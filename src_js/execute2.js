@@ -24,6 +24,11 @@ desktopMirrorEnabled = true;
 // window.x  = 2560;
 // window.y = 23;
 
+window.width = window.monitorWidth * 0.8;
+window.height = window.monitorHeight * 0.8;
+window.x = window.monitorWidth * 0.1;
+window.y = window.monitorHeight * 0.1;
+
 
 
 
