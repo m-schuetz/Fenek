@@ -1,6 +1,8 @@
 # Fenek
 
-Fenek is a live coding JavaScript framework for OpenGL 4.5 and VR that allows users to tweak the render engine, scene, input handling and shaders at runtime and directly in VR without the need to take off the HMD. Video:
+Fenek is a live coding JavaScript framework for OpenGL 4.5 and VR that allows users to tweak the render engine, scene, input handling and shaders at runtime and directly in VR without the need to take off the HMD. It's being developed at the [Research Division of Computer Graphics, TU Wien](https://www.cg.tuwien.ac.at/)  
+
+Video:
 
 <a href="https://youtu.be/xhGNhKVAqW0" target="_blank">
 	<img src="./resources/images/live_code_brushes.png" />
@@ -25,7 +27,7 @@ After the project is compiled, copy following files to _./bin/Release_x64_:
 
 Then, open the workspace in [Visual Studio Code](https://code.visualstudio.com/) by right clicking an empty region inside the solution/project/workspace folder (the one that contains .vscode) and then selecting "Open with Code". Start the application from vscode by pressing __ctrl+shift+b__.
 
-### What to do
+### Things to do
 
 Most JS script files are executed on save (ctrl+s). Take a look at __start.js__ (use ctrl+e to find files). This file is only executed once at startup, but all the files that are executed by watchJS() inside start.js are monitored and executed on save. 
 
