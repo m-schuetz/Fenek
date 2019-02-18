@@ -54,6 +54,7 @@ Some parts of the engine, mainly the math classes is *src_js/math*, are heavily 
 
 ## References
 
-Following papers are based on this project:
+Following publications are based on this project:
 
-* *Live Coding of a VR Render Engine in VR*, Markus Schütz, Michael Wimmer, IEEE VR 2019 (accepted, to be published)
+* *Live Coding of a VR Render Engine in VR*, Markus Schütz, Michael Wimmer, IEEE VR 2019 (Poster, accepted, to be published end of March)
+* *Real-Time Continuous Level of Detail Rendering of Point Clouds*, Markus Schütz, Katharina Krösl, Michael Wimmer, IEEE VR 2019 (Paper, accepted, to be published end of March)
