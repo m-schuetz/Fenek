@@ -120,6 +120,36 @@ void V8Helper::setupWindow(){
 		info.GetReturnValue().Set(mode->height);
 	});
 
+	tpl->SetAccessor(String::NewFromUtf8(isolate, "monitors"), [](Local<String> property, const PropertyCallbackInfo<Value>& info) {
+
+		int numMonitors;
+		GLFWmonitor** monitors = glfwGetMonitors(&numMonitors);
+
+		auto isolate = Isolate::GetCurrent();
+		Local<ObjectTemplate> monitorsTempl = ObjectTemplate::New(isolate);
+		auto objMonitors = monitorsTempl->NewInstance();
+
+		auto lMonitors = Array::New(isolate, numMonitors);
+
+		for (int i = 0; i < numMonitors; i++) {
+
+			const GLFWvidmode * mode = glfwGetVideoMode(monitors[i]);
+
+			Local<ObjectTemplate> monitorTempl = ObjectTemplate::New(isolate);
+			auto objMonitor = monitorTempl->NewInstance();
+
+			auto lWidth = v8::Integer::New(isolate, mode->width);
+			auto lHeight = v8::Integer::New(isolate, mode->height);
+
+			objMonitor->Set(String::NewFromUtf8(isolate, "width"), lWidth);
+			objMonitor->Set(String::NewFromUtf8(isolate, "height"), lHeight);
+
+			lMonitors->Set(i, objMonitor);
+		}
+
+		info.GetReturnValue().Set(lMonitors);
+	});
+
 
 	tpl->SetAccessor(String::NewFromUtf8(isolate, "timeSinceLastFrame"), [](Local<String> property, const PropertyCallbackInfo<Value>& info) {
 
