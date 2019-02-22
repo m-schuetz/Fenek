@@ -22,7 +22,7 @@ desktopMirrorEnabled = true;
 { // set window position
 	let monitors = window.monitors;
 
-	if(monitors.length === 1 || true){
+	if(monitors.length === 1){
 		let monitor = monitors[0];
 
 		window.width = monitor.width * 0.8;
