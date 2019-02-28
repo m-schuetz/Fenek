@@ -13,7 +13,7 @@ let castings = {
 		//let code = `${indent}String::Utf8Value ${varname}UTF8(${argument});\n`;
 		//code += `${indent}GLuint ${varname} = std::stoul(*${varname}UTF8);\n`;
 
-		let code = `${indent}${type} ${varname} = ${argument}->Uint32Value();`;
+		let code = `${indent}${type} ${varname} = ${argument}->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);`;
 
 		return code;
 	},
@@ -21,7 +21,7 @@ let castings = {
 		//let code = `${indent}String::Utf8Value ${varname}UTF8(${argument});\n`;
 		//code += `${indent}GLint ${varname} = std::stoi(*${varname}UTF8);\n`;
 
-		let code = `${indent}${type} ${varname} = ${argument}->Int32Value();`;
+		let code = `${indent}${type} ${varname} = ${argument}->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);`;
 
 		return code;
 	},
@@ -29,7 +29,7 @@ let castings = {
 		//let code = `${indent}String::Utf8Value ${varname}UTF8(${argument});\n`;
 		//code += `${indent}GLuint64 ${varname} = std::stoull(*${varname}UTF8);\n`;
 
-		let code = `${indent}${type} ${varname} = ${type}(${argument}->Uint32Value());`;
+		let code = `${indent}${type} ${varname} = ${type}(${argument}->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));`;
 
 		return code;
 	},
@@ -37,7 +37,7 @@ let castings = {
 		//let code = `${indent}String::Utf8Value ${varname}UTF8(${argument});\n`;
 		//code += `${indent}GLint64 ${varname} = std::stoll(*${varname}UTF8);\n`;
 
-		let code = `${indent}${type} ${varname} = ${type}(${argument}->Int32Value());`;
+		let code = `${indent}${type} ${varname} = ${type}(${argument}->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));`;
 
 		return code;
 	},
@@ -45,7 +45,7 @@ let castings = {
 		//let code = `${indent}String::Utf8Value ${varname}UTF8(${argument});\n`;
 		//code += `${indent}GLushort ${varname} = std::stoul(*${varname}UTF8);\n`;
 
-		let code = `${indent}${type} ${varname} = ${type}(${argument}->Uint32Value());`;
+		let code = `${indent}${type} ${varname} = ${type}(${argument}->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));`;
 
 		return code;
 	},
@@ -53,7 +53,7 @@ let castings = {
 		//let code = `${indent}String::Utf8Value ${varname}UTF8(${argument});\n`;
 		//code += `${indent}GLshort ${varname} = std::stoi(*${varname}UTF8);\n`;
 
-		let code = `${indent}${type} ${varname} = ${type}(${argument}->Int32Value());`;
+		let code = `${indent}${type} ${varname} = ${type}(${argument}->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));`;
 
 		return code;
 	},
@@ -61,7 +61,7 @@ let castings = {
 		//let code = `${indent}String::Utf8Value ${varname}UTF8(${argument});\n`;
 		//code += `${indent}GLbyte ${varname} = std::stoi(*${varname}UTF8);\n`;
 
-		let code = `${indent}${type} ${varname} = ${type}(${argument}->Int32Value());`;
+		let code = `${indent}${type} ${varname} = ${type}(${argument}->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));`;
 
 		return code;
 	},
@@ -69,7 +69,7 @@ let castings = {
 		//let code = `${indent}String::Utf8Value ${varname}UTF8(${argument});\n`;
 		//code += `${indent}GLubyte ${varname} = std::stoul(*${varname}UTF8);\n`;
 
-		let code = `${indent}${type} ${varname} = ${type}(${argument}->Uint32Value());`;
+		let code = `${indent}${type} ${varname} = ${type}(${argument}->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));`;
 
 		return code;
 	},
@@ -77,7 +77,7 @@ let castings = {
 		//let code = `${indent}String::Utf8Value ${varname}UTF8(${argument});\n`;
 		//code += `${indent}GLfloat ${varname} = std::stof(*${varname}UTF8);\n`;
 
-		let code = `${indent}${type} ${varname} = ${type}(${argument}->NumberValue());`;
+		let code = `${indent}${type} ${varname} = ${type}(${argument}->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));`;
 
 		return code;
 	},
@@ -85,7 +85,7 @@ let castings = {
 		//let code = `${indent}String::Utf8Value ${varname}UTF8(${argument});\n`;
 		//code += `${indent}GLdouble ${varname} = std::stod(*${varname}UTF8);\n`;
 
-		let code = `${indent}${type} ${varname} = ${argument}->NumberValue();`;
+		let code = `${indent}${type} ${varname} = ${argument}->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);`;
 
 		return code;
 	},
@@ -99,8 +99,8 @@ let castings = {
 		void *bdata = view->Buffer()->GetContents().Data();
 		${varname} = reinterpret_cast<${type}>(bdata);
 	} else {
-		cout << "ERROR(${commandName}): array must be of type Float32Array" << endl;
-		exit(1);
+		//cout << "ERROR(${commandName}): array must be of type Float32Array" << endl;
+		//exit(1);
 	}
 `
 		return code;
@@ -116,8 +116,8 @@ let castings = {
 		void *bdata = view->Buffer()->GetContents().Data();
 		${varname} = reinterpret_cast<${type}>(bdata);
 	} else {
-		cout << "ERROR(${commandName}): array must be of type Float64Array" << endl;
-		exit(1);
+		//cout << "ERROR(${commandName}): array must be of type Float64Array" << endl;
+		//exit(1);
 	}
 `
 		return code;
@@ -137,8 +137,8 @@ let castings = {
 		void *bdata = view->Buffer()->GetContents().Data();
 		${varname} = reinterpret_cast<${type}>(bdata);
 	}else {
-		cout << "ERROR(${commandName}): array must be of type ArrayBuffer" << endl;
-		exit(1);
+		//cout << "ERROR(${commandName}): array must be of type ArrayBuffer" << endl;
+		//exit(1);
 	}
 `
 		return code;
@@ -154,8 +154,8 @@ let castings = {
 		void *bdata = view->Buffer()->GetContents().Data();
 		${varname} = reinterpret_cast<${type}>(bdata);
 	} else {
-		cout << "ERROR(${commandName}): array must be of type Uint8Array" << endl;
-		exit(1);
+		//cout << "ERROR(${commandName}): array must be of type Uint8Array" << endl;
+		//exit(1);
 	}
 `
 		return code;
@@ -171,8 +171,8 @@ let castings = {
 		void *bdata = view->Buffer()->GetContents().Data();
 		${varname} = reinterpret_cast<${type}>(bdata);
 	} else {
-		cout << "ERROR(${commandName}): array must be of type Int8Array" << endl;
-		exit(1);
+		//cout << "ERROR(${commandName}): array must be of type Int8Array" << endl;
+		//exit(1);
 	}
 `
 		return code;
@@ -188,8 +188,8 @@ let castings = {
 		void *bdata = view->Buffer()->GetContents().Data();
 		${varname} = reinterpret_cast<${type}>(bdata);
 	} else {
-		cout << "ERROR(${commandName}): array must be of type Int16Array" << endl;
-		exit(1);
+		//cout << "ERROR(${commandName}): array must be of type Int16Array" << endl;
+		//exit(1);
 	}
 `
 		return code;
@@ -205,8 +205,8 @@ let castings = {
 		void *bdata = view->Buffer()->GetContents().Data();
 		${varname} = reinterpret_cast<${type}>(bdata);
 	} else {
-		cout << "ERROR(${commandName}): array must be of type Uint16Array" << endl;
-		exit(1);
+		//cout << "ERROR(${commandName}): array must be of type Uint16Array" << endl;
+		//exit(1);
 	}
 `
 		return code;
@@ -222,8 +222,8 @@ let castings = {
 		void *bdata = view->Buffer()->GetContents().Data();
 		${varname} = reinterpret_cast<${type}>(bdata);
 	} else {
-		cout << "ERROR(${commandName}): array must be of type Int32Array" << endl;
-		exit(1);
+		//cout << "ERROR(${commandName}): array must be of type Int32Array" << endl;
+		//exit(1);
 	}
 `
 		return code;
@@ -239,8 +239,8 @@ let castings = {
 		void *bdata = view->Buffer()->GetContents().Data();
 		${varname} = reinterpret_cast<${type}>(bdata);
 	} else {
-		cout << "ERROR(${commandName}): array must be of type Uint32Array" << endl;
-		exit(1);
+		//cout << "ERROR(${commandName}): array must be of type Uint32Array" << endl;
+		//exit(1);
 	}
 `
 		return code;

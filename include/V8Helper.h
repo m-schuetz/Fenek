@@ -43,7 +43,7 @@ using v8::Uint8Array;
 using v8::Float32Array;
 using v8::Float64Array;
 using v8::TypedArray;
-using v8::NamedPropertyGetterCallback;
+//using v8::NamedPropertyGetterCallback;
 using v8::Promise;
 using v8::CopyablePersistentTraits;
 using v8::Function;
@@ -118,7 +118,9 @@ public:
 	Isolate * isolate = nullptr;
 	Scope *scope = nullptr;
 
-	Handle<Context> context;
+	//Handle<Context> context;
+	Local<Object> global;
+	Local<Context> context;
 	Context::Scope *context_scope = nullptr;
 	GLFWwindow* window = nullptr;
 	double timeSinceLastFrame = 0.0;
@@ -132,45 +134,28 @@ public:
 
 	V8Helper() {
 		// Initialize V8.
-		V8::InitializeICU();
-		V8::InitializeExternalStartupData("");
+		//V8::InitializeICU();
+		//V8::InitializeExternalStartupData("");
 
-		Platform* platform = v8::platform::CreateDefaultPlatform();
-		V8::InitializePlatform(platform);
-		V8::Initialize();
+		//std::unique_ptr<v8::Platform> platform = v8::platform::NewDefaultPlatform();
+		//v8::V8::InitializePlatform(platform.get());
+		//V8::Initialize();
 
-		// Create a new Isolate and make it the current one.
-		//ArrayBufferAllocator allocator;
-		Isolate::CreateParams create_params;
-		create_params.array_buffer_allocator = v8::ArrayBuffer::Allocator::NewDefaultAllocator();
-		isolate = Isolate::New(create_params);
+		//// Create a new Isolate and make it the current one.
+		////ArrayBufferAllocator allocator;
+		//Isolate::CreateParams create_params;
+		//create_params.array_buffer_allocator = v8::ArrayBuffer::Allocator::NewDefaultAllocator();
+		//isolate = Isolate::New(create_params);
 
-		scope = new Scope(isolate);
+		//scope = new Scope(isolate);
 
-		//Local<ObjectTemplate> globalTemplate = ObjectTemplate::New();
-		//context = Context::New(isolate, NULL, globalTemplate);
-		context = v8::Context::New(isolate);
+		//global = ObjectTemplate::New(isolate);
 
-		
-		
-		//auto inspectorClient = new InspectorClientImpl();
-		//auto inspector = v8_inspector::V8Inspector::create(isolate, inspectorClient);
-		//auto channel = new ChannelImpl();
-		//
-		//v8_inspector::StringView view;
-		//auto session = inspector->connect(1, channel, view);
-		//
-		//auto message_view = v8_inspector::StringView();
-		//session->dispatchProtocolMessage(message_view);
-		//
-		//inspector->contextCreated(
-		//	v8_inspector::V8ContextInfo(context, 1, v8_inspector::StringView()));
+		//context = Context::New(isolate, NULL, global);
 
+		//context_scope = new Context::Scope(context);
 
-
-		context_scope = new Context::Scope(context);
-
-		V8Helper::_instance = this;
+		//V8Helper::_instance = this;
 
 		//runScript("1 + 2");
 	}
@@ -180,10 +165,11 @@ public:
 	}
 
 	void registerFunction(string name, v8::FunctionCallback callback) {
-		context->Global()->Set(
-			String::NewFromUtf8(isolate, name.c_str()),
-			FunctionTemplate::New(isolate, callback)->GetFunction()
-		);
+
+		auto a = v8::String::NewFromUtf8(isolate, name.c_str(), v8::NewStringType::kNormal).ToLocalChecked();
+		auto b = v8::Function::New(context, callback).ToLocalChecked();
+
+		global->Set(a, b);
 	}
 
 	void throwException(string message) {
@@ -192,7 +178,7 @@ public:
 				v8::NewStringType::kNormal).ToLocalChecked());
 	}
 
-	void runScript(string command);
+	bool runScript(string command);
 	void runScriptSilent(string command);
 	Local<v8::Script> compileScript(string command);
 
@@ -200,7 +186,7 @@ public:
 	void setupGL();
 	void setupWindow();
 	void setupVR();
-	void setupV8GLExtBindings(Local<ObjectTemplate>& tpl);
+	void setupV8GLExtBindings(Local<Object>& obj);
 	//void setupV8GLExtBindings(Local<ObjectTemplate>& tpl, unordered_map<string, int> &constants);
 
 };

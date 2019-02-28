@@ -6,7 +6,14 @@ layout(location = 0) in vec3 aPosition;
 layout(location = 1) in vec3 aColor;
 layout(location = 3) in vec4 aAcc;
 
-uniform mat4 uWorldViewProj;
+layout(std140, binding = 4) uniform shader_data{
+	mat4 transform;
+	mat4 world;
+	mat4 view;
+	mat4 proj;
+
+	float pointSize;
+} ssArgs;
 
 out vec3 vColor;
 out vec4 vVertexID;
@@ -29,17 +36,17 @@ out vec4 vVertexID;
 
 void main() {
 	
-	gl_Position = uWorldViewProj * vec4(aPosition, 1.0);
-	gl_PointSize = 1.0;
+	gl_Position = ssArgs.transform * vec4(aPosition, 1.0);
+	gl_PointSize = ssArgs.pointSize;
 
 	//Vertex v = vbo[gl_VertexID];
 
 	vColor = aColor.rgb;
 	vColor = aAcc.rgb / aAcc.a;
 
-	//if(aAcc.a == 0.0){
-	//	vColor = vec3(1, 0, 0);
-	//}
+	if(aAcc.a == 0.0){
+		vColor = vec3(1, 0, 0);
+	}
 	
 	vVertexID = vec4(
 		float((gl_VertexID >>  0) & 255) / 255.0,

@@ -127,7 +127,7 @@ if(typeof PointCloudProgressive === "undefined"){
 
 			// 4
 			let numPoints = headerView.getUint32(107, true);
-			numPoints = Math.min(numPoints, 120 * 1000 * 1000);
+			numPoints = Math.min(numPoints, 65 * 1000 * 1000);
 
 			// 20
 

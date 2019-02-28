@@ -9,9 +9,14 @@ layout(location = 2) in vec4 aColorAvg;
 //layout(location = 1) in vec4 aColor;
 //layout(location = 2) in uint aID;
 
-uniform mat4 uWorldViewProj;
-uniform bool uDebug;
-uniform float uPointSize;
+layout(std140, binding = 4) uniform shader_data{
+	mat4 transform;
+	mat4 world;
+	mat4 view;
+	mat4 proj;
+
+	float pointSize;
+} ssArgs;
 
 out vec3 vColor;
 out vec4 vVertexID;
@@ -37,19 +42,25 @@ layout(binding = 0) uniform sampler2D uPreviousFrame;
 layout(rgba8ui, binding = 2) uniform uimage2D uIndices;
 
 void main() {
+
+	gl_Position = ssArgs.transform * vec4(aPosition, 1.0);
+	gl_PointSize = ssArgs.pointSize;
+
+	float d = gl_Position.w;
 	
-	gl_Position = uWorldViewProj * vec4(aPosition, 1.0);
-	gl_PointSize = 1.0;
-	
+	vColor = aColorOrig.rgb;
+
 	vVertexID = vec4(
 		float((gl_VertexID >>  0) & 255) / 255.0,
 		float((gl_VertexID >>  8) & 255) / 255.0,
 		float((gl_VertexID >> 16) & 255) / 255.0,
 		float((gl_VertexID >> 24) & 255) / 255.0
 	);
-
+	
 	vec2 uv = (gl_Position.xy / gl_Position.w) / 2.0 + 0.5;
 	vec4 cPrev = texture(uPreviousFrame, uv);
+
+	//vColor = vColor + 0.000001 * cPrev.xyz;
 
 	ivec2 iSize = imageSize(uIndices);
 	ivec2 pixelCoords = ivec2(
@@ -67,7 +78,9 @@ void main() {
 		vec3(vNew.ux, vNew.uy, vNew.uz) - vec3(vOld.ux, vOld.uy, vOld.uz)
 	);
 
-	if(distance < 100.5){
+	
+
+	if(distance < 0.01 * d){
 
 		vec4 cNew = vec4(
 			float((vNew.colors_orig & 0x0000FF) >> 0) / 255.0,
@@ -90,7 +103,7 @@ void main() {
 			vNew.accA += cNew.a;
 		}
 
-		float ww = 0.01;
+		float ww = 0.1;
 		vOld.accR += ww * vOld.accA * cNew.r;
 		vOld.accG += ww * vOld.accA * cNew.g;
 		vOld.accB += ww * vOld.accA * cNew.b;
@@ -136,6 +149,8 @@ void main() {
 	// 	vOld.accA = 1.0;
 	// }
 
+	//vNew.accA = 2.0;
+
 	vColor = vec3(
 		vNew.accR / vNew.accA,
 		vNew.accG / vNew.accA,
@@ -146,6 +161,8 @@ void main() {
 	vbo[gl_VertexID] = vNew;
 
 	//vColor = vec3(0, 1, 0);
+
+
 
 }
 

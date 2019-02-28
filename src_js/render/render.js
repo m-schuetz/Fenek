@@ -430,6 +430,16 @@ var renderBuffers = function(view, proj, target){
 			renderPointCloudProgressive(node, view, proj, target);
 			//renderDefault(node, view, proj, target);
 		}
+		else if(node instanceof PointCloudProgressiveHQ){
+			//renderPointCloudCompute(node, view, proj, target);
+			renderPointCloudProgressiveHQ(node, view, proj, target);
+			//renderDefault(node, view, proj, target);
+		}
+		else if(node instanceof PointCloudBasic){
+			//renderPointCloudCompute(node, view, proj, target);
+			renderPointCloudBasic(node, view, proj, target);
+			//renderDefault(node, view, proj, target);
+		}
 		else if(node instanceof PointCloudExp){
 			//renderPointCloudCompute(node, view, proj, target);
 			//renderPointCloudProgressive(node, view, proj, target);
@@ -742,6 +752,22 @@ var render = function(){
 		debugMillies("duration.gl.render-progressive-ibo", 
 			"render-progressive-ibo-start", 
 			"render-progressive-ibo-end");
+
+		debugMillies("duration.gl.render-progressive-hq", 
+			"render-progressive-hq-start", 
+			"render-progressive-hq-end");
+
+		debugMillies("duration.gl.render-progressive-hq-reproject", 
+			"render-progressive-hq-reproject-start", 
+			"render-progressive-hq-reproject-end");
+
+		debugMillies("duration.gl.render-progressive-hq-add", 
+			"render-progressive-hq-add-start", 
+			"render-progressive-hq-add-end");
+
+		debugMillies("duration.gl.render-progressive-hq-ibo", 
+			"render-progressive-hq-ibo-start", 
+			"render-progressive-hq-ibo-end");
 
 		debugMillies("duration.gl.render-vr", 
 			"render-vr-start", 

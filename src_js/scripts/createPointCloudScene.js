@@ -231,12 +231,52 @@ loadProgressiveHeidentor = function(){
 	let pc = new PointCloudProgressive("heidentor", "C:/dev/pointclouds/heidentor.las");
 	//let pc = new PointCloudProgressive("lion", "C:/dev/pointclouds/lion.las");
 
-	let s = 0.6;
+	let s = 0.4;
 	pc.transform.elements.set([
 		s, 0, 0, 0, 
 			0, 0, s, 0, 
 			0, s, 0, 0, 
-			0, 0, 1, 1, 
+			0, 0, -1, 1, 
+	]);
+
+	scene.root.add(pc);
+
+	view.set(
+		[-11.542882308346643, 7.178273756296709, 5.3013466701128715],
+		[-0.7992052516487097, 3.523237342807562, 1.849253974346153]
+	);
+}
+
+loadProgressiveHQHeidentor = function(){
+	let pc = new PointCloudProgressiveHQ("heidentor_hq", "C:/dev/pointclouds/heidentor.las");
+	//let pc = new PointCloudProgressive("lion", "C:/dev/pointclouds/lion.las");
+
+	let s = 0.4;
+	pc.transform.elements.set([
+		s, 0, 0, 0, 
+			0, 0, s, 0, 
+			0, s, 0, 0, 
+			0, 0, 5, 1, 
+	]);
+
+	scene.root.add(pc);
+
+	view.set(
+		[-11.542882308346643, 7.178273756296709, 5.3013466701128715],
+		[-0.7992052516487097, 3.523237342807562, 1.849253974346153]
+	);
+}
+
+loadBasicHeidentor = function(){
+	let pc = new PointCloudBasic("heidentor_basic", "C:/dev/pointclouds/heidentor.las");
+	//let pc = new PointCloudProgressive("lion", "C:/dev/pointclouds/lion.las");
+
+	let s = 0.4;
+	pc.transform.elements.set([
+		s, 0, 0, 0, 
+			0, 0, s, 0, 
+			0, s, 0, 0, 
+			0, 0, 7, 1, 
 	]);
 
 	scene.root.add(pc);
@@ -623,7 +663,7 @@ loadProgressiveCandiSari = function(){
 }
 
 loadProgressiveRetz = function(){
-	let pc = new PointCloudProgressive("retz_progressive", "C:/dev/pointclouds/Retz_Airborne_Terrestrial_Combined_1cm.las");
+	let pc = new PointCloudProgressive("retz_progressive", "D:/dev/pointclouds/Riegl/Retz_Airborne_Terrestrial_Combined_1cm.las");
 	//let pc = new PointCloudProgressive("heidentor", "C:/dev/pointclouds/heidentor.las");
 	//let pc = new PointCloudProgressive("lion", "C:/dev/pointclouds/lion.las");
 	pc.transform.elements.set([
@@ -639,6 +679,44 @@ loadProgressiveRetz = function(){
 		[515.6532013815034, -20.49565657881057, -505.0567246324728]
 	);
 }
+
+loadProgressiveRetzHQ = function(){
+	let pc = new PointCloudProgressiveHQ("retz_progressive_hq", "D:/dev/pointclouds/Riegl/Retz_Airborne_Terrestrial_Combined_1cm.las");
+	//let pc = new PointCloudProgressive("heidentor", "C:/dev/pointclouds/heidentor.las");
+	//let pc = new PointCloudProgressive("lion", "C:/dev/pointclouds/lion.las");
+	pc.transform.elements.set([
+		1, 0, 0, 0, 
+		0, 0, -1, 0, 
+		0, 1, 0, 0, 
+		0, 0, 0, 1, 
+	]);
+	scene.root.add(pc);
+
+	view.set(
+		[608.2627542249325, 44.81856265925976, -446.82819954242206],
+		[515.6532013815034, -20.49565657881057, -505.0567246324728]
+	);
+}
+
+loadBasicRetz = function(){
+	let pc = new PointCloudBasic("retz_basic", "D:/dev/pointclouds/Riegl/Retz_Airborne_Terrestrial_Combined_1cm.las");
+	//let pc = new PointCloudBasic("retz_basic", "C:/dev/pointclouds/Retz_Airborne_Terrestrial_Combined_1cm.las");
+	//let pc = new PointCloudProgressive("heidentor", "C:/dev/pointclouds/heidentor.las");
+	//let pc = new PointCloudProgressive("lion", "C:/dev/pointclouds/lion.las");
+	pc.transform.elements.set([
+		1, 0, 0, 0, 
+		0, 0, -1, 0, 
+		0, 1, 0, 0, 
+		0, 0, 0, 1, 
+	]);
+	scene.root.add(pc);
+
+	view.set(
+		[608.2627542249325, 44.81856265925976, -446.82819954242206],
+		[515.6532013815034, -20.49565657881057, -505.0567246324728]
+	);
+}
+
 
 loadProgressiveEclepens = function(){
 	let pc = new PointCloudProgressive("eclepens_progressive", "C:/dev/pointclouds/eclepens.las");
@@ -833,7 +911,7 @@ loadOctreePlane = function(){
 // loadOctreePlane();
 
 
-loadExpEndeavor();
+//loadExpEndeavor();
 // loadOctreeEndeavor();
 
 
@@ -848,10 +926,14 @@ loadExpEndeavor();
 //loadExpAffandi_1_74_to_76();
 //loadExpAffandi_6_02_to_04();
 
-//loadProgressiveHeidentor();
+// loadProgressiveHeidentor();
+// loadProgressiveHQHeidentor();
+//loadBasicHeidentor();
 //loadProgressiveLion();
 //loadProgressiveCandiSari();
 //loadProgressiveRetz();
+//loadProgressiveRetzHQ();
+loadBasicRetz();
 //loadProgressiveEclepens();
 
 //loadOctreeHeidentor();

@@ -104,7 +104,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 
 
 
-int main() {
+int main(int argc, char* argv[]) {
 
 	cout << std::setprecision(3) << std::fixed;
 	cout << "<main> " << "(" << now() << ")" << endl;
@@ -189,8 +189,33 @@ int main() {
 	high_resolution_clock::time_point lastFPSTime = start;
 
 
-	V8Helper::instance()->window = window;
-	V8Helper::instance()->setupV8();
+
+
+
+
+
+	auto helper = V8Helper::instance();
+
+	v8::V8::InitializeICUDefaultLocation(argv[0]);
+	v8::V8::InitializeExternalStartupData(argv[0]);
+	std::unique_ptr<v8::Platform> platform = v8::platform::NewDefaultPlatform();
+	v8::V8::InitializePlatform(platform.get());
+	v8::V8::Initialize();
+	v8::V8::SetFlagsFromCommandLine(&argc, argv, true);
+	v8::Isolate::CreateParams create_params;
+	create_params.array_buffer_allocator =
+		v8::ArrayBuffer::Allocator::NewDefaultAllocator();
+	v8::Isolate* isolate = v8::Isolate::New(create_params);
+
+	v8::Isolate::Scope isolate_scope(isolate);
+	v8::HandleScope handle_scope(isolate);
+
+	helper->isolate = isolate;
+
+	helper->window = window;
+	helper->setupV8();
+	Context::Scope context_scope(helper->context);
+
 
 	cout << "<V8 has been set up> " << "(" << now() << ")" << endl;
 

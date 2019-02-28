@@ -50,8 +50,7 @@ Local<ObjectTemplate> createV8ShaderTemplate(v8::Isolate *isolate) {
 			Local<ObjectTemplate> tpl = ObjectTemplate::New(isolate);
 			tpl->SetInternalFieldCount(1);
 
-			tpl->SetNamedPropertyHandler([](Local<String> property, const PropertyCallbackInfo<Value>& info) {
-
+			auto get = [](Local<v8::Name> name, const PropertyCallbackInfo<Value>& info) {
 				HandleScope handle_scope(Isolate::GetCurrent());
 
 				Local<Object> self = info.Holder();
@@ -59,7 +58,7 @@ Local<ObjectTemplate> createV8ShaderTemplate(v8::Isolate *isolate) {
 				void* ptr = wrap->Value();
 				Shader *shader = static_cast<Shader*>(ptr);
 
-				String::Utf8Value str(property);
+				String::Utf8Value str(v8::Isolate::GetCurrent(), name);
 				string uniformName = *str;
 
 				int uniformLocation = shader->uniformLocations[uniformName];
@@ -67,9 +66,34 @@ Local<ObjectTemplate> createV8ShaderTemplate(v8::Isolate *isolate) {
 				//cout << "property: " << uniformName << " -> " << uniformLocation << endl;
 
 				info.GetReturnValue().Set(uniformLocation);
-			});
+			};
 
-			Local<Object> obj = tpl->NewInstance();
+			auto set = [](Local<v8::Name> name, Local<Value> value, const PropertyCallbackInfo<Value>& info) {
+
+			};
+
+			tpl->SetHandler(v8::NamedPropertyHandlerConfiguration(get, set));
+
+			//tpl->SetNamedPropertyHandler([](Local<String> property, const PropertyCallbackInfo<Value>& info) {
+
+			//	HandleScope handle_scope(Isolate::GetCurrent());
+
+			//	Local<Object> self = info.Holder();
+			//	Local<External> wrap = Local<External>::Cast(self->GetInternalField(0));
+			//	void* ptr = wrap->Value();
+			//	Shader *shader = static_cast<Shader*>(ptr);
+
+			//	String::Utf8Value str(v8::Isolate::GetCurrent(), property);
+			//	string uniformName = *str;
+
+			//	int uniformLocation = shader->uniformLocations[uniformName];
+
+			//	//cout << "property: " << uniformName << " -> " << uniformLocation << endl;
+
+			//	info.GetReturnValue().Set(uniformLocation);
+			//});
+
+			Local<Object> obj = tpl->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
 			obj->SetInternalField(0, External::New(isolate, shader));
 
 			shaderUniformHandles[shader] = PersistentObject(isolate, obj);
@@ -88,7 +112,7 @@ Local<Object> v8Object(Shader *shader) {
 	auto isolate = V8Helper::instance()->isolate;
 	//auto tpl = getVector3Template(isolate);
 	auto tpl = createV8ShaderTemplate(isolate);
-	Local<Object> obj = tpl->NewInstance();
+	Local<Object> obj = tpl->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
 	obj->SetInternalField(0, External::New(isolate, shader));
 
 	return obj;

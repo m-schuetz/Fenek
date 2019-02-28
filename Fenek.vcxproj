@@ -138,6 +138,7 @@
     <ClCompile Include="src\Application.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\OpenVRHelper.cpp" />
+    <ClCompile Include="src\test.cpp" />
     <ClCompile Include="src\utils.cpp" />
     <ClCompile Include="src\V8ComputeShader.cpp" />
     <ClCompile Include="src\V8File.cpp" />

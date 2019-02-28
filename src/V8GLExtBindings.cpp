@@ -13,10 +13,13 @@
 #include "V8ComputeShader.h"
 
 
+//#define CREATE_CONSTANT_ACCESSOR( name, value) \
+//	obj->SetAccessor(String::NewFromUtf8(isolate, name), [](Local<String> property, const PropertyCallbackInfo<Value>& info) { \
+//		info.GetReturnValue().Set(value); \
+//	})
+
 #define CREATE_CONSTANT_ACCESSOR( name, value) \
-	tpl->SetAccessor(String::NewFromUtf8(isolate, name), [](Local<String> property, const PropertyCallbackInfo<Value>& info) { \
-		info.GetReturnValue().Set(value); \
-	})
+obj->Set(String::NewFromUtf8(isolate, name), v8::Integer::New(isolate, value));
 
 //void* getArgPointerVoid(const Local<Value> &arg) {
 //	void* pointer = nullptr;
@@ -38,8 +41,10 @@
 //}
 
 
-void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
-	
+void V8Helper::setupV8GLExtBindings(Local<Object>& obj){
+//void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
+
+	auto &context = V8Helper::_instance->context;
 	/* ------------------------------ GL_VERSION_1_2 ------------------------------ */
 
 	CREATE_CONSTANT_ACCESSOR("UNSIGNED_BYTE_3_3_2", GL_UNSIGNED_BYTE_3_3_2);
@@ -85,17 +90,17 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("MAX_ELEMENTS_VERTICES", GL_MAX_ELEMENTS_VERTICES);
 	CREATE_CONSTANT_ACCESSOR("MAX_ELEMENTS_INDICES", GL_MAX_ELEMENTS_INDICES);
 
-	tpl->Set(String::NewFromUtf8(isolate, "drawRangeElements"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "drawRangeElements"),Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 6) {
 			V8Helper::_instance->throwException("drawRangeElements requires 6 arguments");
 			return;
 		}
 
-		GLenum mode = args[0]->Uint32Value();
-		GLuint start = args[1]->Uint32Value();
-		GLuint end = args[2]->Uint32Value();
-		GLsizei count = args[3]->Int32Value();
-		GLenum type = args[4]->Uint32Value();
+		GLenum mode = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint start = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint end = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[4]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* indices = nullptr;
 		if (args[5]->IsArrayBuffer()) {
@@ -108,29 +113,29 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			indices = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glDrawRangeElements): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glDrawRangeElements): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glDrawRangeElements(mode, start, end, count, type, indices);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "texImage3D"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "texImage3D"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 10) {
 			V8Helper::_instance->throwException("texImage3D requires 10 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLint level = args[1]->Int32Value();
-		GLint internalFormat = args[2]->Int32Value();
-		GLsizei width = args[3]->Int32Value();
-		GLsizei height = args[4]->Int32Value();
-		GLsizei depth = args[5]->Int32Value();
-		GLint border = args[6]->Int32Value();
-		GLenum format = args[7]->Uint32Value();
-		GLenum type = args[8]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint level = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint internalFormat = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei height = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei depth = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint border = args[6]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum format = args[7]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[8]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* pixels = nullptr;
 		if (args[9]->IsArrayBuffer()) {
@@ -143,30 +148,30 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			pixels = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glTexImage3D): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glTexImage3D): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glTexImage3D(target, level, internalFormat, width, height, depth, border, format, type, pixels);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "texSubImage3D"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "texSubImage3D"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 11) {
 			V8Helper::_instance->throwException("texSubImage3D requires 11 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLint level = args[1]->Int32Value();
-		GLint xoffset = args[2]->Int32Value();
-		GLint yoffset = args[3]->Int32Value();
-		GLint zoffset = args[4]->Int32Value();
-		GLsizei width = args[5]->Int32Value();
-		GLsizei height = args[6]->Int32Value();
-		GLsizei depth = args[7]->Int32Value();
-		GLenum format = args[8]->Uint32Value();
-		GLenum type = args[9]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint level = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint xoffset = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint yoffset = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint zoffset = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei height = args[6]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei depth = args[7]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum format = args[8]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[9]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* pixels = nullptr;
 		if (args[10]->IsArrayBuffer()) {
@@ -179,32 +184,32 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			pixels = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glTexSubImage3D): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glTexSubImage3D): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glTexSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, pixels);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "copyTexSubImage3D"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "copyTexSubImage3D"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 9) {
 			V8Helper::_instance->throwException("copyTexSubImage3D requires 9 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLint level = args[1]->Int32Value();
-		GLint xoffset = args[2]->Int32Value();
-		GLint yoffset = args[3]->Int32Value();
-		GLint zoffset = args[4]->Int32Value();
-		GLint x = args[5]->Int32Value();
-		GLint y = args[6]->Int32Value();
-		GLsizei width = args[7]->Int32Value();
-		GLsizei height = args[8]->Int32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint level = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint xoffset = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint yoffset = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint zoffset = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint x = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint y = args[6]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[7]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei height = args[8]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glCopyTexSubImage3D(target, level, xoffset, yoffset, zoffset, x, y, width, height);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -308,40 +313,40 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("DOT3_RGBA", GL_DOT3_RGBA);
 	CREATE_CONSTANT_ACCESSOR("CLAMP_TO_BORDER", GL_CLAMP_TO_BORDER);
 
-	tpl->Set(String::NewFromUtf8(isolate, "activeTexture"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "activeTexture"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("activeTexture requires 1 arguments");
 			return;
 		}
 
-		GLenum texture = args[0]->Uint32Value();
+		GLenum texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glActiveTexture(texture);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "clientActiveTexture"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "clientActiveTexture"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("clientActiveTexture requires 1 arguments");
 			return;
 		}
 
-		GLenum texture = args[0]->Uint32Value();
+		GLenum texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glClientActiveTexture(texture);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "compressedTexImage1D"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "compressedTexImage1D"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 7) {
 			V8Helper::_instance->throwException("compressedTexImage1D requires 7 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLint level = args[1]->Int32Value();
-		GLenum internalformat = args[2]->Uint32Value();
-		GLsizei width = args[3]->Int32Value();
-		GLint border = args[4]->Int32Value();
-		GLsizei imageSize = args[5]->Int32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint level = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum internalformat = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint border = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei imageSize = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* data = nullptr;
 		if (args[6]->IsArrayBuffer()) {
@@ -354,27 +359,27 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			data = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glCompressedTexImage1D): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glCompressedTexImage1D): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glCompressedTexImage1D(target, level, internalformat, width, border, imageSize, data);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "compressedTexImage2D"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "compressedTexImage2D"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 8) {
 			V8Helper::_instance->throwException("compressedTexImage2D requires 8 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLint level = args[1]->Int32Value();
-		GLenum internalformat = args[2]->Uint32Value();
-		GLsizei width = args[3]->Int32Value();
-		GLsizei height = args[4]->Int32Value();
-		GLint border = args[5]->Int32Value();
-		GLsizei imageSize = args[6]->Int32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint level = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum internalformat = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei height = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint border = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei imageSize = args[6]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* data = nullptr;
 		if (args[7]->IsArrayBuffer()) {
@@ -387,28 +392,28 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			data = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glCompressedTexImage2D): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glCompressedTexImage2D): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glCompressedTexImage2D(target, level, internalformat, width, height, border, imageSize, data);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "compressedTexImage3D"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "compressedTexImage3D"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 9) {
 			V8Helper::_instance->throwException("compressedTexImage3D requires 9 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLint level = args[1]->Int32Value();
-		GLenum internalformat = args[2]->Uint32Value();
-		GLsizei width = args[3]->Int32Value();
-		GLsizei height = args[4]->Int32Value();
-		GLsizei depth = args[5]->Int32Value();
-		GLint border = args[6]->Int32Value();
-		GLsizei imageSize = args[7]->Int32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint level = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum internalformat = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei height = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei depth = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint border = args[6]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei imageSize = args[7]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* data = nullptr;
 		if (args[8]->IsArrayBuffer()) {
@@ -421,26 +426,26 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			data = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glCompressedTexImage3D): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glCompressedTexImage3D): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glCompressedTexImage3D(target, level, internalformat, width, height, depth, border, imageSize, data);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "compressedTexSubImage1D"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "compressedTexSubImage1D"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 7) {
 			V8Helper::_instance->throwException("compressedTexSubImage1D requires 7 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLint level = args[1]->Int32Value();
-		GLint xoffset = args[2]->Int32Value();
-		GLsizei width = args[3]->Int32Value();
-		GLenum format = args[4]->Uint32Value();
-		GLsizei imageSize = args[5]->Int32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint level = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint xoffset = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum format = args[4]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei imageSize = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* data = nullptr;
 		if (args[6]->IsArrayBuffer()) {
@@ -453,28 +458,28 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			data = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glCompressedTexSubImage1D): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glCompressedTexSubImage1D): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glCompressedTexSubImage1D(target, level, xoffset, width, format, imageSize, data);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "compressedTexSubImage2D"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "compressedTexSubImage2D"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 9) {
 			V8Helper::_instance->throwException("compressedTexSubImage2D requires 9 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLint level = args[1]->Int32Value();
-		GLint xoffset = args[2]->Int32Value();
-		GLint yoffset = args[3]->Int32Value();
-		GLsizei width = args[4]->Int32Value();
-		GLsizei height = args[5]->Int32Value();
-		GLenum format = args[6]->Uint32Value();
-		GLsizei imageSize = args[7]->Int32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint level = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint xoffset = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint yoffset = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei height = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum format = args[6]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei imageSize = args[7]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* data = nullptr;
 		if (args[8]->IsArrayBuffer()) {
@@ -487,30 +492,30 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			data = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glCompressedTexSubImage2D): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glCompressedTexSubImage2D): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glCompressedTexSubImage2D(target, level, xoffset, yoffset, width, height, format, imageSize, data);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "compressedTexSubImage3D"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "compressedTexSubImage3D"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 11) {
 			V8Helper::_instance->throwException("compressedTexSubImage3D requires 11 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLint level = args[1]->Int32Value();
-		GLint xoffset = args[2]->Int32Value();
-		GLint yoffset = args[3]->Int32Value();
-		GLint zoffset = args[4]->Int32Value();
-		GLsizei width = args[5]->Int32Value();
-		GLsizei height = args[6]->Int32Value();
-		GLsizei depth = args[7]->Int32Value();
-		GLenum format = args[8]->Uint32Value();
-		GLsizei imageSize = args[9]->Int32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint level = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint xoffset = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint yoffset = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint zoffset = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei height = args[6]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei depth = args[7]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum format = args[8]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei imageSize = args[9]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* data = nullptr;
 		if (args[10]->IsArrayBuffer()) {
@@ -523,22 +528,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			data = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glCompressedTexSubImage3D): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glCompressedTexSubImage3D): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glCompressedTexSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, imageSize, data);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getCompressedTexImage"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getCompressedTexImage"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getCompressedTexImage requires 3 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLint lod = args[1]->Int32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint lod = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* img = nullptr;
 		if (args[2]->IsArrayBuffer()) {
@@ -551,15 +556,15 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			img = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glGetCompressedTexImage): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glGetCompressedTexImage): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glGetCompressedTexImage(target, lod, img);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "loadTransposeMatrixd"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "loadTransposeMatrixd"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("loadTransposeMatrixd requires 1 arguments");
 			return;
@@ -573,15 +578,15 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			m = reinterpret_cast<GLdouble*>(bdata);
 		} else {
-			cout << "ERROR(glLoadTransposeMatrixd): array must be of type Float64Array" << endl;
-			exit(1);
+			//cout << "ERROR(glLoadTransposeMatrixd): array must be of type Float64Array" << endl;
+			//exit(1);
 		}
 
 
 		glLoadTransposeMatrixd(m);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "loadTransposeMatrixf"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "loadTransposeMatrixf"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("loadTransposeMatrixf requires 1 arguments");
 			return;
@@ -595,15 +600,15 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			m = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glLoadTransposeMatrixf): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glLoadTransposeMatrixf): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glLoadTransposeMatrixf(m);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "multTransposeMatrixd"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "multTransposeMatrixd"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("multTransposeMatrixd requires 1 arguments");
 			return;
@@ -617,15 +622,15 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			m = reinterpret_cast<GLdouble*>(bdata);
 		} else {
-			cout << "ERROR(glMultTransposeMatrixd): array must be of type Float64Array" << endl;
-			exit(1);
+			//cout << "ERROR(glMultTransposeMatrixd): array must be of type Float64Array" << endl;
+			//exit(1);
 		}
 
 
 		glMultTransposeMatrixd(m);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "multTransposeMatrixf"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "multTransposeMatrixf"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("multTransposeMatrixf requires 1 arguments");
 			return;
@@ -639,33 +644,33 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			m = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glMultTransposeMatrixf): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glMultTransposeMatrixf): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glMultTransposeMatrixf(m);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoord1d"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "multiTexCoord1d"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("multiTexCoord1d requires 2 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLdouble s = args[1]->NumberValue();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble s = args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glMultiTexCoord1d(target, s);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoord1dv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "multiTexCoord1dv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("multiTexCoord1dv requires 2 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLdouble* v = nullptr;
 		if (args[1]->IsFloat64Array()) {
@@ -674,33 +679,33 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLdouble*>(bdata);
 		} else {
-			cout << "ERROR(glMultiTexCoord1dv): array must be of type Float64Array" << endl;
-			exit(1);
+			//cout << "ERROR(glMultiTexCoord1dv): array must be of type Float64Array" << endl;
+			//exit(1);
 		}
 
 
 		glMultiTexCoord1dv(target, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoord1f"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "multiTexCoord1f"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("multiTexCoord1f requires 2 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLfloat s = GLfloat(args[1]->NumberValue());
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLfloat s = GLfloat(args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glMultiTexCoord1f(target, s);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoord1fv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "multiTexCoord1fv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("multiTexCoord1fv requires 2 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLfloat* v = nullptr;
 		if (args[1]->IsFloat32Array()) {
@@ -709,33 +714,33 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glMultiTexCoord1fv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glMultiTexCoord1fv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glMultiTexCoord1fv(target, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoord1i"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "multiTexCoord1i"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("multiTexCoord1i requires 2 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLint s = args[1]->Int32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint s = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glMultiTexCoord1i(target, s);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoord1iv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "multiTexCoord1iv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("multiTexCoord1iv requires 2 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* v = nullptr;
 		if (args[1]->IsInt32Array()) {
@@ -744,33 +749,33 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glMultiTexCoord1iv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glMultiTexCoord1iv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glMultiTexCoord1iv(target, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoord1s"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "multiTexCoord1s"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("multiTexCoord1s requires 2 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLshort s = GLshort(args[1]->Int32Value());
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLshort s = GLshort(args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glMultiTexCoord1s(target, s);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoord1sv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "multiTexCoord1sv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("multiTexCoord1sv requires 2 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLshort* v = nullptr;
 		if (args[1]->IsInt16Array()) {
@@ -779,34 +784,34 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLshort*>(bdata);
 		} else {
-			cout << "ERROR(glMultiTexCoord1sv): array must be of type Int16Array" << endl;
-			exit(1);
+			//cout << "ERROR(glMultiTexCoord1sv): array must be of type Int16Array" << endl;
+			//exit(1);
 		}
 
 
 		glMultiTexCoord1sv(target, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoord2d"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "multiTexCoord2d"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("multiTexCoord2d requires 3 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLdouble s = args[1]->NumberValue();
-		GLdouble t = args[2]->NumberValue();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble s = args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble t = args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glMultiTexCoord2d(target, s, t);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoord2dv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "multiTexCoord2dv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("multiTexCoord2dv requires 2 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLdouble* v = nullptr;
 		if (args[1]->IsFloat64Array()) {
@@ -815,34 +820,34 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLdouble*>(bdata);
 		} else {
-			cout << "ERROR(glMultiTexCoord2dv): array must be of type Float64Array" << endl;
-			exit(1);
+			//cout << "ERROR(glMultiTexCoord2dv): array must be of type Float64Array" << endl;
+			//exit(1);
 		}
 
 
 		glMultiTexCoord2dv(target, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoord2f"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "multiTexCoord2f"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("multiTexCoord2f requires 3 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLfloat s = GLfloat(args[1]->NumberValue());
-		GLfloat t = GLfloat(args[2]->NumberValue());
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLfloat s = GLfloat(args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLfloat t = GLfloat(args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glMultiTexCoord2f(target, s, t);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoord2fv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "multiTexCoord2fv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("multiTexCoord2fv requires 2 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLfloat* v = nullptr;
 		if (args[1]->IsFloat32Array()) {
@@ -851,34 +856,34 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glMultiTexCoord2fv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glMultiTexCoord2fv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glMultiTexCoord2fv(target, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoord2i"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "multiTexCoord2i"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("multiTexCoord2i requires 3 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLint s = args[1]->Int32Value();
-		GLint t = args[2]->Int32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint s = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint t = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glMultiTexCoord2i(target, s, t);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoord2iv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "multiTexCoord2iv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("multiTexCoord2iv requires 2 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* v = nullptr;
 		if (args[1]->IsInt32Array()) {
@@ -887,34 +892,34 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glMultiTexCoord2iv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glMultiTexCoord2iv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glMultiTexCoord2iv(target, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoord2s"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "multiTexCoord2s"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("multiTexCoord2s requires 3 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLshort s = GLshort(args[1]->Int32Value());
-		GLshort t = GLshort(args[2]->Int32Value());
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLshort s = GLshort(args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLshort t = GLshort(args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glMultiTexCoord2s(target, s, t);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoord2sv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "multiTexCoord2sv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("multiTexCoord2sv requires 2 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLshort* v = nullptr;
 		if (args[1]->IsInt16Array()) {
@@ -923,35 +928,35 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLshort*>(bdata);
 		} else {
-			cout << "ERROR(glMultiTexCoord2sv): array must be of type Int16Array" << endl;
-			exit(1);
+			//cout << "ERROR(glMultiTexCoord2sv): array must be of type Int16Array" << endl;
+			//exit(1);
 		}
 
 
 		glMultiTexCoord2sv(target, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoord3d"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "multiTexCoord3d"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("multiTexCoord3d requires 4 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLdouble s = args[1]->NumberValue();
-		GLdouble t = args[2]->NumberValue();
-		GLdouble r = args[3]->NumberValue();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble s = args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble t = args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble r = args[3]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glMultiTexCoord3d(target, s, t, r);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoord3dv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "multiTexCoord3dv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("multiTexCoord3dv requires 2 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLdouble* v = nullptr;
 		if (args[1]->IsFloat64Array()) {
@@ -960,35 +965,35 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLdouble*>(bdata);
 		} else {
-			cout << "ERROR(glMultiTexCoord3dv): array must be of type Float64Array" << endl;
-			exit(1);
+			//cout << "ERROR(glMultiTexCoord3dv): array must be of type Float64Array" << endl;
+			//exit(1);
 		}
 
 
 		glMultiTexCoord3dv(target, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoord3f"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "multiTexCoord3f"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("multiTexCoord3f requires 4 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLfloat s = GLfloat(args[1]->NumberValue());
-		GLfloat t = GLfloat(args[2]->NumberValue());
-		GLfloat r = GLfloat(args[3]->NumberValue());
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLfloat s = GLfloat(args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLfloat t = GLfloat(args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLfloat r = GLfloat(args[3]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glMultiTexCoord3f(target, s, t, r);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoord3fv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "multiTexCoord3fv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("multiTexCoord3fv requires 2 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLfloat* v = nullptr;
 		if (args[1]->IsFloat32Array()) {
@@ -997,35 +1002,35 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glMultiTexCoord3fv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glMultiTexCoord3fv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glMultiTexCoord3fv(target, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoord3i"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "multiTexCoord3i"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("multiTexCoord3i requires 4 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLint s = args[1]->Int32Value();
-		GLint t = args[2]->Int32Value();
-		GLint r = args[3]->Int32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint s = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint t = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint r = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glMultiTexCoord3i(target, s, t, r);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoord3iv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "multiTexCoord3iv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("multiTexCoord3iv requires 2 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* v = nullptr;
 		if (args[1]->IsInt32Array()) {
@@ -1034,35 +1039,35 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glMultiTexCoord3iv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glMultiTexCoord3iv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glMultiTexCoord3iv(target, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoord3s"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "multiTexCoord3s"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("multiTexCoord3s requires 4 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLshort s = GLshort(args[1]->Int32Value());
-		GLshort t = GLshort(args[2]->Int32Value());
-		GLshort r = GLshort(args[3]->Int32Value());
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLshort s = GLshort(args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLshort t = GLshort(args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLshort r = GLshort(args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glMultiTexCoord3s(target, s, t, r);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoord3sv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "multiTexCoord3sv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("multiTexCoord3sv requires 2 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLshort* v = nullptr;
 		if (args[1]->IsInt16Array()) {
@@ -1071,36 +1076,36 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLshort*>(bdata);
 		} else {
-			cout << "ERROR(glMultiTexCoord3sv): array must be of type Int16Array" << endl;
-			exit(1);
+			//cout << "ERROR(glMultiTexCoord3sv): array must be of type Int16Array" << endl;
+			//exit(1);
 		}
 
 
 		glMultiTexCoord3sv(target, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoord4d"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "multiTexCoord4d"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("multiTexCoord4d requires 5 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLdouble s = args[1]->NumberValue();
-		GLdouble t = args[2]->NumberValue();
-		GLdouble r = args[3]->NumberValue();
-		GLdouble q = args[4]->NumberValue();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble s = args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble t = args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble r = args[3]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble q = args[4]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glMultiTexCoord4d(target, s, t, r, q);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoord4dv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "multiTexCoord4dv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("multiTexCoord4dv requires 2 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLdouble* v = nullptr;
 		if (args[1]->IsFloat64Array()) {
@@ -1109,36 +1114,36 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLdouble*>(bdata);
 		} else {
-			cout << "ERROR(glMultiTexCoord4dv): array must be of type Float64Array" << endl;
-			exit(1);
+			//cout << "ERROR(glMultiTexCoord4dv): array must be of type Float64Array" << endl;
+			//exit(1);
 		}
 
 
 		glMultiTexCoord4dv(target, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoord4f"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "multiTexCoord4f"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("multiTexCoord4f requires 5 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLfloat s = GLfloat(args[1]->NumberValue());
-		GLfloat t = GLfloat(args[2]->NumberValue());
-		GLfloat r = GLfloat(args[3]->NumberValue());
-		GLfloat q = GLfloat(args[4]->NumberValue());
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLfloat s = GLfloat(args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLfloat t = GLfloat(args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLfloat r = GLfloat(args[3]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLfloat q = GLfloat(args[4]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glMultiTexCoord4f(target, s, t, r, q);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoord4fv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "multiTexCoord4fv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("multiTexCoord4fv requires 2 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLfloat* v = nullptr;
 		if (args[1]->IsFloat32Array()) {
@@ -1147,36 +1152,36 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glMultiTexCoord4fv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glMultiTexCoord4fv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glMultiTexCoord4fv(target, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoord4i"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "multiTexCoord4i"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("multiTexCoord4i requires 5 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLint s = args[1]->Int32Value();
-		GLint t = args[2]->Int32Value();
-		GLint r = args[3]->Int32Value();
-		GLint q = args[4]->Int32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint s = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint t = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint r = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint q = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glMultiTexCoord4i(target, s, t, r, q);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoord4iv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "multiTexCoord4iv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("multiTexCoord4iv requires 2 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* v = nullptr;
 		if (args[1]->IsInt32Array()) {
@@ -1185,36 +1190,36 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glMultiTexCoord4iv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glMultiTexCoord4iv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glMultiTexCoord4iv(target, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoord4s"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "multiTexCoord4s"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("multiTexCoord4s requires 5 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLshort s = GLshort(args[1]->Int32Value());
-		GLshort t = GLshort(args[2]->Int32Value());
-		GLshort r = GLshort(args[3]->Int32Value());
-		GLshort q = GLshort(args[4]->Int32Value());
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLshort s = GLshort(args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLshort t = GLshort(args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLshort r = GLshort(args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLshort q = GLshort(args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glMultiTexCoord4s(target, s, t, r, q);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoord4sv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "multiTexCoord4sv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("multiTexCoord4sv requires 2 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLshort* v = nullptr;
 		if (args[1]->IsInt16Array()) {
@@ -1223,25 +1228,25 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLshort*>(bdata);
 		} else {
-			cout << "ERROR(glMultiTexCoord4sv): array must be of type Int16Array" << endl;
-			exit(1);
+			//cout << "ERROR(glMultiTexCoord4sv): array must be of type Int16Array" << endl;
+			//exit(1);
 		}
 
 
 		glMultiTexCoord4sv(target, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "sampleCoverage"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "sampleCoverage"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("sampleCoverage requires 2 arguments");
 			return;
 		}
 
-		GLclampf value = GLclampf(args[0]->NumberValue());
-		GLboolean invert = GLboolean(args[1]->Uint32Value());
+		GLclampf value = GLclampf(args[0]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLboolean invert = GLboolean(args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glSampleCoverage(value, invert);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -1287,43 +1292,43 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("MAX_TEXTURE_LOD_BIAS", GL_MAX_TEXTURE_LOD_BIAS);
 	CREATE_CONSTANT_ACCESSOR("MIRRORED_REPEAT", GL_MIRRORED_REPEAT);
 
-	tpl->Set(String::NewFromUtf8(isolate, "blendEquation"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "blendEquation"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("blendEquation requires 1 arguments");
 			return;
 		}
 
-		GLenum mode = args[0]->Uint32Value();
+		GLenum mode = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glBlendEquation(mode);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "blendColor"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "blendColor"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("blendColor requires 4 arguments");
 			return;
 		}
 
-		GLclampf red = GLclampf(args[0]->NumberValue());
-		GLclampf green = GLclampf(args[1]->NumberValue());
-		GLclampf blue = GLclampf(args[2]->NumberValue());
-		GLclampf alpha = GLclampf(args[3]->NumberValue());
+		GLclampf red = GLclampf(args[0]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLclampf green = GLclampf(args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLclampf blue = GLclampf(args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLclampf alpha = GLclampf(args[3]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glBlendColor(red, green, blue, alpha);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "fogCoordf"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "fogCoordf"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("fogCoordf requires 1 arguments");
 			return;
 		}
 
-		GLfloat coord = GLfloat(args[0]->NumberValue());
+		GLfloat coord = GLfloat(args[0]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glFogCoordf(coord);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "fogCoordfv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "fogCoordfv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("fogCoordfv requires 1 arguments");
 			return;
@@ -1337,26 +1342,26 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			coord = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glFogCoordfv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glFogCoordfv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glFogCoordfv(coord);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "fogCoordd"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "fogCoordd"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("fogCoordd requires 1 arguments");
 			return;
 		}
 
-		GLdouble coord = args[0]->NumberValue();
+		GLdouble coord = args[0]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glFogCoordd(coord);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "fogCoorddv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "fogCoorddv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("fogCoorddv requires 1 arguments");
 			return;
@@ -1370,22 +1375,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			coord = reinterpret_cast<GLdouble*>(bdata);
 		} else {
-			cout << "ERROR(glFogCoorddv): array must be of type Float64Array" << endl;
-			exit(1);
+			//cout << "ERROR(glFogCoorddv): array must be of type Float64Array" << endl;
+			//exit(1);
 		}
 
 
 		glFogCoorddv(coord);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "fogCoordPointer"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "fogCoordPointer"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("fogCoordPointer requires 3 arguments");
 			return;
 		}
 
-		GLenum type = args[0]->Uint32Value();
-		GLsizei stride = args[1]->Int32Value();
+		GLenum type = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei stride = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* pointer = nullptr;
 		if (args[2]->IsArrayBuffer()) {
@@ -1398,21 +1403,21 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			pointer = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glFogCoordPointer): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glFogCoordPointer): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glFogCoordPointer(type, stride, pointer);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "multiDrawArrays"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "multiDrawArrays"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("multiDrawArrays requires 4 arguments");
 			return;
 		}
 
-		GLenum mode = args[0]->Uint32Value();
+		GLenum mode = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* first = nullptr;
 		if (args[1]->IsInt32Array()) {
@@ -1421,8 +1426,8 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			first = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glMultiDrawArrays): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glMultiDrawArrays): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
@@ -1433,35 +1438,35 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			count = reinterpret_cast<GLsizei*>(bdata);
 		} else {
-			cout << "ERROR(glMultiDrawArrays): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glMultiDrawArrays): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
-		GLsizei drawcount = args[3]->Int32Value();
+		GLsizei drawcount = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glMultiDrawArrays(mode, first, count, drawcount);
-	}));
+	}).ToLocalChecked());
 
 
-	tpl->Set(String::NewFromUtf8(isolate, "pointParameteri"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "pointParameteri"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("pointParameteri requires 2 arguments");
 			return;
 		}
 
-		GLenum pname = args[0]->Uint32Value();
-		GLint param = args[1]->Int32Value();
+		GLenum pname = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint param = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glPointParameteri(pname, param);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "pointParameteriv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "pointParameteriv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("pointParameteriv requires 2 arguments");
 			return;
 		}
 
-		GLenum pname = args[0]->Uint32Value();
+		GLenum pname = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* params = nullptr;
 		if (args[1]->IsInt32Array()) {
@@ -1470,33 +1475,33 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glPointParameteriv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glPointParameteriv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glPointParameteriv(pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "pointParameterf"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "pointParameterf"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("pointParameterf requires 2 arguments");
 			return;
 		}
 
-		GLenum pname = args[0]->Uint32Value();
-		GLfloat param = GLfloat(args[1]->NumberValue());
+		GLenum pname = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLfloat param = GLfloat(args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glPointParameterf(pname, param);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "pointParameterfv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "pointParameterfv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("pointParameterfv requires 2 arguments");
 			return;
 		}
 
-		GLenum pname = args[0]->Uint32Value();
+		GLenum pname = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLfloat* params = nullptr;
 		if (args[1]->IsFloat32Array()) {
@@ -1505,28 +1510,28 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glPointParameterfv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glPointParameterfv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glPointParameterfv(pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "secondaryColor3b"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "secondaryColor3b"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("secondaryColor3b requires 3 arguments");
 			return;
 		}
 
-		GLbyte red = GLbyte(args[0]->Int32Value());
-		GLbyte green = GLbyte(args[1]->Int32Value());
-		GLbyte blue = GLbyte(args[2]->Int32Value());
+		GLbyte red = GLbyte(args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLbyte green = GLbyte(args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLbyte blue = GLbyte(args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glSecondaryColor3b(red, green, blue);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "secondaryColor3bv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "secondaryColor3bv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("secondaryColor3bv requires 1 arguments");
 			return;
@@ -1540,28 +1545,28 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLbyte*>(bdata);
 		} else {
-			cout << "ERROR(glSecondaryColor3bv): array must be of type Int8Array" << endl;
-			exit(1);
+			//cout << "ERROR(glSecondaryColor3bv): array must be of type Int8Array" << endl;
+			//exit(1);
 		}
 
 
 		glSecondaryColor3bv(v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "secondaryColor3d"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "secondaryColor3d"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("secondaryColor3d requires 3 arguments");
 			return;
 		}
 
-		GLdouble red = args[0]->NumberValue();
-		GLdouble green = args[1]->NumberValue();
-		GLdouble blue = args[2]->NumberValue();
+		GLdouble red = args[0]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble green = args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble blue = args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glSecondaryColor3d(red, green, blue);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "secondaryColor3dv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "secondaryColor3dv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("secondaryColor3dv requires 1 arguments");
 			return;
@@ -1575,28 +1580,28 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLdouble*>(bdata);
 		} else {
-			cout << "ERROR(glSecondaryColor3dv): array must be of type Float64Array" << endl;
-			exit(1);
+			//cout << "ERROR(glSecondaryColor3dv): array must be of type Float64Array" << endl;
+			//exit(1);
 		}
 
 
 		glSecondaryColor3dv(v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "secondaryColor3f"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "secondaryColor3f"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("secondaryColor3f requires 3 arguments");
 			return;
 		}
 
-		GLfloat red = GLfloat(args[0]->NumberValue());
-		GLfloat green = GLfloat(args[1]->NumberValue());
-		GLfloat blue = GLfloat(args[2]->NumberValue());
+		GLfloat red = GLfloat(args[0]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLfloat green = GLfloat(args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLfloat blue = GLfloat(args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glSecondaryColor3f(red, green, blue);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "secondaryColor3fv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "secondaryColor3fv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("secondaryColor3fv requires 1 arguments");
 			return;
@@ -1610,28 +1615,28 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glSecondaryColor3fv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glSecondaryColor3fv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glSecondaryColor3fv(v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "secondaryColor3i"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "secondaryColor3i"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("secondaryColor3i requires 3 arguments");
 			return;
 		}
 
-		GLint red = args[0]->Int32Value();
-		GLint green = args[1]->Int32Value();
-		GLint blue = args[2]->Int32Value();
+		GLint red = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint green = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint blue = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glSecondaryColor3i(red, green, blue);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "secondaryColor3iv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "secondaryColor3iv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("secondaryColor3iv requires 1 arguments");
 			return;
@@ -1645,28 +1650,28 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glSecondaryColor3iv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glSecondaryColor3iv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glSecondaryColor3iv(v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "secondaryColor3s"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "secondaryColor3s"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("secondaryColor3s requires 3 arguments");
 			return;
 		}
 
-		GLshort red = GLshort(args[0]->Int32Value());
-		GLshort green = GLshort(args[1]->Int32Value());
-		GLshort blue = GLshort(args[2]->Int32Value());
+		GLshort red = GLshort(args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLshort green = GLshort(args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLshort blue = GLshort(args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glSecondaryColor3s(red, green, blue);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "secondaryColor3sv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "secondaryColor3sv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("secondaryColor3sv requires 1 arguments");
 			return;
@@ -1680,28 +1685,28 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLshort*>(bdata);
 		} else {
-			cout << "ERROR(glSecondaryColor3sv): array must be of type Int16Array" << endl;
-			exit(1);
+			//cout << "ERROR(glSecondaryColor3sv): array must be of type Int16Array" << endl;
+			//exit(1);
 		}
 
 
 		glSecondaryColor3sv(v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "secondaryColor3ub"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "secondaryColor3ub"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("secondaryColor3ub requires 3 arguments");
 			return;
 		}
 
-		GLubyte red = GLubyte(args[0]->Uint32Value());
-		GLubyte green = GLubyte(args[1]->Uint32Value());
-		GLubyte blue = GLubyte(args[2]->Uint32Value());
+		GLubyte red = GLubyte(args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLubyte green = GLubyte(args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLubyte blue = GLubyte(args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glSecondaryColor3ub(red, green, blue);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "secondaryColor3ubv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "secondaryColor3ubv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("secondaryColor3ubv requires 1 arguments");
 			return;
@@ -1715,28 +1720,28 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLubyte*>(bdata);
 		} else {
-			cout << "ERROR(glSecondaryColor3ubv): array must be of type Uint8Array" << endl;
-			exit(1);
+			//cout << "ERROR(glSecondaryColor3ubv): array must be of type Uint8Array" << endl;
+			//exit(1);
 		}
 
 
 		glSecondaryColor3ubv(v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "secondaryColor3ui"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "secondaryColor3ui"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("secondaryColor3ui requires 3 arguments");
 			return;
 		}
 
-		GLuint red = args[0]->Uint32Value();
-		GLuint green = args[1]->Uint32Value();
-		GLuint blue = args[2]->Uint32Value();
+		GLuint red = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint green = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint blue = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glSecondaryColor3ui(red, green, blue);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "secondaryColor3uiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "secondaryColor3uiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("secondaryColor3uiv requires 1 arguments");
 			return;
@@ -1750,28 +1755,28 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glSecondaryColor3uiv): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glSecondaryColor3uiv): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glSecondaryColor3uiv(v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "secondaryColor3us"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "secondaryColor3us"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("secondaryColor3us requires 3 arguments");
 			return;
 		}
 
-		GLushort red = GLushort(args[0]->Uint32Value());
-		GLushort green = GLushort(args[1]->Uint32Value());
-		GLushort blue = GLushort(args[2]->Uint32Value());
+		GLushort red = GLushort(args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLushort green = GLushort(args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLushort blue = GLushort(args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glSecondaryColor3us(red, green, blue);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "secondaryColor3usv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "secondaryColor3usv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("secondaryColor3usv requires 1 arguments");
 			return;
@@ -1785,23 +1790,23 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLushort*>(bdata);
 		} else {
-			cout << "ERROR(glSecondaryColor3usv): array must be of type Uint16Array" << endl;
-			exit(1);
+			//cout << "ERROR(glSecondaryColor3usv): array must be of type Uint16Array" << endl;
+			//exit(1);
 		}
 
 
 		glSecondaryColor3usv(v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "secondaryColorPointer"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "secondaryColorPointer"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("secondaryColorPointer requires 4 arguments");
 			return;
 		}
 
-		GLint size = args[0]->Int32Value();
-		GLenum type = args[1]->Uint32Value();
-		GLsizei stride = args[2]->Int32Value();
+		GLint size = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei stride = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* pointer = nullptr;
 		if (args[3]->IsArrayBuffer()) {
@@ -1814,77 +1819,77 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			pointer = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glSecondaryColorPointer): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glSecondaryColorPointer): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glSecondaryColorPointer(size, type, stride, pointer);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "blendFuncSeparate"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "blendFuncSeparate"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("blendFuncSeparate requires 4 arguments");
 			return;
 		}
 
-		GLenum sfactorRGB = args[0]->Uint32Value();
-		GLenum dfactorRGB = args[1]->Uint32Value();
-		GLenum sfactorAlpha = args[2]->Uint32Value();
-		GLenum dfactorAlpha = args[3]->Uint32Value();
+		GLenum sfactorRGB = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum dfactorRGB = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum sfactorAlpha = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum dfactorAlpha = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glBlendFuncSeparate(sfactorRGB, dfactorRGB, sfactorAlpha, dfactorAlpha);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "windowPos2d"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "windowPos2d"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("windowPos2d requires 2 arguments");
 			return;
 		}
 
-		GLdouble x = args[0]->NumberValue();
-		GLdouble y = args[1]->NumberValue();
+		GLdouble x = args[0]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble y = args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glWindowPos2d(x, y);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "windowPos2f"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "windowPos2f"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("windowPos2f requires 2 arguments");
 			return;
 		}
 
-		GLfloat x = GLfloat(args[0]->NumberValue());
-		GLfloat y = GLfloat(args[1]->NumberValue());
+		GLfloat x = GLfloat(args[0]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLfloat y = GLfloat(args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glWindowPos2f(x, y);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "windowPos2i"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "windowPos2i"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("windowPos2i requires 2 arguments");
 			return;
 		}
 
-		GLint x = args[0]->Int32Value();
-		GLint y = args[1]->Int32Value();
+		GLint x = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint y = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glWindowPos2i(x, y);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "windowPos2s"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "windowPos2s"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("windowPos2s requires 2 arguments");
 			return;
 		}
 
-		GLshort x = GLshort(args[0]->Int32Value());
-		GLshort y = GLshort(args[1]->Int32Value());
+		GLshort x = GLshort(args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLshort y = GLshort(args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glWindowPos2s(x, y);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "windowPos2dv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "windowPos2dv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("windowPos2dv requires 1 arguments");
 			return;
@@ -1898,15 +1903,15 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			p = reinterpret_cast<GLdouble*>(bdata);
 		} else {
-			cout << "ERROR(glWindowPos2dv): array must be of type Float64Array" << endl;
-			exit(1);
+			//cout << "ERROR(glWindowPos2dv): array must be of type Float64Array" << endl;
+			//exit(1);
 		}
 
 
 		glWindowPos2dv(p);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "windowPos2fv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "windowPos2fv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("windowPos2fv requires 1 arguments");
 			return;
@@ -1920,15 +1925,15 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			p = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glWindowPos2fv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glWindowPos2fv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glWindowPos2fv(p);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "windowPos2iv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "windowPos2iv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("windowPos2iv requires 1 arguments");
 			return;
@@ -1942,15 +1947,15 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			p = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glWindowPos2iv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glWindowPos2iv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glWindowPos2iv(p);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "windowPos2sv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "windowPos2sv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("windowPos2sv requires 1 arguments");
 			return;
@@ -1964,67 +1969,67 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			p = reinterpret_cast<GLshort*>(bdata);
 		} else {
-			cout << "ERROR(glWindowPos2sv): array must be of type Int16Array" << endl;
-			exit(1);
+			//cout << "ERROR(glWindowPos2sv): array must be of type Int16Array" << endl;
+			//exit(1);
 		}
 
 
 		glWindowPos2sv(p);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "windowPos3d"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "windowPos3d"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("windowPos3d requires 3 arguments");
 			return;
 		}
 
-		GLdouble x = args[0]->NumberValue();
-		GLdouble y = args[1]->NumberValue();
-		GLdouble z = args[2]->NumberValue();
+		GLdouble x = args[0]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble y = args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble z = args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glWindowPos3d(x, y, z);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "windowPos3f"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "windowPos3f"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("windowPos3f requires 3 arguments");
 			return;
 		}
 
-		GLfloat x = GLfloat(args[0]->NumberValue());
-		GLfloat y = GLfloat(args[1]->NumberValue());
-		GLfloat z = GLfloat(args[2]->NumberValue());
+		GLfloat x = GLfloat(args[0]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLfloat y = GLfloat(args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLfloat z = GLfloat(args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glWindowPos3f(x, y, z);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "windowPos3i"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "windowPos3i"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("windowPos3i requires 3 arguments");
 			return;
 		}
 
-		GLint x = args[0]->Int32Value();
-		GLint y = args[1]->Int32Value();
-		GLint z = args[2]->Int32Value();
+		GLint x = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint y = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint z = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glWindowPos3i(x, y, z);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "windowPos3s"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "windowPos3s"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("windowPos3s requires 3 arguments");
 			return;
 		}
 
-		GLshort x = GLshort(args[0]->Int32Value());
-		GLshort y = GLshort(args[1]->Int32Value());
-		GLshort z = GLshort(args[2]->Int32Value());
+		GLshort x = GLshort(args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLshort y = GLshort(args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLshort z = GLshort(args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glWindowPos3s(x, y, z);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "windowPos3dv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "windowPos3dv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("windowPos3dv requires 1 arguments");
 			return;
@@ -2038,15 +2043,15 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			p = reinterpret_cast<GLdouble*>(bdata);
 		} else {
-			cout << "ERROR(glWindowPos3dv): array must be of type Float64Array" << endl;
-			exit(1);
+			//cout << "ERROR(glWindowPos3dv): array must be of type Float64Array" << endl;
+			//exit(1);
 		}
 
 
 		glWindowPos3dv(p);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "windowPos3fv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "windowPos3fv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("windowPos3fv requires 1 arguments");
 			return;
@@ -2060,15 +2065,15 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			p = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glWindowPos3fv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glWindowPos3fv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glWindowPos3fv(p);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "windowPos3iv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "windowPos3iv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("windowPos3iv requires 1 arguments");
 			return;
@@ -2082,15 +2087,15 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			p = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glWindowPos3iv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glWindowPos3iv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glWindowPos3iv(p);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "windowPos3sv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "windowPos3sv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("windowPos3sv requires 1 arguments");
 			return;
@@ -2104,13 +2109,13 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			p = reinterpret_cast<GLshort*>(bdata);
 		} else {
-			cout << "ERROR(glWindowPos3sv): array must be of type Int16Array" << endl;
-			exit(1);
+			//cout << "ERROR(glWindowPos3sv): array must be of type Int16Array" << endl;
+			//exit(1);
 		}
 
 
 		glWindowPos3sv(p);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -2167,13 +2172,13 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("SRC1_ALPHA", GL_SRC1_ALPHA);
 	CREATE_CONSTANT_ACCESSOR("SRC2_ALPHA", GL_SRC2_ALPHA);
 
-	tpl->Set(String::NewFromUtf8(isolate, "genQueries"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "genQueries"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("genQueries requires 2 arguments");
 			return;
 		}
 
-		GLsizei n = args[0]->Int32Value();
+		GLsizei n = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* ids = nullptr;
 		if (args[1]->IsUint32Array()) {
@@ -2182,21 +2187,21 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			ids = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glGenQueries): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGenQueries): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGenQueries(n, ids);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "deleteQueries"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "deleteQueries"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("deleteQueries requires 2 arguments");
 			return;
 		}
 
-		GLsizei n = args[0]->Int32Value();
+		GLsizei n = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* ids = nullptr;
 		if (args[1]->IsUint32Array()) {
@@ -2205,45 +2210,45 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			ids = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glDeleteQueries): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glDeleteQueries): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glDeleteQueries(n, ids);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "beginQuery"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "beginQuery"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("beginQuery requires 2 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLuint id = args[1]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint id = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glBeginQuery(target, id);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "endQuery"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "endQuery"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("endQuery requires 1 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glEndQuery(target);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getQueryiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getQueryiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getQueryiv requires 3 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* params = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -2252,22 +2257,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetQueryiv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetQueryiv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetQueryiv(target, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getQueryObjectiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getQueryObjectiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getQueryObjectiv requires 3 arguments");
 			return;
 		}
 
-		GLuint id = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLuint id = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* params = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -2276,22 +2281,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetQueryObjectiv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetQueryObjectiv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetQueryObjectiv(id, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getQueryObjectuiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getQueryObjectuiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getQueryObjectuiv requires 3 arguments");
 			return;
 		}
 
-		GLuint id = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLuint id = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* params = nullptr;
 		if (args[2]->IsUint32Array()) {
@@ -2300,33 +2305,33 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glGetQueryObjectuiv): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetQueryObjectuiv): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetQueryObjectuiv(id, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "bindBuffer"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "bindBuffer"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("bindBuffer requires 2 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLuint buffer = args[1]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint buffer = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glBindBuffer(target, buffer);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "deleteBuffers"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "deleteBuffers"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("deleteBuffers requires 2 arguments");
 			return;
 		}
 
-		GLsizei n = args[0]->Int32Value();
+		GLsizei n = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* buffers = nullptr;
 		if (args[1]->IsUint32Array()) {
@@ -2335,21 +2340,21 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			buffers = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glDeleteBuffers): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glDeleteBuffers): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glDeleteBuffers(n, buffers);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "genBuffers"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "genBuffers"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("genBuffers requires 2 arguments");
 			return;
 		}
 
-		GLsizei n = args[0]->Int32Value();
+		GLsizei n = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* buffers = nullptr;
 		if (args[1]->IsUint32Array()) {
@@ -2358,22 +2363,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			buffers = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glGenBuffers): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGenBuffers): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGenBuffers(n, buffers);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "bufferData"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "bufferData"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("bufferData requires 4 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLsizeiptr size = GLsizeiptr(args[1]->Int32Value());
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizeiptr size = GLsizeiptr(args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		void* data = nullptr;
 		if (args[2]->IsArrayBuffer()) {
@@ -2390,20 +2395,20 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			//exit(1);
 		}
 
-		GLenum usage = args[3]->Uint32Value();
+		GLenum usage = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glBufferData(target, size, data, usage);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "bufferSubData"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "bufferSubData"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("bufferSubData requires 4 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLintptr offset = GLintptr(args[1]->Int32Value());
-		GLsizeiptr size = GLsizeiptr(args[2]->Int32Value());
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLintptr offset = GLintptr(args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLsizeiptr size = GLsizeiptr(args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		void* data = nullptr;
 		if (args[3]->IsArrayBuffer()) {
@@ -2416,23 +2421,23 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			data = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glBufferSubData): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glBufferSubData): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glBufferSubData(target, offset, size, data);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getBufferSubData"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getBufferSubData"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("getBufferSubData requires 4 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLintptr offset = GLintptr(args[1]->Int32Value());
-		GLsizeiptr size = GLsizeiptr(args[2]->Int32Value());
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLintptr offset = GLintptr(args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLsizeiptr size = GLsizeiptr(args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		void* data = nullptr;
 		if (args[3]->IsArrayBuffer()) {
@@ -2445,22 +2450,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			data = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glGetBufferSubData): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glGetBufferSubData): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glGetBufferSubData(target, offset, size, data);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getBufferParameteriv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getBufferParameteriv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getBufferParameteriv requires 3 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* params = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -2469,13 +2474,13 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetBufferParameteriv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetBufferParameteriv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetBufferParameteriv(target, pname, params);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -2567,25 +2572,25 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("STENCIL_BACK_VALUE_MASK", GL_STENCIL_BACK_VALUE_MASK);
 	CREATE_CONSTANT_ACCESSOR("STENCIL_BACK_WRITEMASK", GL_STENCIL_BACK_WRITEMASK);
 
-	tpl->Set(String::NewFromUtf8(isolate, "blendEquationSeparate"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "blendEquationSeparate"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("blendEquationSeparate requires 2 arguments");
 			return;
 		}
 
-		GLenum modeRGB = args[0]->Uint32Value();
-		GLenum modeAlpha = args[1]->Uint32Value();
+		GLenum modeRGB = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum modeAlpha = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glBlendEquationSeparate(modeRGB, modeAlpha);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "drawBuffers"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "drawBuffers"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("drawBuffers requires 2 arguments");
 			return;
 		}
 
-		GLsizei n = args[0]->Int32Value();
+		GLsizei n = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLenum* bufs = nullptr;
 		if (args[1]->IsUint32Array()) {
@@ -2594,74 +2599,74 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			bufs = reinterpret_cast<GLenum*>(bdata);
 		} else {
-			cout << "ERROR(glDrawBuffers): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glDrawBuffers): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glDrawBuffers(n, bufs);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "stencilOpSeparate"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "stencilOpSeparate"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("stencilOpSeparate requires 4 arguments");
 			return;
 		}
 
-		GLenum face = args[0]->Uint32Value();
-		GLenum sfail = args[1]->Uint32Value();
-		GLenum dpfail = args[2]->Uint32Value();
-		GLenum dppass = args[3]->Uint32Value();
+		GLenum face = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum sfail = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum dpfail = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum dppass = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glStencilOpSeparate(face, sfail, dpfail, dppass);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "stencilFuncSeparate"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "stencilFuncSeparate"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("stencilFuncSeparate requires 4 arguments");
 			return;
 		}
 
-		GLenum frontfunc = args[0]->Uint32Value();
-		GLenum backfunc = args[1]->Uint32Value();
-		GLint ref = args[2]->Int32Value();
-		GLuint mask = args[3]->Uint32Value();
+		GLenum frontfunc = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum backfunc = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint ref = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint mask = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glStencilFuncSeparate(frontfunc, backfunc, ref, mask);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "stencilMaskSeparate"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "stencilMaskSeparate"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("stencilMaskSeparate requires 2 arguments");
 			return;
 		}
 
-		GLenum face = args[0]->Uint32Value();
-		GLuint mask = args[1]->Uint32Value();
+		GLenum face = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint mask = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glStencilMaskSeparate(face, mask);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "attachShader"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "attachShader"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("attachShader requires 2 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLuint shader = args[1]->Uint32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint shader = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glAttachShader(program, shader);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "bindAttribLocation"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "bindAttribLocation"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("bindAttribLocation requires 3 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLuint index = args[1]->Uint32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint index = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLchar* name = nullptr;
 		if (args[2]->IsInt8Array()) {
@@ -2670,90 +2675,90 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			name = reinterpret_cast<GLchar*>(bdata);
 		} else {
-			cout << "ERROR(glBindAttribLocation): array must be of type Int8Array" << endl;
-			exit(1);
+			//cout << "ERROR(glBindAttribLocation): array must be of type Int8Array" << endl;
+			//exit(1);
 		}
 
 
 		glBindAttribLocation(program, index, name);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "compileShader"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "compileShader"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("compileShader requires 1 arguments");
 			return;
 		}
 
-		GLuint shader = args[0]->Uint32Value();
+		GLuint shader = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glCompileShader(shader);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "deleteProgram"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "deleteProgram"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("deleteProgram requires 1 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glDeleteProgram(program);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "deleteShader"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "deleteShader"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("deleteShader requires 1 arguments");
 			return;
 		}
 
-		GLuint shader = args[0]->Uint32Value();
+		GLuint shader = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glDeleteShader(shader);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "detachShader"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "detachShader"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("detachShader requires 2 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLuint shader = args[1]->Uint32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint shader = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glDetachShader(program, shader);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "disableVertexAttribArray"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "disableVertexAttribArray"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("disableVertexAttribArray requires 1 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glDisableVertexAttribArray(index);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "enableVertexAttribArray"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "enableVertexAttribArray"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("enableVertexAttribArray requires 1 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glEnableVertexAttribArray(index);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getActiveAttrib"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getActiveAttrib"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 7) {
 			V8Helper::_instance->throwException("getActiveAttrib requires 7 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLuint index = args[1]->Uint32Value();
-		GLsizei maxLength = args[2]->Int32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint index = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei maxLength = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLsizei* length = nullptr;
 		if (args[3]->IsInt32Array()) {
@@ -2762,8 +2767,8 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			length = reinterpret_cast<GLsizei*>(bdata);
 		} else {
-			cout << "ERROR(glGetActiveAttrib): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetActiveAttrib): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
@@ -2774,8 +2779,8 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			size = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetActiveAttrib): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetActiveAttrib): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
@@ -2786,8 +2791,8 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			type = reinterpret_cast<GLenum*>(bdata);
 		} else {
-			cout << "ERROR(glGetActiveAttrib): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetActiveAttrib): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
@@ -2798,23 +2803,23 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			name = reinterpret_cast<GLchar*>(bdata);
 		} else {
-			cout << "ERROR(glGetActiveAttrib): array must be of type Int8Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetActiveAttrib): array must be of type Int8Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetActiveAttrib(program, index, maxLength, length, size, type, name);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getActiveUniform"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getActiveUniform"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 7) {
 			V8Helper::_instance->throwException("getActiveUniform requires 7 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLuint index = args[1]->Uint32Value();
-		GLsizei maxLength = args[2]->Int32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint index = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei maxLength = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLsizei* length = nullptr;
 		if (args[3]->IsInt32Array()) {
@@ -2823,8 +2828,8 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			length = reinterpret_cast<GLsizei*>(bdata);
 		} else {
-			cout << "ERROR(glGetActiveUniform): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetActiveUniform): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
@@ -2835,8 +2840,8 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			size = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetActiveUniform): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetActiveUniform): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
@@ -2847,8 +2852,8 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			type = reinterpret_cast<GLenum*>(bdata);
 		} else {
-			cout << "ERROR(glGetActiveUniform): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetActiveUniform): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
@@ -2859,22 +2864,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			name = reinterpret_cast<GLchar*>(bdata);
 		} else {
-			cout << "ERROR(glGetActiveUniform): array must be of type Int8Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetActiveUniform): array must be of type Int8Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetActiveUniform(program, index, maxLength, length, size, type, name);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getAttachedShaders"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getAttachedShaders"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("getAttachedShaders requires 4 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLsizei maxCount = args[1]->Int32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei maxCount = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLsizei* count = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -2883,8 +2888,8 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			count = reinterpret_cast<GLsizei*>(bdata);
 		} else {
-			cout << "ERROR(glGetAttachedShaders): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetAttachedShaders): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
@@ -2895,22 +2900,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			shaders = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glGetAttachedShaders): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetAttachedShaders): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetAttachedShaders(program, maxCount, count, shaders);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getProgramiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getProgramiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getProgramiv requires 3 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* param = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -2919,22 +2924,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			param = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetProgramiv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetProgramiv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetProgramiv(program, pname, param);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getProgramInfoLog"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getProgramInfoLog"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("getProgramInfoLog requires 4 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLsizei bufSize = args[1]->Int32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei bufSize = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLsizei* length = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -2943,8 +2948,8 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			length = reinterpret_cast<GLsizei*>(bdata);
 		} else {
-			cout << "ERROR(glGetProgramInfoLog): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetProgramInfoLog): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
@@ -2955,22 +2960,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			infoLog = reinterpret_cast<GLchar*>(bdata);
 		} else {
-			cout << "ERROR(glGetProgramInfoLog): array must be of type Int8Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetProgramInfoLog): array must be of type Int8Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetProgramInfoLog(program, bufSize, length, infoLog);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getShaderiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getShaderiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getShaderiv requires 3 arguments");
 			return;
 		}
 
-		GLuint shader = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLuint shader = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* param = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -2979,22 +2984,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			param = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetShaderiv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetShaderiv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetShaderiv(shader, pname, param);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getShaderInfoLog"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getShaderInfoLog"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("getShaderInfoLog requires 4 arguments");
 			return;
 		}
 
-		GLuint shader = args[0]->Uint32Value();
-		GLsizei bufSize = args[1]->Int32Value();
+		GLuint shader = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei bufSize = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLsizei* length = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -3003,8 +3008,8 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			length = reinterpret_cast<GLsizei*>(bdata);
 		} else {
-			cout << "ERROR(glGetShaderInfoLog): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetShaderInfoLog): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
@@ -3015,23 +3020,23 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			infoLog = reinterpret_cast<GLchar*>(bdata);
 		} else {
-			cout << "ERROR(glGetShaderInfoLog): array must be of type Int8Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetShaderInfoLog): array must be of type Int8Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetShaderInfoLog(shader, bufSize, length, infoLog);
-	}));
+	}).ToLocalChecked());
 
 
-	tpl->Set(String::NewFromUtf8(isolate, "getUniformfv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getUniformfv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getUniformfv requires 3 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLfloat* params = nullptr;
 		if (args[2]->IsFloat32Array()) {
@@ -3040,22 +3045,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glGetUniformfv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetUniformfv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetUniformfv(program, location, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getUniformiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getUniformiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getUniformiv requires 3 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* params = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -3064,22 +3069,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetUniformiv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetUniformiv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetUniformiv(program, location, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getVertexAttribdv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getVertexAttribdv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getVertexAttribdv requires 3 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLdouble* params = nullptr;
 		if (args[2]->IsFloat64Array()) {
@@ -3088,22 +3093,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLdouble*>(bdata);
 		} else {
-			cout << "ERROR(glGetVertexAttribdv): array must be of type Float64Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetVertexAttribdv): array must be of type Float64Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetVertexAttribdv(index, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getVertexAttribfv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getVertexAttribfv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getVertexAttribfv requires 3 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLfloat* params = nullptr;
 		if (args[2]->IsFloat32Array()) {
@@ -3112,22 +3117,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glGetVertexAttribfv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetVertexAttribfv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetVertexAttribfv(index, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getVertexAttribiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getVertexAttribiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getVertexAttribiv requires 3 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* params = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -3136,34 +3141,34 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetVertexAttribiv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetVertexAttribiv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetVertexAttribiv(index, pname, params);
-	}));
+	}).ToLocalChecked());
 
 
-	tpl->Set(String::NewFromUtf8(isolate, "linkProgram"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "linkProgram"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("linkProgram requires 1 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glLinkProgram(program);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getShaderSource"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getShaderSource"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("getShaderSource requires 4 arguments");
 			return;
 		}
 
-		GLuint obj = args[0]->Uint32Value();
-		GLsizei maxLength = args[1]->Int32Value();
+		GLuint obj = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei maxLength = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLsizei* length = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -3172,8 +3177,8 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			length = reinterpret_cast<GLsizei*>(bdata);
 		} else {
-			cout << "ERROR(glGetShaderSource): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetShaderSource): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
@@ -3184,45 +3189,45 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			source = reinterpret_cast<GLchar*>(bdata);
 		} else {
-			cout << "ERROR(glGetShaderSource): array must be of type Int8Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetShaderSource): array must be of type Int8Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetShaderSource(obj, maxLength, length, source);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "useProgram"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "useProgram"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("useProgram requires 1 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glUseProgram(program);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniform1f"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniform1f"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("uniform1f requires 2 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLfloat v0 = GLfloat(args[1]->NumberValue());
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLfloat v0 = GLfloat(args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glUniform1f(location, v0);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniform1fv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniform1fv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("uniform1fv requires 3 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLsizei count = args[1]->Int32Value();
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLfloat* value = nullptr;
 		if (args[2]->IsFloat32Array()) {
@@ -3231,34 +3236,34 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glUniform1fv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glUniform1fv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glUniform1fv(location, count, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniform1i"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniform1i"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("uniform1i requires 2 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLint v0 = args[1]->Int32Value();
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint v0 = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glUniform1i(location, v0);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniform1iv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniform1iv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("uniform1iv requires 3 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLsizei count = args[1]->Int32Value();
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* value = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -3267,35 +3272,35 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glUniform1iv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glUniform1iv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glUniform1iv(location, count, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniform2f"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniform2f"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("uniform2f requires 3 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLfloat v0 = GLfloat(args[1]->NumberValue());
-		GLfloat v1 = GLfloat(args[2]->NumberValue());
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLfloat v0 = GLfloat(args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLfloat v1 = GLfloat(args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glUniform2f(location, v0, v1);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniform2fv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniform2fv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("uniform2fv requires 3 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLsizei count = args[1]->Int32Value();
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLfloat* value = nullptr;
 		if (args[2]->IsFloat32Array()) {
@@ -3304,35 +3309,35 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glUniform2fv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glUniform2fv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glUniform2fv(location, count, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniform2i"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniform2i"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("uniform2i requires 3 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLint v0 = args[1]->Int32Value();
-		GLint v1 = args[2]->Int32Value();
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint v0 = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint v1 = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glUniform2i(location, v0, v1);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniform2iv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniform2iv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("uniform2iv requires 3 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLsizei count = args[1]->Int32Value();
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* value = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -3341,36 +3346,36 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glUniform2iv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glUniform2iv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glUniform2iv(location, count, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniform3f"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniform3f"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("uniform3f requires 4 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLfloat v0 = GLfloat(args[1]->NumberValue());
-		GLfloat v1 = GLfloat(args[2]->NumberValue());
-		GLfloat v2 = GLfloat(args[3]->NumberValue());
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLfloat v0 = GLfloat(args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLfloat v1 = GLfloat(args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLfloat v2 = GLfloat(args[3]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glUniform3f(location, v0, v1, v2);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniform3fv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniform3fv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("uniform3fv requires 3 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLsizei count = args[1]->Int32Value();
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLfloat* value = nullptr;
 		if (args[2]->IsFloat32Array()) {
@@ -3379,36 +3384,36 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glUniform3fv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glUniform3fv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glUniform3fv(location, count, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniform3i"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniform3i"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("uniform3i requires 4 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLint v0 = args[1]->Int32Value();
-		GLint v1 = args[2]->Int32Value();
-		GLint v2 = args[3]->Int32Value();
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint v0 = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint v1 = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint v2 = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glUniform3i(location, v0, v1, v2);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniform3iv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniform3iv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("uniform3iv requires 3 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLsizei count = args[1]->Int32Value();
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* value = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -3417,37 +3422,37 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glUniform3iv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glUniform3iv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glUniform3iv(location, count, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniform4f"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniform4f"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("uniform4f requires 5 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLfloat v0 = GLfloat(args[1]->NumberValue());
-		GLfloat v1 = GLfloat(args[2]->NumberValue());
-		GLfloat v2 = GLfloat(args[3]->NumberValue());
-		GLfloat v3 = GLfloat(args[4]->NumberValue());
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLfloat v0 = GLfloat(args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLfloat v1 = GLfloat(args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLfloat v2 = GLfloat(args[3]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLfloat v3 = GLfloat(args[4]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glUniform4f(location, v0, v1, v2, v3);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniform4fv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniform4fv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("uniform4fv requires 3 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLsizei count = args[1]->Int32Value();
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLfloat* value = nullptr;
 		if (args[2]->IsFloat32Array()) {
@@ -3456,37 +3461,37 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glUniform4fv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glUniform4fv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glUniform4fv(location, count, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniform4i"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniform4i"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("uniform4i requires 5 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLint v0 = args[1]->Int32Value();
-		GLint v1 = args[2]->Int32Value();
-		GLint v2 = args[3]->Int32Value();
-		GLint v3 = args[4]->Int32Value();
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint v0 = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint v1 = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint v2 = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint v3 = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glUniform4i(location, v0, v1, v2, v3);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniform4iv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniform4iv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("uniform4iv requires 3 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLsizei count = args[1]->Int32Value();
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* value = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -3495,23 +3500,23 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glUniform4iv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glUniform4iv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glUniform4iv(location, count, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniformMatrix2fv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniformMatrix2fv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("uniformMatrix2fv requires 4 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLsizei count = args[1]->Int32Value();
-		GLboolean transpose = GLboolean(args[2]->Uint32Value());
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLboolean transpose = GLboolean(args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		GLfloat* value = nullptr;
 		if (args[3]->IsFloat32Array()) {
@@ -3520,23 +3525,23 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glUniformMatrix2fv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glUniformMatrix2fv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glUniformMatrix2fv(location, count, transpose, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniformMatrix3fv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniformMatrix3fv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("uniformMatrix3fv requires 4 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLsizei count = args[1]->Int32Value();
-		GLboolean transpose = GLboolean(args[2]->Uint32Value());
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLboolean transpose = GLboolean(args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		GLfloat* value = nullptr;
 		if (args[3]->IsFloat32Array()) {
@@ -3545,23 +3550,23 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glUniformMatrix3fv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glUniformMatrix3fv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glUniformMatrix3fv(location, count, transpose, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniformMatrix4fv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniformMatrix4fv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("uniformMatrix4fv requires 4 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLsizei count = args[1]->Int32Value();
-		GLboolean transpose = GLboolean(args[2]->Uint32Value());
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLboolean transpose = GLboolean(args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		GLfloat* value = nullptr;
 		if (args[3]->IsFloat32Array()) {
@@ -3570,44 +3575,44 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glUniformMatrix4fv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glUniformMatrix4fv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glUniformMatrix4fv(location, count, transpose, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "validateProgram"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "validateProgram"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("validateProgram requires 1 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glValidateProgram(program);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttrib1d"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttrib1d"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("vertexAttrib1d requires 2 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
-		GLdouble x = args[1]->NumberValue();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble x = args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glVertexAttrib1d(index, x);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttrib1dv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttrib1dv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("vertexAttrib1dv requires 2 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLdouble* v = nullptr;
 		if (args[1]->IsFloat64Array()) {
@@ -3616,33 +3621,33 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLdouble*>(bdata);
 		} else {
-			cout << "ERROR(glVertexAttrib1dv): array must be of type Float64Array" << endl;
-			exit(1);
+			//cout << "ERROR(glVertexAttrib1dv): array must be of type Float64Array" << endl;
+			//exit(1);
 		}
 
 
 		glVertexAttrib1dv(index, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttrib1f"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttrib1f"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("vertexAttrib1f requires 2 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
-		GLfloat x = GLfloat(args[1]->NumberValue());
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLfloat x = GLfloat(args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glVertexAttrib1f(index, x);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttrib1fv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttrib1fv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("vertexAttrib1fv requires 2 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLfloat* v = nullptr;
 		if (args[1]->IsFloat32Array()) {
@@ -3651,33 +3656,33 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glVertexAttrib1fv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glVertexAttrib1fv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glVertexAttrib1fv(index, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttrib1s"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttrib1s"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("vertexAttrib1s requires 2 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
-		GLshort x = GLshort(args[1]->Int32Value());
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLshort x = GLshort(args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glVertexAttrib1s(index, x);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttrib1sv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttrib1sv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("vertexAttrib1sv requires 2 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLshort* v = nullptr;
 		if (args[1]->IsInt16Array()) {
@@ -3686,34 +3691,34 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLshort*>(bdata);
 		} else {
-			cout << "ERROR(glVertexAttrib1sv): array must be of type Int16Array" << endl;
-			exit(1);
+			//cout << "ERROR(glVertexAttrib1sv): array must be of type Int16Array" << endl;
+			//exit(1);
 		}
 
 
 		glVertexAttrib1sv(index, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttrib2d"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttrib2d"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("vertexAttrib2d requires 3 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
-		GLdouble x = args[1]->NumberValue();
-		GLdouble y = args[2]->NumberValue();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble x = args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble y = args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glVertexAttrib2d(index, x, y);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttrib2dv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttrib2dv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("vertexAttrib2dv requires 2 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLdouble* v = nullptr;
 		if (args[1]->IsFloat64Array()) {
@@ -3722,34 +3727,34 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLdouble*>(bdata);
 		} else {
-			cout << "ERROR(glVertexAttrib2dv): array must be of type Float64Array" << endl;
-			exit(1);
+			//cout << "ERROR(glVertexAttrib2dv): array must be of type Float64Array" << endl;
+			//exit(1);
 		}
 
 
 		glVertexAttrib2dv(index, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttrib2f"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttrib2f"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("vertexAttrib2f requires 3 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
-		GLfloat x = GLfloat(args[1]->NumberValue());
-		GLfloat y = GLfloat(args[2]->NumberValue());
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLfloat x = GLfloat(args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLfloat y = GLfloat(args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glVertexAttrib2f(index, x, y);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttrib2fv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttrib2fv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("vertexAttrib2fv requires 2 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLfloat* v = nullptr;
 		if (args[1]->IsFloat32Array()) {
@@ -3758,34 +3763,34 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glVertexAttrib2fv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glVertexAttrib2fv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glVertexAttrib2fv(index, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttrib2s"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttrib2s"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("vertexAttrib2s requires 3 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
-		GLshort x = GLshort(args[1]->Int32Value());
-		GLshort y = GLshort(args[2]->Int32Value());
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLshort x = GLshort(args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLshort y = GLshort(args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glVertexAttrib2s(index, x, y);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttrib2sv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttrib2sv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("vertexAttrib2sv requires 2 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLshort* v = nullptr;
 		if (args[1]->IsInt16Array()) {
@@ -3794,35 +3799,35 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLshort*>(bdata);
 		} else {
-			cout << "ERROR(glVertexAttrib2sv): array must be of type Int16Array" << endl;
-			exit(1);
+			//cout << "ERROR(glVertexAttrib2sv): array must be of type Int16Array" << endl;
+			//exit(1);
 		}
 
 
 		glVertexAttrib2sv(index, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttrib3d"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttrib3d"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("vertexAttrib3d requires 4 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
-		GLdouble x = args[1]->NumberValue();
-		GLdouble y = args[2]->NumberValue();
-		GLdouble z = args[3]->NumberValue();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble x = args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble y = args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble z = args[3]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glVertexAttrib3d(index, x, y, z);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttrib3dv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttrib3dv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("vertexAttrib3dv requires 2 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLdouble* v = nullptr;
 		if (args[1]->IsFloat64Array()) {
@@ -3831,35 +3836,35 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLdouble*>(bdata);
 		} else {
-			cout << "ERROR(glVertexAttrib3dv): array must be of type Float64Array" << endl;
-			exit(1);
+			//cout << "ERROR(glVertexAttrib3dv): array must be of type Float64Array" << endl;
+			//exit(1);
 		}
 
 
 		glVertexAttrib3dv(index, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttrib3f"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttrib3f"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("vertexAttrib3f requires 4 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
-		GLfloat x = GLfloat(args[1]->NumberValue());
-		GLfloat y = GLfloat(args[2]->NumberValue());
-		GLfloat z = GLfloat(args[3]->NumberValue());
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLfloat x = GLfloat(args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLfloat y = GLfloat(args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLfloat z = GLfloat(args[3]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glVertexAttrib3f(index, x, y, z);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttrib3fv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttrib3fv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("vertexAttrib3fv requires 2 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLfloat* v = nullptr;
 		if (args[1]->IsFloat32Array()) {
@@ -3868,35 +3873,35 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glVertexAttrib3fv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glVertexAttrib3fv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glVertexAttrib3fv(index, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttrib3s"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttrib3s"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("vertexAttrib3s requires 4 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
-		GLshort x = GLshort(args[1]->Int32Value());
-		GLshort y = GLshort(args[2]->Int32Value());
-		GLshort z = GLshort(args[3]->Int32Value());
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLshort x = GLshort(args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLshort y = GLshort(args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLshort z = GLshort(args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glVertexAttrib3s(index, x, y, z);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttrib3sv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttrib3sv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("vertexAttrib3sv requires 2 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLshort* v = nullptr;
 		if (args[1]->IsInt16Array()) {
@@ -3905,21 +3910,21 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLshort*>(bdata);
 		} else {
-			cout << "ERROR(glVertexAttrib3sv): array must be of type Int16Array" << endl;
-			exit(1);
+			//cout << "ERROR(glVertexAttrib3sv): array must be of type Int16Array" << endl;
+			//exit(1);
 		}
 
 
 		glVertexAttrib3sv(index, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttrib4Nbv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttrib4Nbv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("vertexAttrib4Nbv requires 2 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLbyte* v = nullptr;
 		if (args[1]->IsInt8Array()) {
@@ -3928,21 +3933,21 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLbyte*>(bdata);
 		} else {
-			cout << "ERROR(glVertexAttrib4Nbv): array must be of type Int8Array" << endl;
-			exit(1);
+			//cout << "ERROR(glVertexAttrib4Nbv): array must be of type Int8Array" << endl;
+			//exit(1);
 		}
 
 
 		glVertexAttrib4Nbv(index, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttrib4Niv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttrib4Niv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("vertexAttrib4Niv requires 2 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* v = nullptr;
 		if (args[1]->IsInt32Array()) {
@@ -3951,21 +3956,21 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glVertexAttrib4Niv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glVertexAttrib4Niv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glVertexAttrib4Niv(index, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttrib4Nsv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttrib4Nsv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("vertexAttrib4Nsv requires 2 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLshort* v = nullptr;
 		if (args[1]->IsInt16Array()) {
@@ -3974,36 +3979,36 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLshort*>(bdata);
 		} else {
-			cout << "ERROR(glVertexAttrib4Nsv): array must be of type Int16Array" << endl;
-			exit(1);
+			//cout << "ERROR(glVertexAttrib4Nsv): array must be of type Int16Array" << endl;
+			//exit(1);
 		}
 
 
 		glVertexAttrib4Nsv(index, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttrib4Nub"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttrib4Nub"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("vertexAttrib4Nub requires 5 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
-		GLubyte x = GLubyte(args[1]->Uint32Value());
-		GLubyte y = GLubyte(args[2]->Uint32Value());
-		GLubyte z = GLubyte(args[3]->Uint32Value());
-		GLubyte w = GLubyte(args[4]->Uint32Value());
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLubyte x = GLubyte(args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLubyte y = GLubyte(args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLubyte z = GLubyte(args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLubyte w = GLubyte(args[4]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glVertexAttrib4Nub(index, x, y, z, w);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttrib4Nubv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttrib4Nubv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("vertexAttrib4Nubv requires 2 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLubyte* v = nullptr;
 		if (args[1]->IsUint8Array()) {
@@ -4012,21 +4017,21 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLubyte*>(bdata);
 		} else {
-			cout << "ERROR(glVertexAttrib4Nubv): array must be of type Uint8Array" << endl;
-			exit(1);
+			//cout << "ERROR(glVertexAttrib4Nubv): array must be of type Uint8Array" << endl;
+			//exit(1);
 		}
 
 
 		glVertexAttrib4Nubv(index, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttrib4Nuiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttrib4Nuiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("vertexAttrib4Nuiv requires 2 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* v = nullptr;
 		if (args[1]->IsUint32Array()) {
@@ -4035,21 +4040,21 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glVertexAttrib4Nuiv): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glVertexAttrib4Nuiv): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glVertexAttrib4Nuiv(index, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttrib4Nusv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttrib4Nusv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("vertexAttrib4Nusv requires 2 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLushort* v = nullptr;
 		if (args[1]->IsUint16Array()) {
@@ -4058,21 +4063,21 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLushort*>(bdata);
 		} else {
-			cout << "ERROR(glVertexAttrib4Nusv): array must be of type Uint16Array" << endl;
-			exit(1);
+			//cout << "ERROR(glVertexAttrib4Nusv): array must be of type Uint16Array" << endl;
+			//exit(1);
 		}
 
 
 		glVertexAttrib4Nusv(index, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttrib4bv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttrib4bv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("vertexAttrib4bv requires 2 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLbyte* v = nullptr;
 		if (args[1]->IsInt8Array()) {
@@ -4081,36 +4086,36 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLbyte*>(bdata);
 		} else {
-			cout << "ERROR(glVertexAttrib4bv): array must be of type Int8Array" << endl;
-			exit(1);
+			//cout << "ERROR(glVertexAttrib4bv): array must be of type Int8Array" << endl;
+			//exit(1);
 		}
 
 
 		glVertexAttrib4bv(index, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttrib4d"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttrib4d"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("vertexAttrib4d requires 5 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
-		GLdouble x = args[1]->NumberValue();
-		GLdouble y = args[2]->NumberValue();
-		GLdouble z = args[3]->NumberValue();
-		GLdouble w = args[4]->NumberValue();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble x = args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble y = args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble z = args[3]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble w = args[4]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glVertexAttrib4d(index, x, y, z, w);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttrib4dv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttrib4dv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("vertexAttrib4dv requires 2 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLdouble* v = nullptr;
 		if (args[1]->IsFloat64Array()) {
@@ -4119,36 +4124,36 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLdouble*>(bdata);
 		} else {
-			cout << "ERROR(glVertexAttrib4dv): array must be of type Float64Array" << endl;
-			exit(1);
+			//cout << "ERROR(glVertexAttrib4dv): array must be of type Float64Array" << endl;
+			//exit(1);
 		}
 
 
 		glVertexAttrib4dv(index, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttrib4f"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttrib4f"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("vertexAttrib4f requires 5 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
-		GLfloat x = GLfloat(args[1]->NumberValue());
-		GLfloat y = GLfloat(args[2]->NumberValue());
-		GLfloat z = GLfloat(args[3]->NumberValue());
-		GLfloat w = GLfloat(args[4]->NumberValue());
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLfloat x = GLfloat(args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLfloat y = GLfloat(args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLfloat z = GLfloat(args[3]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLfloat w = GLfloat(args[4]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glVertexAttrib4f(index, x, y, z, w);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttrib4fv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttrib4fv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("vertexAttrib4fv requires 2 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLfloat* v = nullptr;
 		if (args[1]->IsFloat32Array()) {
@@ -4157,21 +4162,21 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glVertexAttrib4fv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glVertexAttrib4fv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glVertexAttrib4fv(index, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttrib4iv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttrib4iv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("vertexAttrib4iv requires 2 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* v = nullptr;
 		if (args[1]->IsInt32Array()) {
@@ -4180,36 +4185,36 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glVertexAttrib4iv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glVertexAttrib4iv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glVertexAttrib4iv(index, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttrib4s"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttrib4s"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("vertexAttrib4s requires 5 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
-		GLshort x = GLshort(args[1]->Int32Value());
-		GLshort y = GLshort(args[2]->Int32Value());
-		GLshort z = GLshort(args[3]->Int32Value());
-		GLshort w = GLshort(args[4]->Int32Value());
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLshort x = GLshort(args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLshort y = GLshort(args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLshort z = GLshort(args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLshort w = GLshort(args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glVertexAttrib4s(index, x, y, z, w);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttrib4sv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttrib4sv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("vertexAttrib4sv requires 2 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLshort* v = nullptr;
 		if (args[1]->IsInt16Array()) {
@@ -4218,21 +4223,21 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLshort*>(bdata);
 		} else {
-			cout << "ERROR(glVertexAttrib4sv): array must be of type Int16Array" << endl;
-			exit(1);
+			//cout << "ERROR(glVertexAttrib4sv): array must be of type Int16Array" << endl;
+			//exit(1);
 		}
 
 
 		glVertexAttrib4sv(index, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttrib4ubv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttrib4ubv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("vertexAttrib4ubv requires 2 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLubyte* v = nullptr;
 		if (args[1]->IsUint8Array()) {
@@ -4241,21 +4246,21 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLubyte*>(bdata);
 		} else {
-			cout << "ERROR(glVertexAttrib4ubv): array must be of type Uint8Array" << endl;
-			exit(1);
+			//cout << "ERROR(glVertexAttrib4ubv): array must be of type Uint8Array" << endl;
+			//exit(1);
 		}
 
 
 		glVertexAttrib4ubv(index, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttrib4uiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttrib4uiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("vertexAttrib4uiv requires 2 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* v = nullptr;
 		if (args[1]->IsUint32Array()) {
@@ -4264,21 +4269,21 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glVertexAttrib4uiv): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glVertexAttrib4uiv): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glVertexAttrib4uiv(index, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttrib4usv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttrib4usv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("vertexAttrib4usv requires 2 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLushort* v = nullptr;
 		if (args[1]->IsUint16Array()) {
@@ -4287,25 +4292,25 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLushort*>(bdata);
 		} else {
-			cout << "ERROR(glVertexAttrib4usv): array must be of type Uint16Array" << endl;
-			exit(1);
+			//cout << "ERROR(glVertexAttrib4usv): array must be of type Uint16Array" << endl;
+			//exit(1);
 		}
 
 
 		glVertexAttrib4usv(index, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribPointer"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttribPointer"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 6) {
 			V8Helper::_instance->throwException("vertexAttribPointer requires 6 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
-		GLint size = args[1]->Int32Value();
-		GLenum type = args[2]->Uint32Value();
-		GLboolean normalized = GLboolean(args[3]->Uint32Value());
-		GLsizei stride = args[4]->Int32Value();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint size = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLboolean normalized = GLboolean(args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLsizei stride = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* pointer = nullptr;
 		if (args[5]->IsArrayBuffer()) {
@@ -4317,17 +4322,14 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			auto buffer = view->Buffer();
 			void *bdata = view->Buffer()->GetContents().Data();
 			pointer = reinterpret_cast<void*>(bdata);
-		} else if (args[5]->IsNumber()) {
-			int value = args[5]->NumberValue();
-			pointer = (void*)value;
 		} else {
-			cout << "ERROR(glVertexAttribPointer): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glVertexAttribPointer): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glVertexAttribPointer(index, size, type, normalized, stride, pointer);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -4357,15 +4359,15 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("COMPRESSED_SLUMINANCE", GL_COMPRESSED_SLUMINANCE);
 	CREATE_CONSTANT_ACCESSOR("COMPRESSED_SLUMINANCE_ALPHA", GL_COMPRESSED_SLUMINANCE_ALPHA);
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniformMatrix2x3fv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniformMatrix2x3fv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("uniformMatrix2x3fv requires 4 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLsizei count = args[1]->Int32Value();
-		GLboolean transpose = GLboolean(args[2]->Uint32Value());
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLboolean transpose = GLboolean(args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		GLfloat* value = nullptr;
 		if (args[3]->IsFloat32Array()) {
@@ -4374,23 +4376,23 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glUniformMatrix2x3fv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glUniformMatrix2x3fv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glUniformMatrix2x3fv(location, count, transpose, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniformMatrix3x2fv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniformMatrix3x2fv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("uniformMatrix3x2fv requires 4 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLsizei count = args[1]->Int32Value();
-		GLboolean transpose = GLboolean(args[2]->Uint32Value());
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLboolean transpose = GLboolean(args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		GLfloat* value = nullptr;
 		if (args[3]->IsFloat32Array()) {
@@ -4399,23 +4401,23 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glUniformMatrix3x2fv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glUniformMatrix3x2fv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glUniformMatrix3x2fv(location, count, transpose, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniformMatrix2x4fv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniformMatrix2x4fv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("uniformMatrix2x4fv requires 4 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLsizei count = args[1]->Int32Value();
-		GLboolean transpose = GLboolean(args[2]->Uint32Value());
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLboolean transpose = GLboolean(args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		GLfloat* value = nullptr;
 		if (args[3]->IsFloat32Array()) {
@@ -4424,23 +4426,23 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glUniformMatrix2x4fv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glUniformMatrix2x4fv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glUniformMatrix2x4fv(location, count, transpose, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniformMatrix4x2fv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniformMatrix4x2fv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("uniformMatrix4x2fv requires 4 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLsizei count = args[1]->Int32Value();
-		GLboolean transpose = GLboolean(args[2]->Uint32Value());
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLboolean transpose = GLboolean(args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		GLfloat* value = nullptr;
 		if (args[3]->IsFloat32Array()) {
@@ -4449,23 +4451,23 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glUniformMatrix4x2fv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glUniformMatrix4x2fv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glUniformMatrix4x2fv(location, count, transpose, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniformMatrix3x4fv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniformMatrix3x4fv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("uniformMatrix3x4fv requires 4 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLsizei count = args[1]->Int32Value();
-		GLboolean transpose = GLboolean(args[2]->Uint32Value());
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLboolean transpose = GLboolean(args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		GLfloat* value = nullptr;
 		if (args[3]->IsFloat32Array()) {
@@ -4474,23 +4476,23 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glUniformMatrix3x4fv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glUniformMatrix3x4fv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glUniformMatrix3x4fv(location, count, transpose, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniformMatrix4x3fv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniformMatrix4x3fv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("uniformMatrix4x3fv requires 4 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLsizei count = args[1]->Int32Value();
-		GLboolean transpose = GLboolean(args[2]->Uint32Value());
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLboolean transpose = GLboolean(args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		GLfloat* value = nullptr;
 		if (args[3]->IsFloat32Array()) {
@@ -4499,13 +4501,13 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glUniformMatrix4x3fv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glUniformMatrix4x3fv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glUniformMatrix4x3fv(location, count, transpose, value);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -4522,7 +4524,14 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("MAJOR_VERSION", GL_MAJOR_VERSION);
 	CREATE_CONSTANT_ACCESSOR("MINOR_VERSION", GL_MINOR_VERSION);
 	CREATE_CONSTANT_ACCESSOR("NUM_EXTENSIONS", GL_NUM_EXTENSIONS);
-	CREATE_CONSTANT_ACCESSOR("CONTEXT_FLAGS", GL_CONTEXT_FLAGS);
+	//CREATE_CONSTANT_ACCESSOR("CONTEXT_FLAGS", GL_CONTEXT_FLAGS);
+
+	//obj->SetAccessor(String::NewFromUtf8(isolate, "CONTEXT_FLAGS"), [](Local<String> property, const PropertyCallbackInfo<Value>& info) {
+	//	info.GetReturnValue().Set(GL_CONTEXT_FLAGS);
+	//});
+
+	obj->Set(String::NewFromUtf8(isolate, "CONTEXT_FLAGS"), v8::Integer::New(isolate, GL_CONTEXT_FLAGS));
+
 	CREATE_CONSTANT_ACCESSOR("DEPTH_BUFFER", GL_DEPTH_BUFFER);
 	CREATE_CONSTANT_ACCESSOR("STENCIL_BUFFER", GL_STENCIL_BUFFER);
 	CREATE_CONSTANT_ACCESSOR("CONTEXT_FLAG_FORWARD_COMPATIBLE_BIT", GL_CONTEXT_FLAG_FORWARD_COMPATIBLE_BIT);
@@ -4617,29 +4626,29 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("QUERY_BY_REGION_WAIT", GL_QUERY_BY_REGION_WAIT);
 	CREATE_CONSTANT_ACCESSOR("QUERY_BY_REGION_NO_WAIT", GL_QUERY_BY_REGION_NO_WAIT);
 
-	tpl->Set(String::NewFromUtf8(isolate, "colorMaski"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "colorMaski"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("colorMaski requires 5 arguments");
 			return;
 		}
 
-		GLuint buf = args[0]->Uint32Value();
-		GLboolean red = GLboolean(args[1]->Uint32Value());
-		GLboolean green = GLboolean(args[2]->Uint32Value());
-		GLboolean blue = GLboolean(args[3]->Uint32Value());
-		GLboolean alpha = GLboolean(args[4]->Uint32Value());
+		GLuint buf = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLboolean red = GLboolean(args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLboolean green = GLboolean(args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLboolean blue = GLboolean(args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLboolean alpha = GLboolean(args[4]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glColorMaski(buf, red, green, blue, alpha);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getBooleani_v"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getBooleani_v"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getBooleani_v requires 3 arguments");
 			return;
 		}
 
-		GLenum pname = args[0]->Uint32Value();
-		GLuint index = args[1]->Uint32Value();
+		GLenum pname = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint index = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLboolean* data = nullptr;
 		if (args[2]->IsUint8Array()) {
@@ -4648,518 +4657,518 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			data = reinterpret_cast<GLboolean*>(bdata);
 		} else {
-			cout << "ERROR(glGetBooleani_v): array must be of type Uint8Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetBooleani_v): array must be of type Uint8Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetBooleani_v(pname, index, data);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "enablei"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "enablei"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("enablei requires 2 arguments");
 			return;
 		}
 
-		GLenum cap = args[0]->Uint32Value();
-		GLuint index = args[1]->Uint32Value();
+		GLenum cap = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint index = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glEnablei(cap, index);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "disablei"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "disablei"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("disablei requires 2 arguments");
 			return;
 		}
 
-		GLenum cap = args[0]->Uint32Value();
-		GLuint index = args[1]->Uint32Value();
+		GLenum cap = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint index = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glDisablei(cap, index);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "beginTransformFeedback"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "beginTransformFeedback"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("beginTransformFeedback requires 1 arguments");
 			return;
 		}
 
-		GLenum primitiveMode = args[0]->Uint32Value();
+		GLenum primitiveMode = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glBeginTransformFeedback(primitiveMode);
-	}));
+	}).ToLocalChecked());
 
 
 
 
-	tpl->Set(String::NewFromUtf8(isolate, "clampColor"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "clampColor"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("clampColor requires 2 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum clamp = args[1]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum clamp = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glClampColor(target, clamp);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "beginConditionalRender"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "beginConditionalRender"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("beginConditionalRender requires 2 arguments");
 			return;
 		}
 
-		GLuint id = args[0]->Uint32Value();
-		GLenum mode = args[1]->Uint32Value();
+		GLuint id = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum mode = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glBeginConditionalRender(id, mode);
-	}));
-
-
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribI1i"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("vertexAttribI1i requires 2 arguments");
-			return;
-		}
-
-		GLuint index = args[0]->Uint32Value();
-		GLint v0 = args[1]->Int32Value();
-
-		glVertexAttribI1i(index, v0);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribI2i"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("vertexAttribI2i requires 3 arguments");
-			return;
-		}
-
-		GLuint index = args[0]->Uint32Value();
-		GLint v0 = args[1]->Int32Value();
-		GLint v1 = args[2]->Int32Value();
-
-		glVertexAttribI2i(index, v0, v1);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribI3i"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 4) {
-			V8Helper::_instance->throwException("vertexAttribI3i requires 4 arguments");
-			return;
-		}
-
-		GLuint index = args[0]->Uint32Value();
-		GLint v0 = args[1]->Int32Value();
-		GLint v1 = args[2]->Int32Value();
-		GLint v2 = args[3]->Int32Value();
-
-		glVertexAttribI3i(index, v0, v1, v2);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribI4i"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 5) {
-			V8Helper::_instance->throwException("vertexAttribI4i requires 5 arguments");
-			return;
-		}
-
-		GLuint index = args[0]->Uint32Value();
-		GLint v0 = args[1]->Int32Value();
-		GLint v1 = args[2]->Int32Value();
-		GLint v2 = args[3]->Int32Value();
-		GLint v3 = args[4]->Int32Value();
-
-		glVertexAttribI4i(index, v0, v1, v2, v3);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribI1ui"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("vertexAttribI1ui requires 2 arguments");
-			return;
-		}
-
-		GLuint index = args[0]->Uint32Value();
-		GLuint v0 = args[1]->Uint32Value();
-
-		glVertexAttribI1ui(index, v0);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribI2ui"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("vertexAttribI2ui requires 3 arguments");
-			return;
-		}
-
-		GLuint index = args[0]->Uint32Value();
-		GLuint v0 = args[1]->Uint32Value();
-		GLuint v1 = args[2]->Uint32Value();
-
-		glVertexAttribI2ui(index, v0, v1);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribI3ui"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 4) {
-			V8Helper::_instance->throwException("vertexAttribI3ui requires 4 arguments");
-			return;
-		}
-
-		GLuint index = args[0]->Uint32Value();
-		GLuint v0 = args[1]->Uint32Value();
-		GLuint v1 = args[2]->Uint32Value();
-		GLuint v2 = args[3]->Uint32Value();
-
-		glVertexAttribI3ui(index, v0, v1, v2);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribI4ui"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 5) {
-			V8Helper::_instance->throwException("vertexAttribI4ui requires 5 arguments");
-			return;
-		}
-
-		GLuint index = args[0]->Uint32Value();
-		GLuint v0 = args[1]->Uint32Value();
-		GLuint v1 = args[2]->Uint32Value();
-		GLuint v2 = args[3]->Uint32Value();
-		GLuint v3 = args[4]->Uint32Value();
-
-		glVertexAttribI4ui(index, v0, v1, v2, v3);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribI1iv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("vertexAttribI1iv requires 2 arguments");
-			return;
-		}
-
-		GLuint index = args[0]->Uint32Value();
-
-		GLint* v0 = nullptr;
-		if (args[1]->IsInt32Array()) {
-			v8::Local<v8::Int32Array> view = (args[1]).As<v8::Int32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			v0 = reinterpret_cast<GLint*>(bdata);
-		} else {
-			cout << "ERROR(glVertexAttribI1iv): array must be of type Int32Array" << endl;
-			exit(1);
-		}
-
-
-		glVertexAttribI1iv(index, v0);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribI2iv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("vertexAttribI2iv requires 2 arguments");
-			return;
-		}
-
-		GLuint index = args[0]->Uint32Value();
-
-		GLint* v0 = nullptr;
-		if (args[1]->IsInt32Array()) {
-			v8::Local<v8::Int32Array> view = (args[1]).As<v8::Int32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			v0 = reinterpret_cast<GLint*>(bdata);
-		} else {
-			cout << "ERROR(glVertexAttribI2iv): array must be of type Int32Array" << endl;
-			exit(1);
-		}
-
-
-		glVertexAttribI2iv(index, v0);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribI3iv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("vertexAttribI3iv requires 2 arguments");
-			return;
-		}
-
-		GLuint index = args[0]->Uint32Value();
-
-		GLint* v0 = nullptr;
-		if (args[1]->IsInt32Array()) {
-			v8::Local<v8::Int32Array> view = (args[1]).As<v8::Int32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			v0 = reinterpret_cast<GLint*>(bdata);
-		} else {
-			cout << "ERROR(glVertexAttribI3iv): array must be of type Int32Array" << endl;
-			exit(1);
-		}
-
-
-		glVertexAttribI3iv(index, v0);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribI4iv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("vertexAttribI4iv requires 2 arguments");
-			return;
-		}
-
-		GLuint index = args[0]->Uint32Value();
-
-		GLint* v0 = nullptr;
-		if (args[1]->IsInt32Array()) {
-			v8::Local<v8::Int32Array> view = (args[1]).As<v8::Int32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			v0 = reinterpret_cast<GLint*>(bdata);
-		} else {
-			cout << "ERROR(glVertexAttribI4iv): array must be of type Int32Array" << endl;
-			exit(1);
-		}
-
-
-		glVertexAttribI4iv(index, v0);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribI1uiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("vertexAttribI1uiv requires 2 arguments");
-			return;
-		}
-
-		GLuint index = args[0]->Uint32Value();
-
-		GLuint* v0 = nullptr;
-		if (args[1]->IsUint32Array()) {
-			v8::Local<v8::Uint32Array> view = (args[1]).As<v8::Uint32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			v0 = reinterpret_cast<GLuint*>(bdata);
-		} else {
-			cout << "ERROR(glVertexAttribI1uiv): array must be of type Uint32Array" << endl;
-			exit(1);
-		}
-
-
-		glVertexAttribI1uiv(index, v0);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribI2uiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("vertexAttribI2uiv requires 2 arguments");
-			return;
-		}
-
-		GLuint index = args[0]->Uint32Value();
-
-		GLuint* v0 = nullptr;
-		if (args[1]->IsUint32Array()) {
-			v8::Local<v8::Uint32Array> view = (args[1]).As<v8::Uint32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			v0 = reinterpret_cast<GLuint*>(bdata);
-		} else {
-			cout << "ERROR(glVertexAttribI2uiv): array must be of type Uint32Array" << endl;
-			exit(1);
-		}
-
-
-		glVertexAttribI2uiv(index, v0);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribI3uiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("vertexAttribI3uiv requires 2 arguments");
-			return;
-		}
-
-		GLuint index = args[0]->Uint32Value();
-
-		GLuint* v0 = nullptr;
-		if (args[1]->IsUint32Array()) {
-			v8::Local<v8::Uint32Array> view = (args[1]).As<v8::Uint32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			v0 = reinterpret_cast<GLuint*>(bdata);
-		} else {
-			cout << "ERROR(glVertexAttribI3uiv): array must be of type Uint32Array" << endl;
-			exit(1);
-		}
-
-
-		glVertexAttribI3uiv(index, v0);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribI4uiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("vertexAttribI4uiv requires 2 arguments");
-			return;
-		}
-
-		GLuint index = args[0]->Uint32Value();
-
-		GLuint* v0 = nullptr;
-		if (args[1]->IsUint32Array()) {
-			v8::Local<v8::Uint32Array> view = (args[1]).As<v8::Uint32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			v0 = reinterpret_cast<GLuint*>(bdata);
-		} else {
-			cout << "ERROR(glVertexAttribI4uiv): array must be of type Uint32Array" << endl;
-			exit(1);
-		}
-
-
-		glVertexAttribI4uiv(index, v0);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribI4bv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("vertexAttribI4bv requires 2 arguments");
-			return;
-		}
-
-		GLuint index = args[0]->Uint32Value();
-
-		GLbyte* v0 = nullptr;
-		if (args[1]->IsInt8Array()) {
-			v8::Local<v8::Int8Array> view = (args[1]).As<v8::Int8Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			v0 = reinterpret_cast<GLbyte*>(bdata);
-		} else {
-			cout << "ERROR(glVertexAttribI4bv): array must be of type Int8Array" << endl;
-			exit(1);
-		}
-
-
-		glVertexAttribI4bv(index, v0);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribI4sv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("vertexAttribI4sv requires 2 arguments");
-			return;
-		}
-
-		GLuint index = args[0]->Uint32Value();
-
-		GLshort* v0 = nullptr;
-		if (args[1]->IsInt16Array()) {
-			v8::Local<v8::Int16Array> view = (args[1]).As<v8::Int16Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			v0 = reinterpret_cast<GLshort*>(bdata);
-		} else {
-			cout << "ERROR(glVertexAttribI4sv): array must be of type Int16Array" << endl;
-			exit(1);
-		}
-
-
-		glVertexAttribI4sv(index, v0);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribI4ubv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("vertexAttribI4ubv requires 2 arguments");
-			return;
-		}
-
-		GLuint index = args[0]->Uint32Value();
-
-		GLubyte* v0 = nullptr;
-		if (args[1]->IsUint8Array()) {
-			v8::Local<v8::Uint8Array> view = (args[1]).As<v8::Uint8Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			v0 = reinterpret_cast<GLubyte*>(bdata);
-		} else {
-			cout << "ERROR(glVertexAttribI4ubv): array must be of type Uint8Array" << endl;
-			exit(1);
-		}
-
-
-		glVertexAttribI4ubv(index, v0);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribI4usv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("vertexAttribI4usv requires 2 arguments");
-			return;
-		}
-
-		GLuint index = args[0]->Uint32Value();
-
-		GLushort* v0 = nullptr;
-		if (args[1]->IsUint16Array()) {
-			v8::Local<v8::Uint16Array> view = (args[1]).As<v8::Uint16Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			v0 = reinterpret_cast<GLushort*>(bdata);
-		} else {
-			cout << "ERROR(glVertexAttribI4usv): array must be of type Uint16Array" << endl;
-			exit(1);
-		}
-
-
-		glVertexAttribI4usv(index, v0);
-	}));
-
-
-	tpl->Set(String::NewFromUtf8(isolate, "getVertexAttribIiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("getVertexAttribIiv requires 3 arguments");
-			return;
-		}
-
-		GLuint index = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
-
-		GLint* params = nullptr;
-		if (args[2]->IsInt32Array()) {
-			v8::Local<v8::Int32Array> view = (args[2]).As<v8::Int32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			params = reinterpret_cast<GLint*>(bdata);
-		} else {
-			cout << "ERROR(glGetVertexAttribIiv): array must be of type Int32Array" << endl;
-			exit(1);
-		}
-
-
-		glGetVertexAttribIiv(index, pname, params);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "getVertexAttribIuiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("getVertexAttribIuiv requires 3 arguments");
-			return;
-		}
-
-		GLuint index = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
-
-		GLuint* params = nullptr;
-		if (args[2]->IsUint32Array()) {
-			v8::Local<v8::Uint32Array> view = (args[2]).As<v8::Uint32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			params = reinterpret_cast<GLuint*>(bdata);
-		} else {
-			cout << "ERROR(glGetVertexAttribIuiv): array must be of type Uint32Array" << endl;
-			exit(1);
-		}
-
-
-		glGetVertexAttribIuiv(index, pname, params);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "getUniformuiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	}).ToLocalChecked());
+
+
+	// obj->Set(String::NewFromUtf8(isolate, "vertexAttribI1i"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("vertexAttribI1i requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint v0 = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	glVertexAttribI1i(index, v0);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "vertexAttribI2i"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 3) {
+	// 		V8Helper::_instance->throwException("vertexAttribI2i requires 3 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint v0 = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint v1 = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	glVertexAttribI2i(index, v0, v1);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "vertexAttribI3i"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 4) {
+	// 		V8Helper::_instance->throwException("vertexAttribI3i requires 4 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint v0 = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint v1 = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint v2 = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	glVertexAttribI3i(index, v0, v1, v2);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "vertexAttribI4i"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 5) {
+	// 		V8Helper::_instance->throwException("vertexAttribI4i requires 5 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint v0 = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint v1 = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint v2 = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint v3 = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	glVertexAttribI4i(index, v0, v1, v2, v3);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "vertexAttribI1ui"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("vertexAttribI1ui requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint v0 = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	glVertexAttribI1ui(index, v0);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "vertexAttribI2ui"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 3) {
+	// 		V8Helper::_instance->throwException("vertexAttribI2ui requires 3 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint v0 = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint v1 = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	glVertexAttribI2ui(index, v0, v1);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "vertexAttribI3ui"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 4) {
+	// 		V8Helper::_instance->throwException("vertexAttribI3ui requires 4 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint v0 = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint v1 = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint v2 = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	glVertexAttribI3ui(index, v0, v1, v2);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "vertexAttribI4ui"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 5) {
+	// 		V8Helper::_instance->throwException("vertexAttribI4ui requires 5 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint v0 = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint v1 = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint v2 = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint v3 = args[4]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	glVertexAttribI4ui(index, v0, v1, v2, v3);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "vertexAttribI1iv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("vertexAttribI1iv requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLint* v0 = nullptr;
+	// 	if (args[1]->IsInt32Array()) {
+	// 		v8::Local<v8::Int32Array> view = (args[1]).As<v8::Int32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		v0 = reinterpret_cast<GLint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glVertexAttribI1iv): array must be of type Int32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glVertexAttribI1iv(index, v0);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "vertexAttribI2iv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("vertexAttribI2iv requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLint* v0 = nullptr;
+	// 	if (args[1]->IsInt32Array()) {
+	// 		v8::Local<v8::Int32Array> view = (args[1]).As<v8::Int32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		v0 = reinterpret_cast<GLint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glVertexAttribI2iv): array must be of type Int32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glVertexAttribI2iv(index, v0);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "vertexAttribI3iv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("vertexAttribI3iv requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLint* v0 = nullptr;
+	// 	if (args[1]->IsInt32Array()) {
+	// 		v8::Local<v8::Int32Array> view = (args[1]).As<v8::Int32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		v0 = reinterpret_cast<GLint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glVertexAttribI3iv): array must be of type Int32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glVertexAttribI3iv(index, v0);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "vertexAttribI4iv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("vertexAttribI4iv requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLint* v0 = nullptr;
+	// 	if (args[1]->IsInt32Array()) {
+	// 		v8::Local<v8::Int32Array> view = (args[1]).As<v8::Int32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		v0 = reinterpret_cast<GLint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glVertexAttribI4iv): array must be of type Int32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glVertexAttribI4iv(index, v0);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "vertexAttribI1uiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("vertexAttribI1uiv requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLuint* v0 = nullptr;
+	// 	if (args[1]->IsUint32Array()) {
+	// 		v8::Local<v8::Uint32Array> view = (args[1]).As<v8::Uint32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		v0 = reinterpret_cast<GLuint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glVertexAttribI1uiv): array must be of type Uint32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glVertexAttribI1uiv(index, v0);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "vertexAttribI2uiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("vertexAttribI2uiv requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLuint* v0 = nullptr;
+	// 	if (args[1]->IsUint32Array()) {
+	// 		v8::Local<v8::Uint32Array> view = (args[1]).As<v8::Uint32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		v0 = reinterpret_cast<GLuint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glVertexAttribI2uiv): array must be of type Uint32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glVertexAttribI2uiv(index, v0);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "vertexAttribI3uiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("vertexAttribI3uiv requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLuint* v0 = nullptr;
+	// 	if (args[1]->IsUint32Array()) {
+	// 		v8::Local<v8::Uint32Array> view = (args[1]).As<v8::Uint32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		v0 = reinterpret_cast<GLuint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glVertexAttribI3uiv): array must be of type Uint32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glVertexAttribI3uiv(index, v0);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "vertexAttribI4uiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("vertexAttribI4uiv requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLuint* v0 = nullptr;
+	// 	if (args[1]->IsUint32Array()) {
+	// 		v8::Local<v8::Uint32Array> view = (args[1]).As<v8::Uint32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		v0 = reinterpret_cast<GLuint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glVertexAttribI4uiv): array must be of type Uint32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glVertexAttribI4uiv(index, v0);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "vertexAttribI4bv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("vertexAttribI4bv requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLbyte* v0 = nullptr;
+	// 	if (args[1]->IsInt8Array()) {
+	// 		v8::Local<v8::Int8Array> view = (args[1]).As<v8::Int8Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		v0 = reinterpret_cast<GLbyte*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glVertexAttribI4bv): array must be of type Int8Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glVertexAttribI4bv(index, v0);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "vertexAttribI4sv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("vertexAttribI4sv requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLshort* v0 = nullptr;
+	// 	if (args[1]->IsInt16Array()) {
+	// 		v8::Local<v8::Int16Array> view = (args[1]).As<v8::Int16Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		v0 = reinterpret_cast<GLshort*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glVertexAttribI4sv): array must be of type Int16Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glVertexAttribI4sv(index, v0);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "vertexAttribI4ubv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("vertexAttribI4ubv requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLubyte* v0 = nullptr;
+	// 	if (args[1]->IsUint8Array()) {
+	// 		v8::Local<v8::Uint8Array> view = (args[1]).As<v8::Uint8Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		v0 = reinterpret_cast<GLubyte*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glVertexAttribI4ubv): array must be of type Uint8Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glVertexAttribI4ubv(index, v0);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "vertexAttribI4usv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("vertexAttribI4usv requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLushort* v0 = nullptr;
+	// 	if (args[1]->IsUint16Array()) {
+	// 		v8::Local<v8::Uint16Array> view = (args[1]).As<v8::Uint16Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		v0 = reinterpret_cast<GLushort*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glVertexAttribI4usv): array must be of type Uint16Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glVertexAttribI4usv(index, v0);
+	// }).ToLocalChecked());
+
+
+	// obj->Set(String::NewFromUtf8(isolate, "getVertexAttribIiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 3) {
+	// 		V8Helper::_instance->throwException("getVertexAttribIiv requires 3 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLint* params = nullptr;
+	// 	if (args[2]->IsInt32Array()) {
+	// 		v8::Local<v8::Int32Array> view = (args[2]).As<v8::Int32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		params = reinterpret_cast<GLint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glGetVertexAttribIiv): array must be of type Int32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glGetVertexAttribIiv(index, pname, params);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "getVertexAttribIuiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 3) {
+	// 		V8Helper::_instance->throwException("getVertexAttribIuiv requires 3 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLuint* params = nullptr;
+	// 	if (args[2]->IsUint32Array()) {
+	// 		v8::Local<v8::Uint32Array> view = (args[2]).As<v8::Uint32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		params = reinterpret_cast<GLuint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glGetVertexAttribIuiv): array must be of type Uint32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glGetVertexAttribIuiv(index, pname, params);
+	// }).ToLocalChecked());
+
+	obj->Set(String::NewFromUtf8(isolate, "getUniformuiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getUniformuiv requires 3 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* params = nullptr;
 		if (args[2]->IsUint32Array()) {
@@ -5168,22 +5177,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glGetUniformuiv): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetUniformuiv): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetUniformuiv(program, location, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "bindFragDataLocation"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "bindFragDataLocation"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("bindFragDataLocation requires 3 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLuint colorNumber = args[1]->Uint32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint colorNumber = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLchar* name = nullptr;
 		if (args[2]->IsInt8Array()) {
@@ -5192,76 +5201,76 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			name = reinterpret_cast<GLchar*>(bdata);
 		} else {
-			cout << "ERROR(glBindFragDataLocation): array must be of type Int8Array" << endl;
-			exit(1);
+			//cout << "ERROR(glBindFragDataLocation): array must be of type Int8Array" << endl;
+			//exit(1);
 		}
 
 
 		glBindFragDataLocation(program, colorNumber, name);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniform1ui"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniform1ui"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("uniform1ui requires 2 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLuint v0 = args[1]->Uint32Value();
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint v0 = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glUniform1ui(location, v0);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniform2ui"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniform2ui"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("uniform2ui requires 3 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLuint v0 = args[1]->Uint32Value();
-		GLuint v1 = args[2]->Uint32Value();
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint v0 = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint v1 = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glUniform2ui(location, v0, v1);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniform3ui"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniform3ui"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("uniform3ui requires 4 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLuint v0 = args[1]->Uint32Value();
-		GLuint v1 = args[2]->Uint32Value();
-		GLuint v2 = args[3]->Uint32Value();
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint v0 = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint v1 = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint v2 = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glUniform3ui(location, v0, v1, v2);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniform4ui"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniform4ui"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("uniform4ui requires 5 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLuint v0 = args[1]->Uint32Value();
-		GLuint v1 = args[2]->Uint32Value();
-		GLuint v2 = args[3]->Uint32Value();
-		GLuint v3 = args[4]->Uint32Value();
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint v0 = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint v1 = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint v2 = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint v3 = args[4]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glUniform4ui(location, v0, v1, v2, v3);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniform1uiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniform1uiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("uniform1uiv requires 3 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLsizei count = args[1]->Int32Value();
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* value = nullptr;
 		if (args[2]->IsUint32Array()) {
@@ -5270,22 +5279,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glUniform1uiv): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glUniform1uiv): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glUniform1uiv(location, count, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniform2uiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniform2uiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("uniform2uiv requires 3 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLsizei count = args[1]->Int32Value();
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* value = nullptr;
 		if (args[2]->IsUint32Array()) {
@@ -5294,22 +5303,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glUniform2uiv): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glUniform2uiv): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glUniform2uiv(location, count, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniform3uiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniform3uiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("uniform3uiv requires 3 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLsizei count = args[1]->Int32Value();
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* value = nullptr;
 		if (args[2]->IsUint32Array()) {
@@ -5318,22 +5327,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glUniform3uiv): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glUniform3uiv): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glUniform3uiv(location, count, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniform4uiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniform4uiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("uniform4uiv requires 3 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLsizei count = args[1]->Int32Value();
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* value = nullptr;
 		if (args[2]->IsUint32Array()) {
@@ -5342,22 +5351,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glUniform4uiv): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glUniform4uiv): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glUniform4uiv(location, count, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "texParameterIiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "texParameterIiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("texParameterIiv requires 3 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* params = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -5366,22 +5375,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glTexParameterIiv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glTexParameterIiv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glTexParameterIiv(target, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "texParameterIuiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "texParameterIuiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("texParameterIuiv requires 3 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* params = nullptr;
 		if (args[2]->IsUint32Array()) {
@@ -5390,22 +5399,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glTexParameterIuiv): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glTexParameterIuiv): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glTexParameterIuiv(target, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getTexParameterIiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getTexParameterIiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getTexParameterIiv requires 3 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* params = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -5414,22 +5423,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetTexParameterIiv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetTexParameterIiv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetTexParameterIiv(target, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getTexParameterIuiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getTexParameterIuiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getTexParameterIuiv requires 3 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* params = nullptr;
 		if (args[2]->IsUint32Array()) {
@@ -5438,22 +5447,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glGetTexParameterIuiv): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetTexParameterIuiv): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetTexParameterIuiv(target, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "clearBufferiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "clearBufferiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("clearBufferiv requires 3 arguments");
 			return;
 		}
 
-		GLenum buffer = args[0]->Uint32Value();
-		GLint drawBuffer = args[1]->Int32Value();
+		GLenum buffer = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint drawBuffer = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* value = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -5462,22 +5471,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glClearBufferiv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glClearBufferiv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glClearBufferiv(buffer, drawBuffer, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "clearBufferuiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "clearBufferuiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("clearBufferuiv requires 3 arguments");
 			return;
 		}
 
-		GLenum buffer = args[0]->Uint32Value();
-		GLint drawBuffer = args[1]->Int32Value();
+		GLenum buffer = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint drawBuffer = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* value = nullptr;
 		if (args[2]->IsUint32Array()) {
@@ -5486,22 +5495,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glClearBufferuiv): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glClearBufferuiv): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glClearBufferuiv(buffer, drawBuffer, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "clearBufferfv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "clearBufferfv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("clearBufferfv requires 3 arguments");
 			return;
 		}
 
-		GLenum buffer = args[0]->Uint32Value();
-		GLint drawBuffer = args[1]->Int32Value();
+		GLenum buffer = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint drawBuffer = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLfloat* value = nullptr;
 		if (args[2]->IsFloat32Array()) {
@@ -5510,27 +5519,27 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glClearBufferfv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glClearBufferfv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glClearBufferfv(buffer, drawBuffer, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "clearBufferfi"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "clearBufferfi"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("clearBufferfi requires 4 arguments");
 			return;
 		}
 
-		GLenum buffer = args[0]->Uint32Value();
-		GLint drawBuffer = args[1]->Int32Value();
-		GLfloat depth = GLfloat(args[2]->NumberValue());
-		GLint stencil = args[3]->Int32Value();
+		GLenum buffer = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint drawBuffer = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLfloat depth = GLfloat(args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLint stencil = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glClearBufferfi(buffer, drawBuffer, depth, stencil);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -5571,29 +5580,29 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("BUFFER_MAP_LENGTH", GL_BUFFER_MAP_LENGTH);
 	CREATE_CONSTANT_ACCESSOR("BUFFER_MAP_OFFSET", GL_BUFFER_MAP_OFFSET);
 
-	tpl->Set(String::NewFromUtf8(isolate, "drawArraysInstanced"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "drawArraysInstanced"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("drawArraysInstanced requires 4 arguments");
 			return;
 		}
 
-		GLenum mode = args[0]->Uint32Value();
-		GLint first = args[1]->Int32Value();
-		GLsizei count = args[2]->Int32Value();
-		GLsizei primcount = args[3]->Int32Value();
+		GLenum mode = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint first = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei primcount = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glDrawArraysInstanced(mode, first, count, primcount);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "drawElementsInstanced"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "drawElementsInstanced"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("drawElementsInstanced requires 5 arguments");
 			return;
 		}
 
-		GLenum mode = args[0]->Uint32Value();
-		GLsizei count = args[1]->Int32Value();
-		GLenum type = args[2]->Uint32Value();
+		GLenum mode = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* indices = nullptr;
 		if (args[3]->IsArrayBuffer()) {
@@ -5606,38 +5615,38 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			indices = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glDrawElementsInstanced): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glDrawElementsInstanced): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
-		GLsizei primcount = args[4]->Int32Value();
+		GLsizei primcount = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glDrawElementsInstanced(mode, count, type, indices, primcount);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "texBuffer"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "texBuffer"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("texBuffer requires 3 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum internalFormat = args[1]->Uint32Value();
-		GLuint buffer = args[2]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum internalFormat = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint buffer = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glTexBuffer(target, internalFormat, buffer);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "primitiveRestartIndex"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "primitiveRestartIndex"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("primitiveRestartIndex requires 1 arguments");
 			return;
 		}
 
-		GLuint buffer = args[0]->Uint32Value();
+		GLuint buffer = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glPrimitiveRestartIndex(buffer);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -5668,19 +5677,19 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 
 
 
-	tpl->Set(String::NewFromUtf8(isolate, "framebufferTexture"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "framebufferTexture"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("framebufferTexture requires 4 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum attachment = args[1]->Uint32Value();
-		GLuint texture = args[2]->Uint32Value();
-		GLint level = args[3]->Int32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum attachment = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint texture = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint level = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glFramebufferTexture(target, attachment, texture, level);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -5689,17 +5698,17 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("RGB10_A2UI", GL_RGB10_A2UI);
 	CREATE_CONSTANT_ACCESSOR("VERTEX_ATTRIB_ARRAY_DIVISOR", GL_VERTEX_ATTRIB_ARRAY_DIVISOR);
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribDivisor"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttribDivisor"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("vertexAttribDivisor requires 2 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
-		GLuint divisor = args[1]->Uint32Value();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint divisor = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glVertexAttribDivisor(index, divisor);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -5718,69 +5727,69 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("INT_SAMPLER_CUBE_MAP_ARRAY", GL_INT_SAMPLER_CUBE_MAP_ARRAY);
 	CREATE_CONSTANT_ACCESSOR("UNSIGNED_INT_SAMPLER_CUBE_MAP_ARRAY", GL_UNSIGNED_INT_SAMPLER_CUBE_MAP_ARRAY);
 
-	tpl->Set(String::NewFromUtf8(isolate, "minSampleShading"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "minSampleShading"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("minSampleShading requires 1 arguments");
 			return;
 		}
 
-		GLclampf value = GLclampf(args[0]->NumberValue());
+		GLclampf value = GLclampf(args[0]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glMinSampleShading(value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "blendEquationSeparatei"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "blendEquationSeparatei"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("blendEquationSeparatei requires 3 arguments");
 			return;
 		}
 
-		GLuint buf = args[0]->Uint32Value();
-		GLenum modeRGB = args[1]->Uint32Value();
-		GLenum modeAlpha = args[2]->Uint32Value();
+		GLuint buf = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum modeRGB = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum modeAlpha = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glBlendEquationSeparatei(buf, modeRGB, modeAlpha);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "blendEquationi"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "blendEquationi"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("blendEquationi requires 2 arguments");
 			return;
 		}
 
-		GLuint buf = args[0]->Uint32Value();
-		GLenum mode = args[1]->Uint32Value();
+		GLuint buf = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum mode = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glBlendEquationi(buf, mode);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "blendFuncSeparatei"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "blendFuncSeparatei"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("blendFuncSeparatei requires 5 arguments");
 			return;
 		}
 
-		GLuint buf = args[0]->Uint32Value();
-		GLenum srcRGB = args[1]->Uint32Value();
-		GLenum dstRGB = args[2]->Uint32Value();
-		GLenum srcAlpha = args[3]->Uint32Value();
-		GLenum dstAlpha = args[4]->Uint32Value();
+		GLuint buf = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum srcRGB = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum dstRGB = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum srcAlpha = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum dstAlpha = args[4]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glBlendFuncSeparatei(buf, srcRGB, dstRGB, srcAlpha, dstAlpha);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "blendFunci"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "blendFunci"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("blendFunci requires 3 arguments");
 			return;
 		}
 
-		GLuint buf = args[0]->Uint32Value();
-		GLenum src = args[1]->Uint32Value();
-		GLenum dst = args[2]->Uint32Value();
+		GLuint buf = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum src = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum dst = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glBlendFunci(buf, src, dst);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -5817,17 +5826,17 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 
 	CREATE_CONSTANT_ACCESSOR("CONTEXT_FLAG_ROBUST_ACCESS_BIT", GL_CONTEXT_FLAG_ROBUST_ACCESS_BIT);
 
-	tpl->Set(String::NewFromUtf8(isolate, "getnTexImage"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getnTexImage"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 6) {
 			V8Helper::_instance->throwException("getnTexImage requires 6 arguments");
 			return;
 		}
 
-		GLenum tex = args[0]->Uint32Value();
-		GLint level = args[1]->Int32Value();
-		GLenum format = args[2]->Uint32Value();
-		GLenum type = args[3]->Uint32Value();
-		GLsizei bufSize = args[4]->Int32Value();
+		GLenum tex = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint level = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum format = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei bufSize = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLvoid* pixels = nullptr;
 		if (args[5]->IsArrayBuffer()) {
@@ -5840,23 +5849,23 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			pixels = reinterpret_cast<GLvoid*>(bdata);
 		} else {
-			cout << "ERROR(glGetnTexImage): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glGetnTexImage): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glGetnTexImage(tex, level, format, type, bufSize, pixels);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getnCompressedTexImage"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getnCompressedTexImage"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("getnCompressedTexImage requires 4 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLint lod = args[1]->Int32Value();
-		GLsizei bufSize = args[2]->Int32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint lod = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei bufSize = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLvoid* pixels = nullptr;
 		if (args[3]->IsArrayBuffer()) {
@@ -5869,23 +5878,23 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			pixels = reinterpret_cast<GLvoid*>(bdata);
 		} else {
-			cout << "ERROR(glGetnCompressedTexImage): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glGetnCompressedTexImage): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glGetnCompressedTexImage(target, lod, bufSize, pixels);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getnUniformdv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getnUniformdv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("getnUniformdv requires 4 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLsizei bufSize = args[2]->Int32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei bufSize = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLdouble* params = nullptr;
 		if (args[3]->IsFloat64Array()) {
@@ -5894,13 +5903,13 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLdouble*>(bdata);
 		} else {
-			cout << "ERROR(glGetnUniformdv): array must be of type Float64Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetnUniformdv): array must be of type Float64Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetnUniformdv(program, location, bufSize, params);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -5929,13 +5938,13 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("SPIR_V_EXTENSIONS", GL_SPIR_V_EXTENSIONS);
 	CREATE_CONSTANT_ACCESSOR("NUM_SPIR_V_EXTENSIONS", GL_NUM_SPIR_V_EXTENSIONS);
 
-	tpl->Set(String::NewFromUtf8(isolate, "multiDrawArraysIndirectCount"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "multiDrawArraysIndirectCount"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("multiDrawArraysIndirectCount requires 5 arguments");
 			return;
 		}
 
-		GLenum mode = args[0]->Uint32Value();
+		GLenum mode = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLvoid* indirect = nullptr;
 		if (args[1]->IsArrayBuffer()) {
@@ -5948,25 +5957,25 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			indirect = reinterpret_cast<GLvoid*>(bdata);
 		} else {
-			cout << "ERROR(glMultiDrawArraysIndirectCount): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glMultiDrawArraysIndirectCount): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
-		GLintptr drawcount = GLintptr(args[2]->Int32Value());
-		GLsizei maxdrawcount = args[3]->Int32Value();
-		GLsizei stride = args[4]->Int32Value();
+		GLintptr drawcount = GLintptr(args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLsizei maxdrawcount = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei stride = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glMultiDrawArraysIndirectCount(mode, indirect, drawcount, maxdrawcount, stride);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "multiDrawElementsIndirectCount"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "multiDrawElementsIndirectCount"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 6) {
 			V8Helper::_instance->throwException("multiDrawElementsIndirectCount requires 6 arguments");
 			return;
 		}
 
-		GLenum mode = args[0]->Uint32Value();
-		GLenum type = args[1]->Uint32Value();
+		GLenum mode = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLvoid* indirect = nullptr;
 		if (args[2]->IsArrayBuffer()) {
@@ -5979,24 +5988,24 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			indirect = reinterpret_cast<GLvoid*>(bdata);
 		} else {
-			cout << "ERROR(glMultiDrawElementsIndirectCount): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glMultiDrawElementsIndirectCount): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
-		GLintptr drawcount = GLintptr(args[3]->Int32Value());
-		GLsizei maxdrawcount = args[4]->Int32Value();
-		GLsizei stride = args[5]->Int32Value();
+		GLintptr drawcount = GLintptr(args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLsizei maxdrawcount = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei stride = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glMultiDrawElementsIndirectCount(mode, type, indirect, drawcount, maxdrawcount, stride);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "specializeShader"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "specializeShader"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("specializeShader requires 5 arguments");
 			return;
 		}
 
-		GLuint shader = args[0]->Uint32Value();
+		GLuint shader = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLchar* pEntryPoint = nullptr;
 		if (args[1]->IsInt8Array()) {
@@ -6005,11 +6014,11 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			pEntryPoint = reinterpret_cast<GLchar*>(bdata);
 		} else {
-			cout << "ERROR(glSpecializeShader): array must be of type Int8Array" << endl;
-			exit(1);
+			//cout << "ERROR(glSpecializeShader): array must be of type Int8Array" << endl;
+			//exit(1);
 		}
 
-		GLuint numSpecializationConstants = args[2]->Uint32Value();
+		GLuint numSpecializationConstants = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* pConstantIndex = nullptr;
 		if (args[3]->IsUint32Array()) {
@@ -6018,8 +6027,8 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			pConstantIndex = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glSpecializeShader): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glSpecializeShader): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
@@ -6030,13 +6039,13 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			pConstantValue = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glSpecializeShader): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glSpecializeShader): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glSpecializeShader(shader, pEntryPoint, numSpecializationConstants, pConstantIndex, pConstantValue);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -6110,364 +6119,364 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("DRAW_FRAMEBUFFER_ANGLE", GL_DRAW_FRAMEBUFFER_ANGLE);
 	CREATE_CONSTANT_ACCESSOR("READ_FRAMEBUFFER_BINDING_ANGLE", GL_READ_FRAMEBUFFER_BINDING_ANGLE);
 
-	tpl->Set(String::NewFromUtf8(isolate, "blitFramebufferANGLE"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "blitFramebufferANGLE"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 10) {
 			V8Helper::_instance->throwException("blitFramebufferANGLE requires 10 arguments");
 			return;
 		}
 
-		GLint srcX0 = args[0]->Int32Value();
-		GLint srcY0 = args[1]->Int32Value();
-		GLint srcX1 = args[2]->Int32Value();
-		GLint srcY1 = args[3]->Int32Value();
-		GLint dstX0 = args[4]->Int32Value();
-		GLint dstY0 = args[5]->Int32Value();
-		GLint dstX1 = args[6]->Int32Value();
-		GLint dstY1 = args[7]->Int32Value();
-		GLbitfield mask = args[8]->Uint32Value();
-		GLenum filter = args[9]->Uint32Value();
+		GLint srcX0 = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint srcY0 = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint srcX1 = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint srcY1 = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint dstX0 = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint dstY0 = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint dstX1 = args[6]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint dstY1 = args[7]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLbitfield mask = args[8]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum filter = args[9]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glBlitFramebufferANGLE(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
-	}));
+	}).ToLocalChecked());
 
 
 
 	/* ------------------------------ GL_ANGLE_framebuffer_multisample ------------------------------ */
 
-	CREATE_CONSTANT_ACCESSOR("RENDERBUFFER_SAMPLES_ANGLE", GL_RENDERBUFFER_SAMPLES_ANGLE);
-	CREATE_CONSTANT_ACCESSOR("FRAMEBUFFER_INCOMPLETE_MULTISAMPLE_ANGLE", GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE_ANGLE);
-	CREATE_CONSTANT_ACCESSOR("MAX_SAMPLES_ANGLE", GL_MAX_SAMPLES_ANGLE);
+	// CREATE_CONSTANT_ACCESSOR("RENDERBUFFER_SAMPLES_ANGLE", GL_RENDERBUFFER_SAMPLES_ANGLE);
+	// CREATE_CONSTANT_ACCESSOR("FRAMEBUFFER_INCOMPLETE_MULTISAMPLE_ANGLE", GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE_ANGLE);
+	// CREATE_CONSTANT_ACCESSOR("MAX_SAMPLES_ANGLE", GL_MAX_SAMPLES_ANGLE);
 
-	tpl->Set(String::NewFromUtf8(isolate, "renderbufferStorageMultisampleANGLE"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 5) {
-			V8Helper::_instance->throwException("renderbufferStorageMultisampleANGLE requires 5 arguments");
-			return;
-		}
+	// obj->Set(String::NewFromUtf8(isolate, "renderbufferStorageMultisampleANGLE"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 5) {
+	// 		V8Helper::_instance->throwException("renderbufferStorageMultisampleANGLE requires 5 arguments");
+	// 		return;
+	// 	}
 
-		GLenum target = args[0]->Uint32Value();
-		GLsizei samples = args[1]->Int32Value();
-		GLenum internalformat = args[2]->Uint32Value();
-		GLsizei width = args[3]->Int32Value();
-		GLsizei height = args[4]->Int32Value();
+	// 	GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLsizei samples = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum internalformat = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLsizei width = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLsizei height = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
-		glRenderbufferStorageMultisampleANGLE(target, samples, internalformat, width, height);
-	}));
+	// 	glRenderbufferStorageMultisampleANGLE(target, samples, internalformat, width, height);
+	// }).ToLocalChecked());
 
 
 
-	/* ------------------------------ GL_ANGLE_instanced_arrays ------------------------------ */
+	// /* ------------------------------ GL_ANGLE_instanced_arrays ------------------------------ */
 
-	CREATE_CONSTANT_ACCESSOR("VERTEX_ATTRIB_ARRAY_DIVISOR_ANGLE", GL_VERTEX_ATTRIB_ARRAY_DIVISOR_ANGLE);
+	// CREATE_CONSTANT_ACCESSOR("VERTEX_ATTRIB_ARRAY_DIVISOR_ANGLE", GL_VERTEX_ATTRIB_ARRAY_DIVISOR_ANGLE);
 
-	tpl->Set(String::NewFromUtf8(isolate, "drawArraysInstancedANGLE"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 4) {
-			V8Helper::_instance->throwException("drawArraysInstancedANGLE requires 4 arguments");
-			return;
-		}
+	// obj->Set(String::NewFromUtf8(isolate, "drawArraysInstancedANGLE"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 4) {
+	// 		V8Helper::_instance->throwException("drawArraysInstancedANGLE requires 4 arguments");
+	// 		return;
+	// 	}
 
-		GLenum mode = args[0]->Uint32Value();
-		GLint first = args[1]->Int32Value();
-		GLsizei count = args[2]->Int32Value();
-		GLsizei primcount = args[3]->Int32Value();
+	// 	GLenum mode = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint first = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLsizei count = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLsizei primcount = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
-		glDrawArraysInstancedANGLE(mode, first, count, primcount);
-	}));
+	// 	glDrawArraysInstancedANGLE(mode, first, count, primcount);
+	// }).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "drawElementsInstancedANGLE"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 5) {
-			V8Helper::_instance->throwException("drawElementsInstancedANGLE requires 5 arguments");
-			return;
-		}
+	// obj->Set(String::NewFromUtf8(isolate, "drawElementsInstancedANGLE"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 5) {
+	// 		V8Helper::_instance->throwException("drawElementsInstancedANGLE requires 5 arguments");
+	// 		return;
+	// 	}
 
-		GLenum mode = args[0]->Uint32Value();
-		GLsizei count = args[1]->Int32Value();
-		GLenum type = args[2]->Uint32Value();
+	// 	GLenum mode = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum type = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
-		void* indices = nullptr;
-		if (args[3]->IsArrayBuffer()) {
-			v8::Local<v8::ArrayBuffer> buffer = (args[3]).As<v8::ArrayBuffer>();
-			void *bdata = buffer->GetContents().Data();
-			indices = reinterpret_cast<void*>(bdata);
-		} else if (args[3]->IsArrayBufferView()) {
-			v8::Local<v8::ArrayBufferView> view = (args[3]).As<v8::ArrayBufferView>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			indices = reinterpret_cast<void*>(bdata);
-		} else {
-			cout << "ERROR(glDrawElementsInstancedANGLE): array must be of type ArrayBuffer" << endl;
-			exit(1);
-		}
+	// 	void* indices = nullptr;
+	// 	if (args[3]->IsArrayBuffer()) {
+	// 		v8::Local<v8::ArrayBuffer> buffer = (args[3]).As<v8::ArrayBuffer>();
+	// 		void *bdata = buffer->GetContents().Data();
+	// 		indices = reinterpret_cast<void*>(bdata);
+	// 	} else if (args[3]->IsArrayBufferView()) {
+	// 		v8::Local<v8::ArrayBufferView> view = (args[3]).As<v8::ArrayBufferView>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		indices = reinterpret_cast<void*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glDrawElementsInstancedANGLE): array must be of type ArrayBuffer" << endl;
+	// 		//exit(1);
+	// 	}
 
-		GLsizei primcount = args[4]->Int32Value();
+	// 	GLsizei primcount = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
-		glDrawElementsInstancedANGLE(mode, count, type, indices, primcount);
-	}));
+	// 	glDrawElementsInstancedANGLE(mode, count, type, indices, primcount);
+	// }).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribDivisorANGLE"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("vertexAttribDivisorANGLE requires 2 arguments");
-			return;
-		}
+	// obj->Set(String::NewFromUtf8(isolate, "vertexAttribDivisorANGLE"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("vertexAttribDivisorANGLE requires 2 arguments");
+	// 		return;
+	// 	}
 
-		GLuint index = args[0]->Uint32Value();
-		GLuint divisor = args[1]->Uint32Value();
+	// 	GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint divisor = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
-		glVertexAttribDivisorANGLE(index, divisor);
-	}));
+	// 	glVertexAttribDivisorANGLE(index, divisor);
+	// }).ToLocalChecked());
 
 
 
-	/* ------------------------------ GL_ANGLE_pack_reverse_row_order ------------------------------ */
+	// /* ------------------------------ GL_ANGLE_pack_reverse_row_order ------------------------------ */
 
-	CREATE_CONSTANT_ACCESSOR("PACK_REVERSE_ROW_ORDER_ANGLE", GL_PACK_REVERSE_ROW_ORDER_ANGLE);
+	// CREATE_CONSTANT_ACCESSOR("PACK_REVERSE_ROW_ORDER_ANGLE", GL_PACK_REVERSE_ROW_ORDER_ANGLE);
 
 
 
-	/* ------------------------------ GL_ANGLE_program_binary ------------------------------ */
+	// /* ------------------------------ GL_ANGLE_program_binary ------------------------------ */
 
-	CREATE_CONSTANT_ACCESSOR("PROGRAM_BINARY_ANGLE", GL_PROGRAM_BINARY_ANGLE);
+	// CREATE_CONSTANT_ACCESSOR("PROGRAM_BINARY_ANGLE", GL_PROGRAM_BINARY_ANGLE);
 
 
 
-	/* ------------------------------ GL_ANGLE_texture_compression_dxt1 ------------------------------ */
+	// /* ------------------------------ GL_ANGLE_texture_compression_dxt1 ------------------------------ */
 
-	CREATE_CONSTANT_ACCESSOR("COMPRESSED_RGB_S3TC_DXT1_ANGLE", GL_COMPRESSED_RGB_S3TC_DXT1_ANGLE);
-	CREATE_CONSTANT_ACCESSOR("COMPRESSED_RGBA_S3TC_DXT1_ANGLE", GL_COMPRESSED_RGBA_S3TC_DXT1_ANGLE);
-	CREATE_CONSTANT_ACCESSOR("COMPRESSED_RGBA_S3TC_DXT3_ANGLE", GL_COMPRESSED_RGBA_S3TC_DXT3_ANGLE);
-	CREATE_CONSTANT_ACCESSOR("COMPRESSED_RGBA_S3TC_DXT5_ANGLE", GL_COMPRESSED_RGBA_S3TC_DXT5_ANGLE);
+	// CREATE_CONSTANT_ACCESSOR("COMPRESSED_RGB_S3TC_DXT1_ANGLE", GL_COMPRESSED_RGB_S3TC_DXT1_ANGLE);
+	// CREATE_CONSTANT_ACCESSOR("COMPRESSED_RGBA_S3TC_DXT1_ANGLE", GL_COMPRESSED_RGBA_S3TC_DXT1_ANGLE);
+	// CREATE_CONSTANT_ACCESSOR("COMPRESSED_RGBA_S3TC_DXT3_ANGLE", GL_COMPRESSED_RGBA_S3TC_DXT3_ANGLE);
+	// CREATE_CONSTANT_ACCESSOR("COMPRESSED_RGBA_S3TC_DXT5_ANGLE", GL_COMPRESSED_RGBA_S3TC_DXT5_ANGLE);
 
 
 
-	/* ------------------------------ GL_ANGLE_texture_compression_dxt3 ------------------------------ */
+	// /* ------------------------------ GL_ANGLE_texture_compression_dxt3 ------------------------------ */
 
-	CREATE_CONSTANT_ACCESSOR("COMPRESSED_RGB_S3TC_DXT1_ANGLE", GL_COMPRESSED_RGB_S3TC_DXT1_ANGLE);
-	CREATE_CONSTANT_ACCESSOR("COMPRESSED_RGBA_S3TC_DXT1_ANGLE", GL_COMPRESSED_RGBA_S3TC_DXT1_ANGLE);
-	CREATE_CONSTANT_ACCESSOR("COMPRESSED_RGBA_S3TC_DXT3_ANGLE", GL_COMPRESSED_RGBA_S3TC_DXT3_ANGLE);
-	CREATE_CONSTANT_ACCESSOR("COMPRESSED_RGBA_S3TC_DXT5_ANGLE", GL_COMPRESSED_RGBA_S3TC_DXT5_ANGLE);
+	// CREATE_CONSTANT_ACCESSOR("COMPRESSED_RGB_S3TC_DXT1_ANGLE", GL_COMPRESSED_RGB_S3TC_DXT1_ANGLE);
+	// CREATE_CONSTANT_ACCESSOR("COMPRESSED_RGBA_S3TC_DXT1_ANGLE", GL_COMPRESSED_RGBA_S3TC_DXT1_ANGLE);
+	// CREATE_CONSTANT_ACCESSOR("COMPRESSED_RGBA_S3TC_DXT3_ANGLE", GL_COMPRESSED_RGBA_S3TC_DXT3_ANGLE);
+	// CREATE_CONSTANT_ACCESSOR("COMPRESSED_RGBA_S3TC_DXT5_ANGLE", GL_COMPRESSED_RGBA_S3TC_DXT5_ANGLE);
 
 
 
-	/* ------------------------------ GL_ANGLE_texture_compression_dxt5 ------------------------------ */
+	// /* ------------------------------ GL_ANGLE_texture_compression_dxt5 ------------------------------ */
 
-	CREATE_CONSTANT_ACCESSOR("COMPRESSED_RGB_S3TC_DXT1_ANGLE", GL_COMPRESSED_RGB_S3TC_DXT1_ANGLE);
-	CREATE_CONSTANT_ACCESSOR("COMPRESSED_RGBA_S3TC_DXT1_ANGLE", GL_COMPRESSED_RGBA_S3TC_DXT1_ANGLE);
-	CREATE_CONSTANT_ACCESSOR("COMPRESSED_RGBA_S3TC_DXT3_ANGLE", GL_COMPRESSED_RGBA_S3TC_DXT3_ANGLE);
-	CREATE_CONSTANT_ACCESSOR("COMPRESSED_RGBA_S3TC_DXT5_ANGLE", GL_COMPRESSED_RGBA_S3TC_DXT5_ANGLE);
+	// CREATE_CONSTANT_ACCESSOR("COMPRESSED_RGB_S3TC_DXT1_ANGLE", GL_COMPRESSED_RGB_S3TC_DXT1_ANGLE);
+	// CREATE_CONSTANT_ACCESSOR("COMPRESSED_RGBA_S3TC_DXT1_ANGLE", GL_COMPRESSED_RGBA_S3TC_DXT1_ANGLE);
+	// CREATE_CONSTANT_ACCESSOR("COMPRESSED_RGBA_S3TC_DXT3_ANGLE", GL_COMPRESSED_RGBA_S3TC_DXT3_ANGLE);
+	// CREATE_CONSTANT_ACCESSOR("COMPRESSED_RGBA_S3TC_DXT5_ANGLE", GL_COMPRESSED_RGBA_S3TC_DXT5_ANGLE);
 
 
 
-	/* ------------------------------ GL_ANGLE_texture_usage ------------------------------ */
+	// /* ------------------------------ GL_ANGLE_texture_usage ------------------------------ */
 
-	CREATE_CONSTANT_ACCESSOR("TEXTURE_USAGE_ANGLE", GL_TEXTURE_USAGE_ANGLE);
-	CREATE_CONSTANT_ACCESSOR("FRAMEBUFFER_ATTACHMENT_ANGLE", GL_FRAMEBUFFER_ATTACHMENT_ANGLE);
+	// CREATE_CONSTANT_ACCESSOR("TEXTURE_USAGE_ANGLE", GL_TEXTURE_USAGE_ANGLE);
+	// CREATE_CONSTANT_ACCESSOR("FRAMEBUFFER_ATTACHMENT_ANGLE", GL_FRAMEBUFFER_ATTACHMENT_ANGLE);
 
 
 
-	/* ------------------------------ GL_ANGLE_timer_query ------------------------------ */
+	// /* ------------------------------ GL_ANGLE_timer_query ------------------------------ */
 
-	CREATE_CONSTANT_ACCESSOR("QUERY_COUNTER_BITS_ANGLE", GL_QUERY_COUNTER_BITS_ANGLE);
-	CREATE_CONSTANT_ACCESSOR("CURRENT_QUERY_ANGLE", GL_CURRENT_QUERY_ANGLE);
-	CREATE_CONSTANT_ACCESSOR("QUERY_RESULT_ANGLE", GL_QUERY_RESULT_ANGLE);
-	CREATE_CONSTANT_ACCESSOR("QUERY_RESULT_AVAILABLE_ANGLE", GL_QUERY_RESULT_AVAILABLE_ANGLE);
-	CREATE_CONSTANT_ACCESSOR("TIME_ELAPSED_ANGLE", GL_TIME_ELAPSED_ANGLE);
-	CREATE_CONSTANT_ACCESSOR("TIMESTAMP_ANGLE", GL_TIMESTAMP_ANGLE);
+	// CREATE_CONSTANT_ACCESSOR("QUERY_COUNTER_BITS_ANGLE", GL_QUERY_COUNTER_BITS_ANGLE);
+	// CREATE_CONSTANT_ACCESSOR("CURRENT_QUERY_ANGLE", GL_CURRENT_QUERY_ANGLE);
+	// CREATE_CONSTANT_ACCESSOR("QUERY_RESULT_ANGLE", GL_QUERY_RESULT_ANGLE);
+	// CREATE_CONSTANT_ACCESSOR("QUERY_RESULT_AVAILABLE_ANGLE", GL_QUERY_RESULT_AVAILABLE_ANGLE);
+	// CREATE_CONSTANT_ACCESSOR("TIME_ELAPSED_ANGLE", GL_TIME_ELAPSED_ANGLE);
+	// CREATE_CONSTANT_ACCESSOR("TIMESTAMP_ANGLE", GL_TIMESTAMP_ANGLE);
 
-	tpl->Set(String::NewFromUtf8(isolate, "beginQueryANGLE"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("beginQueryANGLE requires 2 arguments");
-			return;
-		}
+	// obj->Set(String::NewFromUtf8(isolate, "beginQueryANGLE"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("beginQueryANGLE requires 2 arguments");
+	// 		return;
+	// 	}
 
-		GLenum target = args[0]->Uint32Value();
-		GLuint id = args[1]->Uint32Value();
+	// 	GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint id = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
-		glBeginQueryANGLE(target, id);
-	}));
+	// 	glBeginQueryANGLE(target, id);
+	// }).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "deleteQueriesANGLE"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("deleteQueriesANGLE requires 2 arguments");
-			return;
-		}
+	// obj->Set(String::NewFromUtf8(isolate, "deleteQueriesANGLE"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("deleteQueriesANGLE requires 2 arguments");
+	// 		return;
+	// 	}
 
-		GLsizei n = args[0]->Int32Value();
+	// 	GLsizei n = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
-		GLuint* ids = nullptr;
-		if (args[1]->IsUint32Array()) {
-			v8::Local<v8::Uint32Array> view = (args[1]).As<v8::Uint32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			ids = reinterpret_cast<GLuint*>(bdata);
-		} else {
-			cout << "ERROR(glDeleteQueriesANGLE): array must be of type Uint32Array" << endl;
-			exit(1);
-		}
+	// 	GLuint* ids = nullptr;
+	// 	if (args[1]->IsUint32Array()) {
+	// 		v8::Local<v8::Uint32Array> view = (args[1]).As<v8::Uint32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		ids = reinterpret_cast<GLuint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glDeleteQueriesANGLE): array must be of type Uint32Array" << endl;
+	// 		//exit(1);
+	// 	}
 
 
-		glDeleteQueriesANGLE(n, ids);
-	}));
+	// 	glDeleteQueriesANGLE(n, ids);
+	// }).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "endQueryANGLE"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 1) {
-			V8Helper::_instance->throwException("endQueryANGLE requires 1 arguments");
-			return;
-		}
+	// obj->Set(String::NewFromUtf8(isolate, "endQueryANGLE"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 1) {
+	// 		V8Helper::_instance->throwException("endQueryANGLE requires 1 arguments");
+	// 		return;
+	// 	}
 
-		GLenum target = args[0]->Uint32Value();
+	// 	GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
-		glEndQueryANGLE(target);
-	}));
+	// 	glEndQueryANGLE(target);
+	// }).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "genQueriesANGLE"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("genQueriesANGLE requires 2 arguments");
-			return;
-		}
+	// obj->Set(String::NewFromUtf8(isolate, "genQueriesANGLE"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("genQueriesANGLE requires 2 arguments");
+	// 		return;
+	// 	}
 
-		GLsizei n = args[0]->Int32Value();
+	// 	GLsizei n = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
-		GLuint* ids = nullptr;
-		if (args[1]->IsUint32Array()) {
-			v8::Local<v8::Uint32Array> view = (args[1]).As<v8::Uint32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			ids = reinterpret_cast<GLuint*>(bdata);
-		} else {
-			cout << "ERROR(glGenQueriesANGLE): array must be of type Uint32Array" << endl;
-			exit(1);
-		}
+	// 	GLuint* ids = nullptr;
+	// 	if (args[1]->IsUint32Array()) {
+	// 		v8::Local<v8::Uint32Array> view = (args[1]).As<v8::Uint32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		ids = reinterpret_cast<GLuint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glGenQueriesANGLE): array must be of type Uint32Array" << endl;
+	// 		//exit(1);
+	// 	}
 
 
-		glGenQueriesANGLE(n, ids);
-	}));
+	// 	glGenQueriesANGLE(n, ids);
+	// }).ToLocalChecked());
 
 
-	tpl->Set(String::NewFromUtf8(isolate, "getQueryObjectivANGLE"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("getQueryObjectivANGLE requires 3 arguments");
-			return;
-		}
+	// obj->Set(String::NewFromUtf8(isolate, "getQueryObjectivANGLE"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 3) {
+	// 		V8Helper::_instance->throwException("getQueryObjectivANGLE requires 3 arguments");
+	// 		return;
+	// 	}
 
-		GLuint id = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+	// 	GLuint id = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
-		GLint* params = nullptr;
-		if (args[2]->IsInt32Array()) {
-			v8::Local<v8::Int32Array> view = (args[2]).As<v8::Int32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			params = reinterpret_cast<GLint*>(bdata);
-		} else {
-			cout << "ERROR(glGetQueryObjectivANGLE): array must be of type Int32Array" << endl;
-			exit(1);
-		}
+	// 	GLint* params = nullptr;
+	// 	if (args[2]->IsInt32Array()) {
+	// 		v8::Local<v8::Int32Array> view = (args[2]).As<v8::Int32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		params = reinterpret_cast<GLint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glGetQueryObjectivANGLE): array must be of type Int32Array" << endl;
+	// 		//exit(1);
+	// 	}
 
 
-		glGetQueryObjectivANGLE(id, pname, params);
-	}));
+	// 	glGetQueryObjectivANGLE(id, pname, params);
+	// }).ToLocalChecked());
 
 
-	tpl->Set(String::NewFromUtf8(isolate, "getQueryObjectuivANGLE"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("getQueryObjectuivANGLE requires 3 arguments");
-			return;
-		}
+	// obj->Set(String::NewFromUtf8(isolate, "getQueryObjectuivANGLE"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 3) {
+	// 		V8Helper::_instance->throwException("getQueryObjectuivANGLE requires 3 arguments");
+	// 		return;
+	// 	}
 
-		GLuint id = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+	// 	GLuint id = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
-		GLuint* params = nullptr;
-		if (args[2]->IsUint32Array()) {
-			v8::Local<v8::Uint32Array> view = (args[2]).As<v8::Uint32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			params = reinterpret_cast<GLuint*>(bdata);
-		} else {
-			cout << "ERROR(glGetQueryObjectuivANGLE): array must be of type Uint32Array" << endl;
-			exit(1);
-		}
+	// 	GLuint* params = nullptr;
+	// 	if (args[2]->IsUint32Array()) {
+	// 		v8::Local<v8::Uint32Array> view = (args[2]).As<v8::Uint32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		params = reinterpret_cast<GLuint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glGetQueryObjectuivANGLE): array must be of type Uint32Array" << endl;
+	// 		//exit(1);
+	// 	}
 
 
-		glGetQueryObjectuivANGLE(id, pname, params);
-	}));
+	// 	glGetQueryObjectuivANGLE(id, pname, params);
+	// }).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getQueryivANGLE"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("getQueryivANGLE requires 3 arguments");
-			return;
-		}
+	// obj->Set(String::NewFromUtf8(isolate, "getQueryivANGLE"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 3) {
+	// 		V8Helper::_instance->throwException("getQueryivANGLE requires 3 arguments");
+	// 		return;
+	// 	}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+	// 	GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
-		GLint* params = nullptr;
-		if (args[2]->IsInt32Array()) {
-			v8::Local<v8::Int32Array> view = (args[2]).As<v8::Int32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			params = reinterpret_cast<GLint*>(bdata);
-		} else {
-			cout << "ERROR(glGetQueryivANGLE): array must be of type Int32Array" << endl;
-			exit(1);
-		}
+	// 	GLint* params = nullptr;
+	// 	if (args[2]->IsInt32Array()) {
+	// 		v8::Local<v8::Int32Array> view = (args[2]).As<v8::Int32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		params = reinterpret_cast<GLint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glGetQueryivANGLE): array must be of type Int32Array" << endl;
+	// 		//exit(1);
+	// 	}
 
 
-		glGetQueryivANGLE(target, pname, params);
-	}));
+	// 	glGetQueryivANGLE(target, pname, params);
+	// }).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "queryCounterANGLE"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("queryCounterANGLE requires 2 arguments");
-			return;
-		}
+	// obj->Set(String::NewFromUtf8(isolate, "queryCounterANGLE"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("queryCounterANGLE requires 2 arguments");
+	// 		return;
+	// 	}
 
-		GLuint id = args[0]->Uint32Value();
-		GLenum target = args[1]->Uint32Value();
+	// 	GLuint id = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum target = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
-		glQueryCounterANGLE(id, target);
-	}));
+	// 	glQueryCounterANGLE(id, target);
+	// }).ToLocalChecked());
 
 
 
-	/* ------------------------------ GL_ANGLE_translated_shader_source ------------------------------ */
+	// /* ------------------------------ GL_ANGLE_translated_shader_source ------------------------------ */
 
-	CREATE_CONSTANT_ACCESSOR("TRANSLATED_SHADER_SOURCE_LENGTH_ANGLE", GL_TRANSLATED_SHADER_SOURCE_LENGTH_ANGLE);
+	// CREATE_CONSTANT_ACCESSOR("TRANSLATED_SHADER_SOURCE_LENGTH_ANGLE", GL_TRANSLATED_SHADER_SOURCE_LENGTH_ANGLE);
 
-	tpl->Set(String::NewFromUtf8(isolate, "getTranslatedShaderSourceANGLE"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 4) {
-			V8Helper::_instance->throwException("getTranslatedShaderSourceANGLE requires 4 arguments");
-			return;
-		}
+	// obj->Set(String::NewFromUtf8(isolate, "getTranslatedShaderSourceANGLE"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 4) {
+	// 		V8Helper::_instance->throwException("getTranslatedShaderSourceANGLE requires 4 arguments");
+	// 		return;
+	// 	}
 
-		GLuint shader = args[0]->Uint32Value();
-		GLsizei bufsize = args[1]->Int32Value();
+	// 	GLuint shader = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLsizei bufsize = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
-		GLsizei* length = nullptr;
-		if (args[2]->IsInt32Array()) {
-			v8::Local<v8::Int32Array> view = (args[2]).As<v8::Int32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			length = reinterpret_cast<GLsizei*>(bdata);
-		} else {
-			cout << "ERROR(glGetTranslatedShaderSourceANGLE): array must be of type Int32Array" << endl;
-			exit(1);
-		}
+	// 	GLsizei* length = nullptr;
+	// 	if (args[2]->IsInt32Array()) {
+	// 		v8::Local<v8::Int32Array> view = (args[2]).As<v8::Int32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		length = reinterpret_cast<GLsizei*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glGetTranslatedShaderSourceANGLE): array must be of type Int32Array" << endl;
+	// 		//exit(1);
+	// 	}
 
 
-		GLchar* source = nullptr;
-		if (args[3]->IsInt8Array()) {
-			v8::Local<v8::Int8Array> view = (args[3]).As<v8::Int8Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			source = reinterpret_cast<GLchar*>(bdata);
-		} else {
-			cout << "ERROR(glGetTranslatedShaderSourceANGLE): array must be of type Int8Array" << endl;
-			exit(1);
-		}
+	// 	GLchar* source = nullptr;
+	// 	if (args[3]->IsInt8Array()) {
+	// 		v8::Local<v8::Int8Array> view = (args[3]).As<v8::Int8Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		source = reinterpret_cast<GLchar*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glGetTranslatedShaderSourceANGLE): array must be of type Int8Array" << endl;
+	// 		//exit(1);
+	// 	}
 
 
-		glGetTranslatedShaderSourceANGLE(shader, bufsize, length, source);
-	}));
+	// 	glGetTranslatedShaderSourceANGLE(shader, bufsize, length, source);
+	// }).ToLocalChecked());
 
 
 
@@ -6501,30 +6510,30 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	/* ------------------------------ GL_ARB_base_instance ------------------------------ */
 
 
-	tpl->Set(String::NewFromUtf8(isolate, "drawArraysInstancedBaseInstance"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "drawArraysInstancedBaseInstance"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("drawArraysInstancedBaseInstance requires 5 arguments");
 			return;
 		}
 
-		GLenum mode = args[0]->Uint32Value();
-		GLint first = args[1]->Int32Value();
-		GLsizei count = args[2]->Int32Value();
-		GLsizei primcount = args[3]->Int32Value();
-		GLuint baseinstance = args[4]->Uint32Value();
+		GLenum mode = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint first = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei primcount = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint baseinstance = args[4]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glDrawArraysInstancedBaseInstance(mode, first, count, primcount, baseinstance);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "drawElementsInstancedBaseInstance"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "drawElementsInstancedBaseInstance"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 6) {
 			V8Helper::_instance->throwException("drawElementsInstancedBaseInstance requires 6 arguments");
 			return;
 		}
 
-		GLenum mode = args[0]->Uint32Value();
-		GLsizei count = args[1]->Int32Value();
-		GLenum type = args[2]->Uint32Value();
+		GLenum mode = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* indices = nullptr;
 		if (args[3]->IsArrayBuffer()) {
@@ -6537,25 +6546,25 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			indices = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glDrawElementsInstancedBaseInstance): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glDrawElementsInstancedBaseInstance): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
-		GLsizei primcount = args[4]->Int32Value();
-		GLuint baseinstance = args[5]->Uint32Value();
+		GLsizei primcount = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint baseinstance = args[5]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glDrawElementsInstancedBaseInstance(mode, count, type, indices, primcount, baseinstance);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "drawElementsInstancedBaseVertexBaseInstance"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "drawElementsInstancedBaseVertexBaseInstance"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 7) {
 			V8Helper::_instance->throwException("drawElementsInstancedBaseVertexBaseInstance requires 7 arguments");
 			return;
 		}
 
-		GLenum mode = args[0]->Uint32Value();
-		GLsizei count = args[1]->Int32Value();
-		GLenum type = args[2]->Uint32Value();
+		GLenum mode = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* indices = nullptr;
 		if (args[3]->IsArrayBuffer()) {
@@ -6568,16 +6577,16 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			indices = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glDrawElementsInstancedBaseVertexBaseInstance): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glDrawElementsInstancedBaseVertexBaseInstance): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
-		GLsizei primcount = args[4]->Int32Value();
-		GLint basevertex = args[5]->Int32Value();
-		GLuint baseinstance = args[6]->Uint32Value();
+		GLsizei primcount = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint basevertex = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint baseinstance = args[6]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glDrawElementsInstancedBaseVertexBaseInstance(mode, count, type, indices, primcount, basevertex, baseinstance);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -6604,14 +6613,14 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("BUFFER_IMMUTABLE_STORAGE", GL_BUFFER_IMMUTABLE_STORAGE);
 	CREATE_CONSTANT_ACCESSOR("BUFFER_STORAGE_FLAGS", GL_BUFFER_STORAGE_FLAGS);
 
-	tpl->Set(String::NewFromUtf8(isolate, "bufferStorage"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "bufferStorage"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("bufferStorage requires 4 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLsizeiptr size = GLsizeiptr(args[1]->Int32Value());
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizeiptr size = GLsizeiptr(args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		void* data = nullptr;
 		if (args[2]->IsArrayBuffer()) {
@@ -6624,30 +6633,30 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			data = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glBufferStorage): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glBufferStorage): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
-		GLbitfield flags = args[3]->Uint32Value();
+		GLbitfield flags = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glBufferStorage(target, size, data, flags);
-	}));
+	}).ToLocalChecked());
 
 
 
 	/* ------------------------------ GL_ARB_clear_buffer_object ------------------------------ */
 
 
-	tpl->Set(String::NewFromUtf8(isolate, "clearBufferData"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "clearBufferData"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("clearBufferData requires 5 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum internalformat = args[1]->Uint32Value();
-		GLenum format = args[2]->Uint32Value();
-		GLenum type = args[3]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum internalformat = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum format = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* data = nullptr;
 		if (args[4]->IsArrayBuffer()) {
@@ -6660,26 +6669,26 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			data = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glClearBufferData): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glClearBufferData): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glClearBufferData(target, internalformat, format, type, data);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "clearBufferSubData"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "clearBufferSubData"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 7) {
 			V8Helper::_instance->throwException("clearBufferSubData requires 7 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum internalformat = args[1]->Uint32Value();
-		GLintptr offset = GLintptr(args[2]->Int32Value());
-		GLsizeiptr size = GLsizeiptr(args[3]->Int32Value());
-		GLenum format = args[4]->Uint32Value();
-		GLenum type = args[5]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum internalformat = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLintptr offset = GLintptr(args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLsizeiptr size = GLsizeiptr(args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLenum format = args[4]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[5]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* data = nullptr;
 		if (args[6]->IsArrayBuffer()) {
@@ -6692,13 +6701,13 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			data = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glClearBufferSubData): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glClearBufferSubData): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glClearBufferSubData(target, internalformat, offset, size, format, type, data);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -6706,16 +6715,16 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 
 	CREATE_CONSTANT_ACCESSOR("CLEAR_TEXTURE", GL_CLEAR_TEXTURE);
 
-	tpl->Set(String::NewFromUtf8(isolate, "clearTexImage"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "clearTexImage"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("clearTexImage requires 5 arguments");
 			return;
 		}
 
-		GLuint texture = args[0]->Uint32Value();
-		GLint level = args[1]->Int32Value();
-		GLenum format = args[2]->Uint32Value();
-		GLenum type = args[3]->Uint32Value();
+		GLuint texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint level = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum format = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* data = nullptr;
 		if (args[4]->IsArrayBuffer()) {
@@ -6728,30 +6737,30 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			data = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glClearTexImage): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glClearTexImage): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glClearTexImage(texture, level, format, type, data);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "clearTexSubImage"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "clearTexSubImage"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 11) {
 			V8Helper::_instance->throwException("clearTexSubImage requires 11 arguments");
 			return;
 		}
 
-		GLuint texture = args[0]->Uint32Value();
-		GLint level = args[1]->Int32Value();
-		GLint xoffset = args[2]->Int32Value();
-		GLint yoffset = args[3]->Int32Value();
-		GLint zoffset = args[4]->Int32Value();
-		GLsizei width = args[5]->Int32Value();
-		GLsizei height = args[6]->Int32Value();
-		GLsizei depth = args[7]->Int32Value();
-		GLenum format = args[8]->Uint32Value();
-		GLenum type = args[9]->Uint32Value();
+		GLuint texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint level = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint xoffset = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint yoffset = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint zoffset = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei height = args[6]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei depth = args[7]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum format = args[8]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[9]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* data = nullptr;
 		if (args[10]->IsArrayBuffer()) {
@@ -6764,13 +6773,13 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			data = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glClearTexSubImage): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glClearTexSubImage): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glClearTexSubImage(texture, level, xoffset, yoffset, zoffset, width, height, depth, format, type, data);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -6783,17 +6792,17 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("NEGATIVE_ONE_TO_ONE", GL_NEGATIVE_ONE_TO_ONE);
 	CREATE_CONSTANT_ACCESSOR("ZERO_TO_ONE", GL_ZERO_TO_ONE);
 
-	tpl->Set(String::NewFromUtf8(isolate, "clipControl"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "clipControl"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("clipControl requires 2 arguments");
 			return;
 		}
 
-		GLenum origin = args[0]->Uint32Value();
-		GLenum depth = args[1]->Uint32Value();
+		GLenum origin = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum depth = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glClipControl(origin, depth);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -6834,29 +6843,29 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("MAX_COMPUTE_WORK_GROUP_COUNT", GL_MAX_COMPUTE_WORK_GROUP_COUNT);
 	CREATE_CONSTANT_ACCESSOR("MAX_COMPUTE_WORK_GROUP_SIZE", GL_MAX_COMPUTE_WORK_GROUP_SIZE);
 
-	tpl->Set(String::NewFromUtf8(isolate, "dispatchCompute"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "dispatchCompute"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("dispatchCompute requires 3 arguments");
 			return;
 		}
 
-		GLuint num_groups_x = args[0]->Uint32Value();
-		GLuint num_groups_y = args[1]->Uint32Value();
-		GLuint num_groups_z = args[2]->Uint32Value();
+		GLuint num_groups_x = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint num_groups_y = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint num_groups_z = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glDispatchCompute(num_groups_x, num_groups_y, num_groups_z);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "dispatchComputeIndirect"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "dispatchComputeIndirect"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("dispatchComputeIndirect requires 1 arguments");
 			return;
 		}
 
-		GLintptr indirect = GLintptr(args[0]->Int32Value());
+		GLintptr indirect = GLintptr(args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glDispatchComputeIndirect(indirect);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -6876,50 +6885,50 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("COPY_READ_BUFFER", GL_COPY_READ_BUFFER);
 	CREATE_CONSTANT_ACCESSOR("COPY_WRITE_BUFFER", GL_COPY_WRITE_BUFFER);
 
-	tpl->Set(String::NewFromUtf8(isolate, "copyBufferSubData"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "copyBufferSubData"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("copyBufferSubData requires 5 arguments");
 			return;
 		}
 
-		GLenum readtarget = args[0]->Uint32Value();
-		GLenum writetarget = args[1]->Uint32Value();
-		GLintptr readoffset = GLintptr(args[2]->Int32Value());
-		GLintptr writeoffset = GLintptr(args[3]->Int32Value());
-		GLsizeiptr size = GLsizeiptr(args[4]->Int32Value());
+		GLenum readtarget = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum writetarget = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLintptr readoffset = GLintptr(args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLintptr writeoffset = GLintptr(args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLsizeiptr size = GLsizeiptr(args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glCopyBufferSubData(readtarget, writetarget, readoffset, writeoffset, size);
-	}));
+	}).ToLocalChecked());
 
 
 
 	/* ------------------------------ GL_ARB_copy_image ------------------------------ */
 
 
-	tpl->Set(String::NewFromUtf8(isolate, "copyImageSubData"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "copyImageSubData"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 15) {
 			V8Helper::_instance->throwException("copyImageSubData requires 15 arguments");
 			return;
 		}
 
-		GLuint srcName = args[0]->Uint32Value();
-		GLenum srcTarget = args[1]->Uint32Value();
-		GLint srcLevel = args[2]->Int32Value();
-		GLint srcX = args[3]->Int32Value();
-		GLint srcY = args[4]->Int32Value();
-		GLint srcZ = args[5]->Int32Value();
-		GLuint dstName = args[6]->Uint32Value();
-		GLenum dstTarget = args[7]->Uint32Value();
-		GLint dstLevel = args[8]->Int32Value();
-		GLint dstX = args[9]->Int32Value();
-		GLint dstY = args[10]->Int32Value();
-		GLint dstZ = args[11]->Int32Value();
-		GLsizei srcWidth = args[12]->Int32Value();
-		GLsizei srcHeight = args[13]->Int32Value();
-		GLsizei srcDepth = args[14]->Int32Value();
+		GLuint srcName = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum srcTarget = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint srcLevel = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint srcX = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint srcY = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint srcZ = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint dstName = args[6]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum dstTarget = args[7]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint dstLevel = args[8]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint dstX = args[9]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint dstY = args[10]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint dstZ = args[11]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei srcWidth = args[12]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei srcHeight = args[13]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei srcDepth = args[14]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glCopyImageSubData(srcName, srcTarget, srcLevel, srcX, srcY, srcZ, dstName, dstTarget, dstLevel, dstX, dstY, dstZ, srcWidth, srcHeight, srcDepth);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -6952,50 +6961,50 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("TEXTURE_TARGET", GL_TEXTURE_TARGET);
 	CREATE_CONSTANT_ACCESSOR("QUERY_TARGET", GL_QUERY_TARGET);
 
-	tpl->Set(String::NewFromUtf8(isolate, "bindTextureUnit"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "bindTextureUnit"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("bindTextureUnit requires 2 arguments");
 			return;
 		}
 
-		GLuint unit = args[0]->Uint32Value();
-		GLuint texture = args[1]->Uint32Value();
+		GLuint unit = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint texture = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glBindTextureUnit(unit, texture);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "blitNamedFramebuffer"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "blitNamedFramebuffer"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 12) {
 			V8Helper::_instance->throwException("blitNamedFramebuffer requires 12 arguments");
 			return;
 		}
 
-		GLuint readFramebuffer = args[0]->Uint32Value();
-		GLuint drawFramebuffer = args[1]->Uint32Value();
-		GLint srcX0 = args[2]->Int32Value();
-		GLint srcY0 = args[3]->Int32Value();
-		GLint srcX1 = args[4]->Int32Value();
-		GLint srcY1 = args[5]->Int32Value();
-		GLint dstX0 = args[6]->Int32Value();
-		GLint dstY0 = args[7]->Int32Value();
-		GLint dstX1 = args[8]->Int32Value();
-		GLint dstY1 = args[9]->Int32Value();
-		GLbitfield mask = args[10]->Uint32Value();
-		GLenum filter = args[11]->Uint32Value();
+		GLuint readFramebuffer = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint drawFramebuffer = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint srcX0 = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint srcY0 = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint srcX1 = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint srcY1 = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint dstX0 = args[6]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint dstY0 = args[7]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint dstX1 = args[8]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint dstY1 = args[9]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLbitfield mask = args[10]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum filter = args[11]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glBlitNamedFramebuffer(readFramebuffer, drawFramebuffer, srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "clearNamedBufferData"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "clearNamedBufferData"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("clearNamedBufferData requires 5 arguments");
 			return;
 		}
 
-		GLuint buffer = args[0]->Uint32Value();
-		GLenum internalformat = args[1]->Uint32Value();
-		GLenum format = args[2]->Uint32Value();
-		GLenum type = args[3]->Uint32Value();
+		GLuint buffer = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum internalformat = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum format = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* data = nullptr;
 		if (args[4]->IsArrayBuffer()) {
@@ -7008,26 +7017,26 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			data = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glClearNamedBufferData): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glClearNamedBufferData): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glClearNamedBufferData(buffer, internalformat, format, type, data);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "clearNamedBufferSubData"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "clearNamedBufferSubData"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 7) {
 			V8Helper::_instance->throwException("clearNamedBufferSubData requires 7 arguments");
 			return;
 		}
 
-		GLuint buffer = args[0]->Uint32Value();
-		GLenum internalformat = args[1]->Uint32Value();
-		GLintptr offset = GLintptr(args[2]->Int32Value());
-		GLsizeiptr size = GLsizeiptr(args[3]->Int32Value());
-		GLenum format = args[4]->Uint32Value();
-		GLenum type = args[5]->Uint32Value();
+		GLuint buffer = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum internalformat = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLintptr offset = GLintptr(args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLsizeiptr size = GLsizeiptr(args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLenum format = args[4]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[5]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* data = nullptr;
 		if (args[6]->IsArrayBuffer()) {
@@ -7040,38 +7049,38 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			data = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glClearNamedBufferSubData): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glClearNamedBufferSubData): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glClearNamedBufferSubData(buffer, internalformat, offset, size, format, type, data);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "clearNamedFramebufferfi"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "clearNamedFramebufferfi"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("clearNamedFramebufferfi requires 5 arguments");
 			return;
 		}
 
-		GLuint framebuffer = args[0]->Uint32Value();
-		GLenum buffer = args[1]->Uint32Value();
-		GLint drawbuffer = args[2]->Int32Value();
-		GLfloat depth = GLfloat(args[3]->NumberValue());
-		GLint stencil = args[4]->Int32Value();
+		GLuint framebuffer = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum buffer = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint drawbuffer = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLfloat depth = GLfloat(args[3]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLint stencil = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glClearNamedFramebufferfi(framebuffer, buffer, drawbuffer, depth, stencil);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "clearNamedFramebufferfv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "clearNamedFramebufferfv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("clearNamedFramebufferfv requires 4 arguments");
 			return;
 		}
 
-		GLuint framebuffer = args[0]->Uint32Value();
-		GLenum buffer = args[1]->Uint32Value();
-		GLint drawbuffer = args[2]->Int32Value();
+		GLuint framebuffer = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum buffer = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint drawbuffer = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLfloat* value = nullptr;
 		if (args[3]->IsFloat32Array()) {
@@ -7080,23 +7089,23 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glClearNamedFramebufferfv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glClearNamedFramebufferfv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glClearNamedFramebufferfv(framebuffer, buffer, drawbuffer, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "clearNamedFramebufferiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "clearNamedFramebufferiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("clearNamedFramebufferiv requires 4 arguments");
 			return;
 		}
 
-		GLuint framebuffer = args[0]->Uint32Value();
-		GLenum buffer = args[1]->Uint32Value();
-		GLint drawbuffer = args[2]->Int32Value();
+		GLuint framebuffer = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum buffer = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint drawbuffer = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* value = nullptr;
 		if (args[3]->IsInt32Array()) {
@@ -7105,23 +7114,23 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glClearNamedFramebufferiv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glClearNamedFramebufferiv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glClearNamedFramebufferiv(framebuffer, buffer, drawbuffer, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "clearNamedFramebufferuiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "clearNamedFramebufferuiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("clearNamedFramebufferuiv requires 4 arguments");
 			return;
 		}
 
-		GLuint framebuffer = args[0]->Uint32Value();
-		GLenum buffer = args[1]->Uint32Value();
-		GLint drawbuffer = args[2]->Int32Value();
+		GLuint framebuffer = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum buffer = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint drawbuffer = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* value = nullptr;
 		if (args[3]->IsUint32Array()) {
@@ -7130,191 +7139,191 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glClearNamedFramebufferuiv): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glClearNamedFramebufferuiv): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glClearNamedFramebufferuiv(framebuffer, buffer, drawbuffer, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "compressedTextureSubImage1D"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 7) {
-			V8Helper::_instance->throwException("compressedTextureSubImage1D requires 7 arguments");
-			return;
-		}
+	// obj->Set(String::NewFromUtf8(isolate, "compressedTextureSubImage1D"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 7) {
+	// 		V8Helper::_instance->throwException("compressedTextureSubImage1D requires 7 arguments");
+	// 		return;
+	// 	}
 
-		GLuint texture = args[0]->Uint32Value();
-		GLint level = args[1]->Int32Value();
-		GLint xoffset = args[2]->Int32Value();
-		GLsizei width = args[3]->Int32Value();
-		GLenum format = args[4]->Uint32Value();
-		GLsizei imageSize = args[5]->Int32Value();
+	// 	GLuint texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint level = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint xoffset = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLsizei width = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum format = args[4]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLsizei imageSize = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
-		void* data = nullptr;
-		if (args[6]->IsArrayBuffer()) {
-			v8::Local<v8::ArrayBuffer> buffer = (args[6]).As<v8::ArrayBuffer>();
-			void *bdata = buffer->GetContents().Data();
-			data = reinterpret_cast<void*>(bdata);
-		} else if (args[6]->IsArrayBufferView()) {
-			v8::Local<v8::ArrayBufferView> view = (args[6]).As<v8::ArrayBufferView>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			data = reinterpret_cast<void*>(bdata);
-		} else {
-			cout << "ERROR(glCompressedTextureSubImage1D): array must be of type ArrayBuffer" << endl;
-			exit(1);
-		}
-
-
-		glCompressedTextureSubImage1D(texture, level, xoffset, width, format, imageSize, data);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "compressedTextureSubImage2D"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 9) {
-			V8Helper::_instance->throwException("compressedTextureSubImage2D requires 9 arguments");
-			return;
-		}
-
-		GLuint texture = args[0]->Uint32Value();
-		GLint level = args[1]->Int32Value();
-		GLint xoffset = args[2]->Int32Value();
-		GLint yoffset = args[3]->Int32Value();
-		GLsizei width = args[4]->Int32Value();
-		GLsizei height = args[5]->Int32Value();
-		GLenum format = args[6]->Uint32Value();
-		GLsizei imageSize = args[7]->Int32Value();
-
-		void* data = nullptr;
-		if (args[8]->IsArrayBuffer()) {
-			v8::Local<v8::ArrayBuffer> buffer = (args[8]).As<v8::ArrayBuffer>();
-			void *bdata = buffer->GetContents().Data();
-			data = reinterpret_cast<void*>(bdata);
-		} else if (args[8]->IsArrayBufferView()) {
-			v8::Local<v8::ArrayBufferView> view = (args[8]).As<v8::ArrayBufferView>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			data = reinterpret_cast<void*>(bdata);
-		} else {
-			cout << "ERROR(glCompressedTextureSubImage2D): array must be of type ArrayBuffer" << endl;
-			exit(1);
-		}
+	// 	void* data = nullptr;
+	// 	if (args[6]->IsArrayBuffer()) {
+	// 		v8::Local<v8::ArrayBuffer> buffer = (args[6]).As<v8::ArrayBuffer>();
+	// 		void *bdata = buffer->GetContents().Data();
+	// 		data = reinterpret_cast<void*>(bdata);
+	// 	} else if (args[6]->IsArrayBufferView()) {
+	// 		v8::Local<v8::ArrayBufferView> view = (args[6]).As<v8::ArrayBufferView>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		data = reinterpret_cast<void*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glCompressedTextureSubImage1D): array must be of type ArrayBuffer" << endl;
+	// 		//exit(1);
+	// 	}
 
 
-		glCompressedTextureSubImage2D(texture, level, xoffset, yoffset, width, height, format, imageSize, data);
-	}));
+	// 	glCompressedTextureSubImage1D(texture, level, xoffset, width, format, imageSize, data);
+	// }).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "compressedTextureSubImage3D"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 11) {
-			V8Helper::_instance->throwException("compressedTextureSubImage3D requires 11 arguments");
-			return;
-		}
+	// obj->Set(String::NewFromUtf8(isolate, "compressedTextureSubImage2D"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 9) {
+	// 		V8Helper::_instance->throwException("compressedTextureSubImage2D requires 9 arguments");
+	// 		return;
+	// 	}
 
-		GLuint texture = args[0]->Uint32Value();
-		GLint level = args[1]->Int32Value();
-		GLint xoffset = args[2]->Int32Value();
-		GLint yoffset = args[3]->Int32Value();
-		GLint zoffset = args[4]->Int32Value();
-		GLsizei width = args[5]->Int32Value();
-		GLsizei height = args[6]->Int32Value();
-		GLsizei depth = args[7]->Int32Value();
-		GLenum format = args[8]->Uint32Value();
-		GLsizei imageSize = args[9]->Int32Value();
+	// 	GLuint texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint level = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint xoffset = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint yoffset = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLsizei width = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLsizei height = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum format = args[6]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLsizei imageSize = args[7]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
-		void* data = nullptr;
-		if (args[10]->IsArrayBuffer()) {
-			v8::Local<v8::ArrayBuffer> buffer = (args[10]).As<v8::ArrayBuffer>();
-			void *bdata = buffer->GetContents().Data();
-			data = reinterpret_cast<void*>(bdata);
-		} else if (args[10]->IsArrayBufferView()) {
-			v8::Local<v8::ArrayBufferView> view = (args[10]).As<v8::ArrayBufferView>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			data = reinterpret_cast<void*>(bdata);
-		} else {
-			cout << "ERROR(glCompressedTextureSubImage3D): array must be of type ArrayBuffer" << endl;
-			exit(1);
-		}
+	// 	void* data = nullptr;
+	// 	if (args[8]->IsArrayBuffer()) {
+	// 		v8::Local<v8::ArrayBuffer> buffer = (args[8]).As<v8::ArrayBuffer>();
+	// 		void *bdata = buffer->GetContents().Data();
+	// 		data = reinterpret_cast<void*>(bdata);
+	// 	} else if (args[8]->IsArrayBufferView()) {
+	// 		v8::Local<v8::ArrayBufferView> view = (args[8]).As<v8::ArrayBufferView>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		data = reinterpret_cast<void*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glCompressedTextureSubImage2D): array must be of type ArrayBuffer" << endl;
+	// 		//exit(1);
+	// 	}
 
 
-		glCompressedTextureSubImage3D(texture, level, xoffset, yoffset, zoffset, width, height, depth, format, imageSize, data);
-	}));
+	// 	glCompressedTextureSubImage2D(texture, level, xoffset, yoffset, width, height, format, imageSize, data);
+	// }).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "copyNamedBufferSubData"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 5) {
-			V8Helper::_instance->throwException("copyNamedBufferSubData requires 5 arguments");
-			return;
-		}
+	// obj->Set(String::NewFromUtf8(isolate, "compressedTextureSubImage3D"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 11) {
+	// 		V8Helper::_instance->throwException("compressedTextureSubImage3D requires 11 arguments");
+	// 		return;
+	// 	}
 
-		GLuint readBuffer = args[0]->Uint32Value();
-		GLuint writeBuffer = args[1]->Uint32Value();
-		GLintptr readOffset = GLintptr(args[2]->Int32Value());
-		GLintptr writeOffset = GLintptr(args[3]->Int32Value());
-		GLsizeiptr size = GLsizeiptr(args[4]->Int32Value());
+	// 	GLuint texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint level = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint xoffset = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint yoffset = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint zoffset = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLsizei width = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLsizei height = args[6]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLsizei depth = args[7]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum format = args[8]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLsizei imageSize = args[9]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
-		glCopyNamedBufferSubData(readBuffer, writeBuffer, readOffset, writeOffset, size);
-	}));
+	// 	void* data = nullptr;
+	// 	if (args[10]->IsArrayBuffer()) {
+	// 		v8::Local<v8::ArrayBuffer> buffer = (args[10]).As<v8::ArrayBuffer>();
+	// 		void *bdata = buffer->GetContents().Data();
+	// 		data = reinterpret_cast<void*>(bdata);
+	// 	} else if (args[10]->IsArrayBufferView()) {
+	// 		v8::Local<v8::ArrayBufferView> view = (args[10]).As<v8::ArrayBufferView>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		data = reinterpret_cast<void*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glCompressedTextureSubImage3D): array must be of type ArrayBuffer" << endl;
+	// 		//exit(1);
+	// 	}
 
-	tpl->Set(String::NewFromUtf8(isolate, "copyTextureSubImage1D"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+
+	// 	glCompressedTextureSubImage3D(texture, level, xoffset, yoffset, zoffset, width, height, depth, format, imageSize, data);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "copyNamedBufferSubData"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 5) {
+	// 		V8Helper::_instance->throwException("copyNamedBufferSubData requires 5 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint readBuffer = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint writeBuffer = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLintptr readOffset = GLintptr(args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+	// 	GLintptr writeOffset = GLintptr(args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+	// 	GLsizeiptr size = GLsizeiptr(args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+
+	// 	glCopyNamedBufferSubData(readBuffer, writeBuffer, readOffset, writeOffset, size);
+	// }).ToLocalChecked());
+
+	obj->Set(String::NewFromUtf8(isolate, "copyTextureSubImage1D"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 6) {
 			V8Helper::_instance->throwException("copyTextureSubImage1D requires 6 arguments");
 			return;
 		}
 
-		GLuint texture = args[0]->Uint32Value();
-		GLint level = args[1]->Int32Value();
-		GLint xoffset = args[2]->Int32Value();
-		GLint x = args[3]->Int32Value();
-		GLint y = args[4]->Int32Value();
-		GLsizei width = args[5]->Int32Value();
+		GLuint texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint level = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint xoffset = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint x = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint y = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glCopyTextureSubImage1D(texture, level, xoffset, x, y, width);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "copyTextureSubImage2D"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "copyTextureSubImage2D"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 8) {
 			V8Helper::_instance->throwException("copyTextureSubImage2D requires 8 arguments");
 			return;
 		}
 
-		GLuint texture = args[0]->Uint32Value();
-		GLint level = args[1]->Int32Value();
-		GLint xoffset = args[2]->Int32Value();
-		GLint yoffset = args[3]->Int32Value();
-		GLint x = args[4]->Int32Value();
-		GLint y = args[5]->Int32Value();
-		GLsizei width = args[6]->Int32Value();
-		GLsizei height = args[7]->Int32Value();
+		GLuint texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint level = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint xoffset = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint yoffset = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint x = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint y = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[6]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei height = args[7]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glCopyTextureSubImage2D(texture, level, xoffset, yoffset, x, y, width, height);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "copyTextureSubImage3D"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "copyTextureSubImage3D"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 9) {
 			V8Helper::_instance->throwException("copyTextureSubImage3D requires 9 arguments");
 			return;
 		}
 
-		GLuint texture = args[0]->Uint32Value();
-		GLint level = args[1]->Int32Value();
-		GLint xoffset = args[2]->Int32Value();
-		GLint yoffset = args[3]->Int32Value();
-		GLint zoffset = args[4]->Int32Value();
-		GLint x = args[5]->Int32Value();
-		GLint y = args[6]->Int32Value();
-		GLsizei width = args[7]->Int32Value();
-		GLsizei height = args[8]->Int32Value();
+		GLuint texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint level = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint xoffset = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint yoffset = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint zoffset = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint x = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint y = args[6]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[7]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei height = args[8]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glCopyTextureSubImage3D(texture, level, xoffset, yoffset, zoffset, x, y, width, height);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "createBuffers"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "createBuffers"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("createBuffers requires 2 arguments");
 			return;
 		}
 
-		GLsizei n = args[0]->Int32Value();
+		GLsizei n = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* buffers = nullptr;
 		if (args[1]->IsUint32Array()) {
@@ -7323,21 +7332,21 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			buffers = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glCreateBuffers): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glCreateBuffers): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glCreateBuffers(n, buffers);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "createFramebuffers"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "createFramebuffers"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("createFramebuffers requires 2 arguments");
 			return;
 		}
 
-		GLsizei n = args[0]->Int32Value();
+		GLsizei n = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* framebuffers = nullptr;
 		if (args[1]->IsUint32Array()) {
@@ -7346,21 +7355,21 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			framebuffers = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glCreateFramebuffers): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glCreateFramebuffers): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glCreateFramebuffers(n, framebuffers);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "createProgramPipelines"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "createProgramPipelines"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("createProgramPipelines requires 2 arguments");
 			return;
 		}
 
-		GLsizei n = args[0]->Int32Value();
+		GLsizei n = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* pipelines = nullptr;
 		if (args[1]->IsUint32Array()) {
@@ -7369,22 +7378,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			pipelines = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glCreateProgramPipelines): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glCreateProgramPipelines): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glCreateProgramPipelines(n, pipelines);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "createQueries"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "createQueries"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("createQueries requires 3 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLsizei n = args[1]->Int32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei n = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* ids = nullptr;
 		if (args[2]->IsUint32Array()) {
@@ -7393,21 +7402,21 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			ids = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glCreateQueries): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glCreateQueries): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glCreateQueries(target, n, ids);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "createRenderbuffers"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "createRenderbuffers"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("createRenderbuffers requires 2 arguments");
 			return;
 		}
 
-		GLsizei n = args[0]->Int32Value();
+		GLsizei n = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* renderbuffers = nullptr;
 		if (args[1]->IsUint32Array()) {
@@ -7416,21 +7425,21 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			renderbuffers = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glCreateRenderbuffers): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glCreateRenderbuffers): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glCreateRenderbuffers(n, renderbuffers);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "createSamplers"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "createSamplers"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("createSamplers requires 2 arguments");
 			return;
 		}
 
-		GLsizei n = args[0]->Int32Value();
+		GLsizei n = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* samplers = nullptr;
 		if (args[1]->IsUint32Array()) {
@@ -7439,22 +7448,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			samplers = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glCreateSamplers): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glCreateSamplers): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glCreateSamplers(n, samplers);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "createTextures"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "createTextures"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("createTextures requires 3 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLsizei n = args[1]->Int32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei n = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* textures = nullptr;
 		if (args[2]->IsUint32Array()) {
@@ -7463,21 +7472,21 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			textures = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glCreateTextures): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glCreateTextures): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glCreateTextures(target, n, textures);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "createTransformFeedbacks"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "createTransformFeedbacks"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("createTransformFeedbacks requires 2 arguments");
 			return;
 		}
 
-		GLsizei n = args[0]->Int32Value();
+		GLsizei n = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* ids = nullptr;
 		if (args[1]->IsUint32Array()) {
@@ -7486,21 +7495,21 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			ids = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glCreateTransformFeedbacks): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glCreateTransformFeedbacks): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glCreateTransformFeedbacks(n, ids);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "createVertexArrays"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "createVertexArrays"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("createVertexArrays requires 2 arguments");
 			return;
 		}
 
-		GLsizei n = args[0]->Int32Value();
+		GLsizei n = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* arrays = nullptr;
 		if (args[1]->IsUint32Array()) {
@@ -7509,71 +7518,71 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			arrays = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glCreateVertexArrays): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glCreateVertexArrays): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glCreateVertexArrays(n, arrays);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "disableVertexArrayAttrib"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "disableVertexArrayAttrib"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("disableVertexArrayAttrib requires 2 arguments");
 			return;
 		}
 
-		GLuint vaobj = args[0]->Uint32Value();
-		GLuint index = args[1]->Uint32Value();
+		GLuint vaobj = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint index = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glDisableVertexArrayAttrib(vaobj, index);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "enableVertexArrayAttrib"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "enableVertexArrayAttrib"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("enableVertexArrayAttrib requires 2 arguments");
 			return;
 		}
 
-		GLuint vaobj = args[0]->Uint32Value();
-		GLuint index = args[1]->Uint32Value();
+		GLuint vaobj = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint index = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glEnableVertexArrayAttrib(vaobj, index);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "flushMappedNamedBufferRange"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "flushMappedNamedBufferRange"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("flushMappedNamedBufferRange requires 3 arguments");
 			return;
 		}
 
-		GLuint buffer = args[0]->Uint32Value();
-		GLintptr offset = GLintptr(args[1]->Int32Value());
-		GLsizeiptr length = GLsizeiptr(args[2]->Int32Value());
+		GLuint buffer = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLintptr offset = GLintptr(args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLsizeiptr length = GLsizeiptr(args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glFlushMappedNamedBufferRange(buffer, offset, length);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "generateTextureMipmap"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "generateTextureMipmap"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("generateTextureMipmap requires 1 arguments");
 			return;
 		}
 
-		GLuint texture = args[0]->Uint32Value();
+		GLuint texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glGenerateTextureMipmap(texture);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getCompressedTextureImage"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getCompressedTextureImage"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("getCompressedTextureImage requires 4 arguments");
 			return;
 		}
 
-		GLuint texture = args[0]->Uint32Value();
-		GLint level = args[1]->Int32Value();
-		GLsizei bufSize = args[2]->Int32Value();
+		GLuint texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint level = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei bufSize = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* pixels = nullptr;
 		if (args[3]->IsArrayBuffer()) {
@@ -7586,23 +7595,23 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			pixels = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glGetCompressedTextureImage): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glGetCompressedTextureImage): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glGetCompressedTextureImage(texture, level, bufSize, pixels);
-	}));
+	}).ToLocalChecked());
 
 
-	tpl->Set(String::NewFromUtf8(isolate, "getNamedBufferParameteriv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getNamedBufferParameteriv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getNamedBufferParameteriv requires 3 arguments");
 			return;
 		}
 
-		GLuint buffer = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLuint buffer = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* params = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -7611,24 +7620,24 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetNamedBufferParameteriv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetNamedBufferParameteriv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetNamedBufferParameteriv(buffer, pname, params);
-	}));
+	}).ToLocalChecked());
 
 
-	tpl->Set(String::NewFromUtf8(isolate, "getNamedBufferSubData"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getNamedBufferSubData"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("getNamedBufferSubData requires 4 arguments");
 			return;
 		}
 
-		GLuint buffer = args[0]->Uint32Value();
-		GLintptr offset = GLintptr(args[1]->Int32Value());
-		GLsizeiptr size = GLsizeiptr(args[2]->Int32Value());
+		GLuint buffer = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLintptr offset = GLintptr(args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLsizeiptr size = GLsizeiptr(args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		void* data = nullptr;
 		if (args[3]->IsArrayBuffer()) {
@@ -7641,23 +7650,23 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			data = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glGetNamedBufferSubData): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glGetNamedBufferSubData): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glGetNamedBufferSubData(buffer, offset, size, data);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getNamedFramebufferAttachmentParameteriv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getNamedFramebufferAttachmentParameteriv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("getNamedFramebufferAttachmentParameteriv requires 4 arguments");
 			return;
 		}
 
-		GLuint framebuffer = args[0]->Uint32Value();
-		GLenum attachment = args[1]->Uint32Value();
-		GLenum pname = args[2]->Uint32Value();
+		GLuint framebuffer = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum attachment = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* params = nullptr;
 		if (args[3]->IsInt32Array()) {
@@ -7666,22 +7675,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetNamedFramebufferAttachmentParameteriv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetNamedFramebufferAttachmentParameteriv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetNamedFramebufferAttachmentParameteriv(framebuffer, attachment, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getNamedFramebufferParameteriv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getNamedFramebufferParameteriv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getNamedFramebufferParameteriv requires 3 arguments");
 			return;
 		}
 
-		GLuint framebuffer = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLuint framebuffer = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* param = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -7690,22 +7699,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			param = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetNamedFramebufferParameteriv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetNamedFramebufferParameteriv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetNamedFramebufferParameteriv(framebuffer, pname, param);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getNamedRenderbufferParameteriv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getNamedRenderbufferParameteriv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getNamedRenderbufferParameteriv requires 3 arguments");
 			return;
 		}
 
-		GLuint renderbuffer = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLuint renderbuffer = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* params = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -7714,81 +7723,81 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetNamedRenderbufferParameteriv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetNamedRenderbufferParameteriv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetNamedRenderbufferParameteriv(renderbuffer, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getQueryBufferObjecti64v"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getQueryBufferObjecti64v"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("getQueryBufferObjecti64v requires 4 arguments");
 			return;
 		}
 
-		GLuint id = args[0]->Uint32Value();
-		GLuint buffer = args[1]->Uint32Value();
-		GLenum pname = args[2]->Uint32Value();
-		GLintptr offset = GLintptr(args[3]->Int32Value());
+		GLuint id = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint buffer = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLintptr offset = GLintptr(args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glGetQueryBufferObjecti64v(id, buffer, pname, offset);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getQueryBufferObjectiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getQueryBufferObjectiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("getQueryBufferObjectiv requires 4 arguments");
 			return;
 		}
 
-		GLuint id = args[0]->Uint32Value();
-		GLuint buffer = args[1]->Uint32Value();
-		GLenum pname = args[2]->Uint32Value();
-		GLintptr offset = GLintptr(args[3]->Int32Value());
+		GLuint id = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint buffer = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLintptr offset = GLintptr(args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glGetQueryBufferObjectiv(id, buffer, pname, offset);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getQueryBufferObjectui64v"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getQueryBufferObjectui64v"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("getQueryBufferObjectui64v requires 4 arguments");
 			return;
 		}
 
-		GLuint id = args[0]->Uint32Value();
-		GLuint buffer = args[1]->Uint32Value();
-		GLenum pname = args[2]->Uint32Value();
-		GLintptr offset = GLintptr(args[3]->Int32Value());
+		GLuint id = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint buffer = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLintptr offset = GLintptr(args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glGetQueryBufferObjectui64v(id, buffer, pname, offset);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getQueryBufferObjectuiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getQueryBufferObjectuiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("getQueryBufferObjectuiv requires 4 arguments");
 			return;
 		}
 
-		GLuint id = args[0]->Uint32Value();
-		GLuint buffer = args[1]->Uint32Value();
-		GLenum pname = args[2]->Uint32Value();
-		GLintptr offset = GLintptr(args[3]->Int32Value());
+		GLuint id = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint buffer = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLintptr offset = GLintptr(args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glGetQueryBufferObjectuiv(id, buffer, pname, offset);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getTextureImage"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getTextureImage"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 6) {
 			V8Helper::_instance->throwException("getTextureImage requires 6 arguments");
 			return;
 		}
 
-		GLuint texture = args[0]->Uint32Value();
-		GLint level = args[1]->Int32Value();
-		GLenum format = args[2]->Uint32Value();
-		GLenum type = args[3]->Uint32Value();
-		GLsizei bufSize = args[4]->Int32Value();
+		GLuint texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint level = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum format = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei bufSize = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* pixels = nullptr;
 		if (args[5]->IsArrayBuffer()) {
@@ -7801,23 +7810,23 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			pixels = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glGetTextureImage): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glGetTextureImage): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glGetTextureImage(texture, level, format, type, bufSize, pixels);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getTextureLevelParameterfv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getTextureLevelParameterfv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("getTextureLevelParameterfv requires 4 arguments");
 			return;
 		}
 
-		GLuint texture = args[0]->Uint32Value();
-		GLint level = args[1]->Int32Value();
-		GLenum pname = args[2]->Uint32Value();
+		GLuint texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint level = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLfloat* params = nullptr;
 		if (args[3]->IsFloat32Array()) {
@@ -7826,23 +7835,23 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glGetTextureLevelParameterfv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetTextureLevelParameterfv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetTextureLevelParameterfv(texture, level, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getTextureLevelParameteriv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getTextureLevelParameteriv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("getTextureLevelParameteriv requires 4 arguments");
 			return;
 		}
 
-		GLuint texture = args[0]->Uint32Value();
-		GLint level = args[1]->Int32Value();
-		GLenum pname = args[2]->Uint32Value();
+		GLuint texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint level = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* params = nullptr;
 		if (args[3]->IsInt32Array()) {
@@ -7851,22 +7860,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetTextureLevelParameteriv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetTextureLevelParameteriv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetTextureLevelParameteriv(texture, level, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getTextureParameterIiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getTextureParameterIiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getTextureParameterIiv requires 3 arguments");
 			return;
 		}
 
-		GLuint texture = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLuint texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* params = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -7875,22 +7884,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetTextureParameterIiv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetTextureParameterIiv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetTextureParameterIiv(texture, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getTextureParameterIuiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getTextureParameterIuiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getTextureParameterIuiv requires 3 arguments");
 			return;
 		}
 
-		GLuint texture = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLuint texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* params = nullptr;
 		if (args[2]->IsUint32Array()) {
@@ -7899,22 +7908,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glGetTextureParameterIuiv): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetTextureParameterIuiv): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetTextureParameterIuiv(texture, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getTextureParameterfv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getTextureParameterfv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getTextureParameterfv requires 3 arguments");
 			return;
 		}
 
-		GLuint texture = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLuint texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLfloat* params = nullptr;
 		if (args[2]->IsFloat32Array()) {
@@ -7923,22 +7932,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glGetTextureParameterfv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetTextureParameterfv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetTextureParameterfv(texture, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getTextureParameteriv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getTextureParameteriv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getTextureParameteriv requires 3 arguments");
 			return;
 		}
 
-		GLuint texture = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLuint texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* params = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -7947,24 +7956,24 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetTextureParameteriv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetTextureParameteriv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetTextureParameteriv(texture, pname, params);
-	}));
+	}).ToLocalChecked());
 
 
-	tpl->Set(String::NewFromUtf8(isolate, "getTransformFeedbacki_v"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getTransformFeedbacki_v"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("getTransformFeedbacki_v requires 4 arguments");
 			return;
 		}
 
-		GLuint xfb = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
-		GLuint index = args[2]->Uint32Value();
+		GLuint xfb = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint index = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* param = nullptr;
 		if (args[3]->IsInt32Array()) {
@@ -7973,22 +7982,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			param = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetTransformFeedbacki_v): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetTransformFeedbacki_v): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetTransformFeedbacki_v(xfb, pname, index, param);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getTransformFeedbackiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getTransformFeedbackiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getTransformFeedbackiv requires 3 arguments");
 			return;
 		}
 
-		GLuint xfb = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLuint xfb = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* param = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -7997,24 +8006,24 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			param = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetTransformFeedbackiv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetTransformFeedbackiv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetTransformFeedbackiv(xfb, pname, param);
-	}));
+	}).ToLocalChecked());
 
 
-	tpl->Set(String::NewFromUtf8(isolate, "getVertexArrayIndexediv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getVertexArrayIndexediv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("getVertexArrayIndexediv requires 4 arguments");
 			return;
 		}
 
-		GLuint vaobj = args[0]->Uint32Value();
-		GLuint index = args[1]->Uint32Value();
-		GLenum pname = args[2]->Uint32Value();
+		GLuint vaobj = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint index = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* param = nullptr;
 		if (args[3]->IsInt32Array()) {
@@ -8023,22 +8032,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			param = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetVertexArrayIndexediv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetVertexArrayIndexediv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetVertexArrayIndexediv(vaobj, index, pname, param);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getVertexArrayiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getVertexArrayiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getVertexArrayiv requires 3 arguments");
 			return;
 		}
 
-		GLuint vaobj = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLuint vaobj = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* param = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -8047,22 +8056,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			param = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetVertexArrayiv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetVertexArrayiv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetVertexArrayiv(vaobj, pname, param);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "invalidateNamedFramebufferData"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "invalidateNamedFramebufferData"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("invalidateNamedFramebufferData requires 3 arguments");
 			return;
 		}
 
-		GLuint framebuffer = args[0]->Uint32Value();
-		GLsizei numAttachments = args[1]->Int32Value();
+		GLuint framebuffer = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei numAttachments = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLenum* attachments = nullptr;
 		if (args[2]->IsUint32Array()) {
@@ -8071,22 +8080,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			attachments = reinterpret_cast<GLenum*>(bdata);
 		} else {
-			cout << "ERROR(glInvalidateNamedFramebufferData): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glInvalidateNamedFramebufferData): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glInvalidateNamedFramebufferData(framebuffer, numAttachments, attachments);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "invalidateNamedFramebufferSubData"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "invalidateNamedFramebufferSubData"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 7) {
 			V8Helper::_instance->throwException("invalidateNamedFramebufferSubData requires 7 arguments");
 			return;
 		}
 
-		GLuint framebuffer = args[0]->Uint32Value();
-		GLsizei numAttachments = args[1]->Int32Value();
+		GLuint framebuffer = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei numAttachments = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLenum* attachments = nullptr;
 		if (args[2]->IsUint32Array()) {
@@ -8095,26 +8104,26 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			attachments = reinterpret_cast<GLenum*>(bdata);
 		} else {
-			cout << "ERROR(glInvalidateNamedFramebufferSubData): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glInvalidateNamedFramebufferSubData): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
-		GLint x = args[3]->Int32Value();
-		GLint y = args[4]->Int32Value();
-		GLsizei width = args[5]->Int32Value();
-		GLsizei height = args[6]->Int32Value();
+		GLint x = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint y = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei height = args[6]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glInvalidateNamedFramebufferSubData(framebuffer, numAttachments, attachments, x, y, width, height);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "namedBufferData"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "namedBufferData"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("namedBufferData requires 4 arguments");
 			return;
 		}
 
-		GLuint buffer = args[0]->Uint32Value();
-		GLsizeiptr size = GLsizeiptr(args[1]->Int32Value());
+		GLuint buffer = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizeiptr size = GLsizeiptr(args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		void* data = nullptr;
 		if (args[2]->IsArrayBuffer()) {
@@ -8131,19 +8140,19 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			//exit(1);
 		}
 
-		GLenum usage = args[3]->Uint32Value();
+		GLenum usage = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glNamedBufferData(buffer, size, data, usage);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "namedBufferStorage"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "namedBufferStorage"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("namedBufferStorage requires 4 arguments");
 			return;
 		}
 
-		GLuint buffer = args[0]->Uint32Value();
-		GLsizeiptr size = GLsizeiptr(args[1]->Int32Value());
+		GLuint buffer = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizeiptr size = GLsizeiptr(args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		void* data = nullptr;
 		if (args[2]->IsArrayBuffer()) {
@@ -8156,24 +8165,24 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			data = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glNamedBufferStorage): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glNamedBufferStorage): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
-		GLbitfield flags = args[3]->Uint32Value();
+		GLbitfield flags = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glNamedBufferStorage(buffer, size, data, flags);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "namedBufferSubData"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "namedBufferSubData"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("namedBufferSubData requires 4 arguments");
 			return;
 		}
 
-		GLuint buffer = args[0]->Uint32Value();
-		GLintptr offset = GLintptr(args[1]->Int32Value());
-		GLsizeiptr size = GLsizeiptr(args[2]->Int32Value());
+		GLuint buffer = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLintptr offset = GLintptr(args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLsizeiptr size = GLsizeiptr(args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		void* data = nullptr;
 		if (args[3]->IsArrayBuffer()) {
@@ -8186,34 +8195,34 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			data = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glNamedBufferSubData): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glNamedBufferSubData): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glNamedBufferSubData(buffer, offset, size, data);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "namedFramebufferDrawBuffer"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "namedFramebufferDrawBuffer"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("namedFramebufferDrawBuffer requires 2 arguments");
 			return;
 		}
 
-		GLuint framebuffer = args[0]->Uint32Value();
-		GLenum mode = args[1]->Uint32Value();
+		GLuint framebuffer = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum mode = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glNamedFramebufferDrawBuffer(framebuffer, mode);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "namedFramebufferDrawBuffers"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "namedFramebufferDrawBuffers"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("namedFramebufferDrawBuffers requires 3 arguments");
 			return;
 		}
 
-		GLuint framebuffer = args[0]->Uint32Value();
-		GLsizei n = args[1]->Int32Value();
+		GLuint framebuffer = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei n = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLenum* bufs = nullptr;
 		if (args[2]->IsUint32Array()) {
@@ -8222,147 +8231,147 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			bufs = reinterpret_cast<GLenum*>(bdata);
 		} else {
-			cout << "ERROR(glNamedFramebufferDrawBuffers): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glNamedFramebufferDrawBuffers): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glNamedFramebufferDrawBuffers(framebuffer, n, bufs);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "namedFramebufferParameteri"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "namedFramebufferParameteri"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("namedFramebufferParameteri requires 3 arguments");
 			return;
 		}
 
-		GLuint framebuffer = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
-		GLint param = args[2]->Int32Value();
+		GLuint framebuffer = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint param = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glNamedFramebufferParameteri(framebuffer, pname, param);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "namedFramebufferReadBuffer"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "namedFramebufferReadBuffer"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("namedFramebufferReadBuffer requires 2 arguments");
 			return;
 		}
 
-		GLuint framebuffer = args[0]->Uint32Value();
-		GLenum mode = args[1]->Uint32Value();
+		GLuint framebuffer = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum mode = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glNamedFramebufferReadBuffer(framebuffer, mode);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "namedFramebufferRenderbuffer"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "namedFramebufferRenderbuffer"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("namedFramebufferRenderbuffer requires 4 arguments");
 			return;
 		}
 
-		GLuint framebuffer = args[0]->Uint32Value();
-		GLenum attachment = args[1]->Uint32Value();
-		GLenum renderbuffertarget = args[2]->Uint32Value();
-		GLuint renderbuffer = args[3]->Uint32Value();
+		GLuint framebuffer = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum attachment = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum renderbuffertarget = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint renderbuffer = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glNamedFramebufferRenderbuffer(framebuffer, attachment, renderbuffertarget, renderbuffer);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "namedFramebufferTexture"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "namedFramebufferTexture"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("namedFramebufferTexture requires 4 arguments");
 			return;
 		}
 
-		GLuint framebuffer = args[0]->Uint32Value();
-		GLenum attachment = args[1]->Uint32Value();
-		GLuint texture = args[2]->Uint32Value();
-		GLint level = args[3]->Int32Value();
+		GLuint framebuffer = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum attachment = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint texture = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint level = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glNamedFramebufferTexture(framebuffer, attachment, texture, level);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "namedFramebufferTextureLayer"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "namedFramebufferTextureLayer"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("namedFramebufferTextureLayer requires 5 arguments");
 			return;
 		}
 
-		GLuint framebuffer = args[0]->Uint32Value();
-		GLenum attachment = args[1]->Uint32Value();
-		GLuint texture = args[2]->Uint32Value();
-		GLint level = args[3]->Int32Value();
-		GLint layer = args[4]->Int32Value();
+		GLuint framebuffer = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum attachment = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint texture = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint level = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint layer = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glNamedFramebufferTextureLayer(framebuffer, attachment, texture, level, layer);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "namedRenderbufferStorage"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "namedRenderbufferStorage"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("namedRenderbufferStorage requires 4 arguments");
 			return;
 		}
 
-		GLuint renderbuffer = args[0]->Uint32Value();
-		GLenum internalformat = args[1]->Uint32Value();
-		GLsizei width = args[2]->Int32Value();
-		GLsizei height = args[3]->Int32Value();
+		GLuint renderbuffer = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum internalformat = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei height = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glNamedRenderbufferStorage(renderbuffer, internalformat, width, height);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "namedRenderbufferStorageMultisample"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "namedRenderbufferStorageMultisample"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("namedRenderbufferStorageMultisample requires 5 arguments");
 			return;
 		}
 
-		GLuint renderbuffer = args[0]->Uint32Value();
-		GLsizei samples = args[1]->Int32Value();
-		GLenum internalformat = args[2]->Uint32Value();
-		GLsizei width = args[3]->Int32Value();
-		GLsizei height = args[4]->Int32Value();
+		GLuint renderbuffer = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei samples = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum internalformat = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei height = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glNamedRenderbufferStorageMultisample(renderbuffer, samples, internalformat, width, height);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "textureBuffer"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "textureBuffer"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("textureBuffer requires 3 arguments");
 			return;
 		}
 
-		GLuint texture = args[0]->Uint32Value();
-		GLenum internalformat = args[1]->Uint32Value();
-		GLuint buffer = args[2]->Uint32Value();
+		GLuint texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum internalformat = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint buffer = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glTextureBuffer(texture, internalformat, buffer);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "textureBufferRange"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "textureBufferRange"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("textureBufferRange requires 5 arguments");
 			return;
 		}
 
-		GLuint texture = args[0]->Uint32Value();
-		GLenum internalformat = args[1]->Uint32Value();
-		GLuint buffer = args[2]->Uint32Value();
-		GLintptr offset = GLintptr(args[3]->Int32Value());
-		GLsizeiptr size = GLsizeiptr(args[4]->Int32Value());
+		GLuint texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum internalformat = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint buffer = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLintptr offset = GLintptr(args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLsizeiptr size = GLsizeiptr(args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glTextureBufferRange(texture, internalformat, buffer, offset, size);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "textureParameterIiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "textureParameterIiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("textureParameterIiv requires 3 arguments");
 			return;
 		}
 
-		GLuint texture = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLuint texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* params = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -8371,22 +8380,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glTextureParameterIiv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glTextureParameterIiv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glTextureParameterIiv(texture, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "textureParameterIuiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "textureParameterIuiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("textureParameterIuiv requires 3 arguments");
 			return;
 		}
 
-		GLuint texture = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLuint texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* params = nullptr;
 		if (args[2]->IsUint32Array()) {
@@ -8395,35 +8404,35 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glTextureParameterIuiv): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glTextureParameterIuiv): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glTextureParameterIuiv(texture, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "textureParameterf"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "textureParameterf"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("textureParameterf requires 3 arguments");
 			return;
 		}
 
-		GLuint texture = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
-		GLfloat param = GLfloat(args[2]->NumberValue());
+		GLuint texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLfloat param = GLfloat(args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glTextureParameterf(texture, pname, param);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "textureParameterfv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "textureParameterfv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("textureParameterfv requires 3 arguments");
 			return;
 		}
 
-		GLuint texture = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLuint texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLfloat* param = nullptr;
 		if (args[2]->IsFloat32Array()) {
@@ -8432,35 +8441,35 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			param = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glTextureParameterfv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glTextureParameterfv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glTextureParameterfv(texture, pname, param);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "textureParameteri"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "textureParameteri"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("textureParameteri requires 3 arguments");
 			return;
 		}
 
-		GLuint texture = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
-		GLint param = args[2]->Int32Value();
+		GLuint texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint param = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glTextureParameteri(texture, pname, param);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "textureParameteriv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "textureParameteriv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("textureParameteriv requires 3 arguments");
 			return;
 		}
 
-		GLuint texture = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLuint texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* param = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -8469,104 +8478,104 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			param = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glTextureParameteriv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glTextureParameteriv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glTextureParameteriv(texture, pname, param);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "textureStorage1D"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "textureStorage1D"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("textureStorage1D requires 4 arguments");
 			return;
 		}
 
-		GLuint texture = args[0]->Uint32Value();
-		GLsizei levels = args[1]->Int32Value();
-		GLenum internalformat = args[2]->Uint32Value();
-		GLsizei width = args[3]->Int32Value();
+		GLuint texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei levels = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum internalformat = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glTextureStorage1D(texture, levels, internalformat, width);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "textureStorage2D"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "textureStorage2D"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("textureStorage2D requires 5 arguments");
 			return;
 		}
 
-		GLuint texture = args[0]->Uint32Value();
-		GLsizei levels = args[1]->Int32Value();
-		GLenum internalformat = args[2]->Uint32Value();
-		GLsizei width = args[3]->Int32Value();
-		GLsizei height = args[4]->Int32Value();
+		GLuint texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei levels = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum internalformat = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei height = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glTextureStorage2D(texture, levels, internalformat, width, height);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "textureStorage2DMultisample"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "textureStorage2DMultisample"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 6) {
 			V8Helper::_instance->throwException("textureStorage2DMultisample requires 6 arguments");
 			return;
 		}
 
-		GLuint texture = args[0]->Uint32Value();
-		GLsizei samples = args[1]->Int32Value();
-		GLenum internalformat = args[2]->Uint32Value();
-		GLsizei width = args[3]->Int32Value();
-		GLsizei height = args[4]->Int32Value();
-		GLboolean fixedsamplelocations = GLboolean(args[5]->Uint32Value());
+		GLuint texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei samples = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum internalformat = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei height = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLboolean fixedsamplelocations = GLboolean(args[5]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glTextureStorage2DMultisample(texture, samples, internalformat, width, height, fixedsamplelocations);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "textureStorage3D"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "textureStorage3D"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 6) {
 			V8Helper::_instance->throwException("textureStorage3D requires 6 arguments");
 			return;
 		}
 
-		GLuint texture = args[0]->Uint32Value();
-		GLsizei levels = args[1]->Int32Value();
-		GLenum internalformat = args[2]->Uint32Value();
-		GLsizei width = args[3]->Int32Value();
-		GLsizei height = args[4]->Int32Value();
-		GLsizei depth = args[5]->Int32Value();
+		GLuint texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei levels = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum internalformat = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei height = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei depth = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glTextureStorage3D(texture, levels, internalformat, width, height, depth);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "textureStorage3DMultisample"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "textureStorage3DMultisample"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 7) {
 			V8Helper::_instance->throwException("textureStorage3DMultisample requires 7 arguments");
 			return;
 		}
 
-		GLuint texture = args[0]->Uint32Value();
-		GLsizei samples = args[1]->Int32Value();
-		GLenum internalformat = args[2]->Uint32Value();
-		GLsizei width = args[3]->Int32Value();
-		GLsizei height = args[4]->Int32Value();
-		GLsizei depth = args[5]->Int32Value();
-		GLboolean fixedsamplelocations = GLboolean(args[6]->Uint32Value());
+		GLuint texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei samples = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum internalformat = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei height = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei depth = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLboolean fixedsamplelocations = GLboolean(args[6]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glTextureStorage3DMultisample(texture, samples, internalformat, width, height, depth, fixedsamplelocations);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "textureSubImage1D"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "textureSubImage1D"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 7) {
 			V8Helper::_instance->throwException("textureSubImage1D requires 7 arguments");
 			return;
 		}
 
-		GLuint texture = args[0]->Uint32Value();
-		GLint level = args[1]->Int32Value();
-		GLint xoffset = args[2]->Int32Value();
-		GLsizei width = args[3]->Int32Value();
-		GLenum format = args[4]->Uint32Value();
-		GLenum type = args[5]->Uint32Value();
+		GLuint texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint level = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint xoffset = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum format = args[4]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[5]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* pixels = nullptr;
 		if (args[6]->IsArrayBuffer()) {
@@ -8579,28 +8588,28 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			pixels = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glTextureSubImage1D): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glTextureSubImage1D): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glTextureSubImage1D(texture, level, xoffset, width, format, type, pixels);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "textureSubImage2D"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "textureSubImage2D"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 9) {
 			V8Helper::_instance->throwException("textureSubImage2D requires 9 arguments");
 			return;
 		}
 
-		GLuint texture = args[0]->Uint32Value();
-		GLint level = args[1]->Int32Value();
-		GLint xoffset = args[2]->Int32Value();
-		GLint yoffset = args[3]->Int32Value();
-		GLsizei width = args[4]->Int32Value();
-		GLsizei height = args[5]->Int32Value();
-		GLenum format = args[6]->Uint32Value();
-		GLenum type = args[7]->Uint32Value();
+		GLuint texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint level = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint xoffset = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint yoffset = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei height = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum format = args[6]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[7]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* pixels = nullptr;
 		if (args[8]->IsArrayBuffer()) {
@@ -8613,30 +8622,30 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			pixels = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glTextureSubImage2D): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glTextureSubImage2D): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glTextureSubImage2D(texture, level, xoffset, yoffset, width, height, format, type, pixels);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "textureSubImage3D"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "textureSubImage3D"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 11) {
 			V8Helper::_instance->throwException("textureSubImage3D requires 11 arguments");
 			return;
 		}
 
-		GLuint texture = args[0]->Uint32Value();
-		GLint level = args[1]->Int32Value();
-		GLint xoffset = args[2]->Int32Value();
-		GLint yoffset = args[3]->Int32Value();
-		GLint zoffset = args[4]->Int32Value();
-		GLsizei width = args[5]->Int32Value();
-		GLsizei height = args[6]->Int32Value();
-		GLsizei depth = args[7]->Int32Value();
-		GLenum format = args[8]->Uint32Value();
-		GLenum type = args[9]->Uint32Value();
+		GLuint texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint level = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint xoffset = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint yoffset = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint zoffset = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei height = args[6]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei depth = args[7]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum format = args[8]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[9]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* pixels = nullptr;
 		if (args[10]->IsArrayBuffer()) {
@@ -8649,140 +8658,140 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			pixels = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glTextureSubImage3D): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glTextureSubImage3D): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glTextureSubImage3D(texture, level, xoffset, yoffset, zoffset, width, height, depth, format, type, pixels);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "transformFeedbackBufferBase"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "transformFeedbackBufferBase"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("transformFeedbackBufferBase requires 3 arguments");
 			return;
 		}
 
-		GLuint xfb = args[0]->Uint32Value();
-		GLuint index = args[1]->Uint32Value();
-		GLuint buffer = args[2]->Uint32Value();
+		GLuint xfb = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint index = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint buffer = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glTransformFeedbackBufferBase(xfb, index, buffer);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "transformFeedbackBufferRange"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "transformFeedbackBufferRange"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("transformFeedbackBufferRange requires 5 arguments");
 			return;
 		}
 
-		GLuint xfb = args[0]->Uint32Value();
-		GLuint index = args[1]->Uint32Value();
-		GLuint buffer = args[2]->Uint32Value();
-		GLintptr offset = GLintptr(args[3]->Int32Value());
-		GLsizeiptr size = GLsizeiptr(args[4]->Int32Value());
+		GLuint xfb = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint index = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint buffer = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLintptr offset = GLintptr(args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLsizeiptr size = GLsizeiptr(args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glTransformFeedbackBufferRange(xfb, index, buffer, offset, size);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexArrayAttribBinding"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexArrayAttribBinding"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("vertexArrayAttribBinding requires 3 arguments");
 			return;
 		}
 
-		GLuint vaobj = args[0]->Uint32Value();
-		GLuint attribindex = args[1]->Uint32Value();
-		GLuint bindingindex = args[2]->Uint32Value();
+		GLuint vaobj = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint attribindex = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint bindingindex = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glVertexArrayAttribBinding(vaobj, attribindex, bindingindex);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexArrayAttribFormat"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexArrayAttribFormat"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 6) {
 			V8Helper::_instance->throwException("vertexArrayAttribFormat requires 6 arguments");
 			return;
 		}
 
-		GLuint vaobj = args[0]->Uint32Value();
-		GLuint attribindex = args[1]->Uint32Value();
-		GLint size = args[2]->Int32Value();
-		GLenum type = args[3]->Uint32Value();
-		GLboolean normalized = GLboolean(args[4]->Uint32Value());
-		GLuint relativeoffset = args[5]->Uint32Value();
+		GLuint vaobj = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint attribindex = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint size = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLboolean normalized = GLboolean(args[4]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLuint relativeoffset = args[5]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glVertexArrayAttribFormat(vaobj, attribindex, size, type, normalized, relativeoffset);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexArrayAttribIFormat"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexArrayAttribIFormat"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("vertexArrayAttribIFormat requires 5 arguments");
 			return;
 		}
 
-		GLuint vaobj = args[0]->Uint32Value();
-		GLuint attribindex = args[1]->Uint32Value();
-		GLint size = args[2]->Int32Value();
-		GLenum type = args[3]->Uint32Value();
-		GLuint relativeoffset = args[4]->Uint32Value();
+		GLuint vaobj = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint attribindex = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint size = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint relativeoffset = args[4]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glVertexArrayAttribIFormat(vaobj, attribindex, size, type, relativeoffset);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexArrayAttribLFormat"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexArrayAttribLFormat"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("vertexArrayAttribLFormat requires 5 arguments");
 			return;
 		}
 
-		GLuint vaobj = args[0]->Uint32Value();
-		GLuint attribindex = args[1]->Uint32Value();
-		GLint size = args[2]->Int32Value();
-		GLenum type = args[3]->Uint32Value();
-		GLuint relativeoffset = args[4]->Uint32Value();
+		GLuint vaobj = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint attribindex = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint size = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint relativeoffset = args[4]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glVertexArrayAttribLFormat(vaobj, attribindex, size, type, relativeoffset);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexArrayBindingDivisor"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexArrayBindingDivisor"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("vertexArrayBindingDivisor requires 3 arguments");
 			return;
 		}
 
-		GLuint vaobj = args[0]->Uint32Value();
-		GLuint bindingindex = args[1]->Uint32Value();
-		GLuint divisor = args[2]->Uint32Value();
+		GLuint vaobj = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint bindingindex = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint divisor = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glVertexArrayBindingDivisor(vaobj, bindingindex, divisor);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexArrayElementBuffer"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexArrayElementBuffer"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("vertexArrayElementBuffer requires 2 arguments");
 			return;
 		}
 
-		GLuint vaobj = args[0]->Uint32Value();
-		GLuint buffer = args[1]->Uint32Value();
+		GLuint vaobj = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint buffer = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glVertexArrayElementBuffer(vaobj, buffer);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexArrayVertexBuffer"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexArrayVertexBuffer"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("vertexArrayVertexBuffer requires 5 arguments");
 			return;
 		}
 
-		GLuint vaobj = args[0]->Uint32Value();
-		GLuint bindingindex = args[1]->Uint32Value();
-		GLuint buffer = args[2]->Uint32Value();
-		GLintptr offset = GLintptr(args[3]->Int32Value());
-		GLsizei stride = args[4]->Int32Value();
+		GLuint vaobj = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint bindingindex = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint buffer = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLintptr offset = GLintptr(args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLsizei stride = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glVertexArrayVertexBuffer(vaobj, bindingindex, buffer, offset, stride);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -8792,15 +8801,15 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	/* ------------------------------ GL_ARB_draw_elements_base_vertex ------------------------------ */
 
 
-	tpl->Set(String::NewFromUtf8(isolate, "drawElementsBaseVertex"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "drawElementsBaseVertex"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("drawElementsBaseVertex requires 5 arguments");
 			return;
 		}
 
-		GLenum mode = args[0]->Uint32Value();
-		GLsizei count = args[1]->Int32Value();
-		GLenum type = args[2]->Uint32Value();
+		GLenum mode = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* indices = nullptr;
 		if (args[3]->IsArrayBuffer()) {
@@ -8813,24 +8822,24 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			indices = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glDrawElementsBaseVertex): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glDrawElementsBaseVertex): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
-		GLint basevertex = args[4]->Int32Value();
+		GLint basevertex = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glDrawElementsBaseVertex(mode, count, type, indices, basevertex);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "drawElementsInstancedBaseVertex"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "drawElementsInstancedBaseVertex"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 6) {
 			V8Helper::_instance->throwException("drawElementsInstancedBaseVertex requires 6 arguments");
 			return;
 		}
 
-		GLenum mode = args[0]->Uint32Value();
-		GLsizei count = args[1]->Int32Value();
-		GLenum type = args[2]->Uint32Value();
+		GLenum mode = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* indices = nullptr;
 		if (args[3]->IsArrayBuffer()) {
@@ -8843,27 +8852,27 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			indices = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glDrawElementsInstancedBaseVertex): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glDrawElementsInstancedBaseVertex): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
-		GLsizei primcount = args[4]->Int32Value();
-		GLint basevertex = args[5]->Int32Value();
+		GLsizei primcount = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint basevertex = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glDrawElementsInstancedBaseVertex(mode, count, type, indices, primcount, basevertex);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "drawRangeElementsBaseVertex"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "drawRangeElementsBaseVertex"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 7) {
 			V8Helper::_instance->throwException("drawRangeElementsBaseVertex requires 7 arguments");
 			return;
 		}
 
-		GLenum mode = args[0]->Uint32Value();
-		GLuint start = args[1]->Uint32Value();
-		GLuint end = args[2]->Uint32Value();
-		GLsizei count = args[3]->Int32Value();
-		GLenum type = args[4]->Uint32Value();
+		GLenum mode = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint start = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint end = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[4]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* indices = nullptr;
 		if (args[5]->IsArrayBuffer()) {
@@ -8876,14 +8885,14 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			indices = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glDrawRangeElementsBaseVertex): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glDrawRangeElementsBaseVertex): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
-		GLint basevertex = args[6]->Int32Value();
+		GLint basevertex = args[6]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glDrawRangeElementsBaseVertex(mode, start, end, count, type, indices, basevertex);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -8893,13 +8902,13 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("DRAW_INDIRECT_BUFFER", GL_DRAW_INDIRECT_BUFFER);
 	CREATE_CONSTANT_ACCESSOR("DRAW_INDIRECT_BUFFER_BINDING", GL_DRAW_INDIRECT_BUFFER_BINDING);
 
-	tpl->Set(String::NewFromUtf8(isolate, "drawArraysIndirect"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "drawArraysIndirect"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("drawArraysIndirect requires 2 arguments");
 			return;
 		}
 
-		GLenum mode = args[0]->Uint32Value();
+		GLenum mode = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* indirect = nullptr;
 		if (args[1]->IsArrayBuffer()) {
@@ -8918,16 +8927,16 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 
 
 		glDrawArraysIndirect(mode, indirect);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "drawElementsIndirect"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "drawElementsIndirect"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("drawElementsIndirect requires 3 arguments");
 			return;
 		}
 
-		GLenum mode = args[0]->Uint32Value();
-		GLenum type = args[1]->Uint32Value();
+		GLenum mode = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* indirect = nullptr;
 		if (args[2]->IsArrayBuffer()) {
@@ -8940,12 +8949,13 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			indirect = reinterpret_cast<void*>(bdata);
 		} else {
-			
+			//cout << "ERROR(glDrawElementsIndirect): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glDrawElementsIndirect(mode, type, indirect);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -8977,37 +8987,37 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("MAX_VARYING_VECTORS", GL_MAX_VARYING_VECTORS);
 	CREATE_CONSTANT_ACCESSOR("MAX_FRAGMENT_UNIFORM_VECTORS", GL_MAX_FRAGMENT_UNIFORM_VECTORS);
 
-	tpl->Set(String::NewFromUtf8(isolate, "clearDepthf"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "clearDepthf"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("clearDepthf requires 1 arguments");
 			return;
 		}
 
-		GLclampf d = GLclampf(args[0]->NumberValue());
+		GLclampf d = GLclampf(args[0]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glClearDepthf(d);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "depthRangef"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "depthRangef"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("depthRangef requires 2 arguments");
 			return;
 		}
 
-		GLclampf n = GLclampf(args[0]->NumberValue());
-		GLclampf f = GLclampf(args[1]->NumberValue());
+		GLclampf n = GLclampf(args[0]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLclampf f = GLclampf(args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glDepthRangef(n, f);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getShaderPrecisionFormat"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getShaderPrecisionFormat"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("getShaderPrecisionFormat requires 4 arguments");
 			return;
 		}
 
-		GLenum shadertype = args[0]->Uint32Value();
-		GLenum precisiontype = args[1]->Uint32Value();
+		GLenum shadertype = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum precisiontype = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* range = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -9016,8 +9026,8 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			range = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetShaderPrecisionFormat): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetShaderPrecisionFormat): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
@@ -9028,13 +9038,13 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			precision = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetShaderPrecisionFormat): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetShaderPrecisionFormat): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetShaderPrecisionFormat(shadertype, precisiontype, range, precision);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -9043,16 +9053,16 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	/* ------------------------------ GL_ARB_ES3_1_compatibility ------------------------------ */
 
 
-	tpl->Set(String::NewFromUtf8(isolate, "memoryBarrierByRegion"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "memoryBarrierByRegion"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("memoryBarrierByRegion requires 1 arguments");
 			return;
 		}
 
-		GLbitfield barriers = args[0]->Uint32Value();
+		GLbitfield barriers = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glMemoryBarrierByRegion(barriers);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -9101,27 +9111,27 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("MAX_FRAMEBUFFER_LAYERS", GL_MAX_FRAMEBUFFER_LAYERS);
 	CREATE_CONSTANT_ACCESSOR("MAX_FRAMEBUFFER_SAMPLES", GL_MAX_FRAMEBUFFER_SAMPLES);
 
-	tpl->Set(String::NewFromUtf8(isolate, "framebufferParameteri"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "framebufferParameteri"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("framebufferParameteri requires 3 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
-		GLint param = args[2]->Int32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint param = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glFramebufferParameteri(target, pname, param);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getFramebufferParameteriv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getFramebufferParameteriv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getFramebufferParameteriv requires 3 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* params = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -9130,13 +9140,13 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetFramebufferParameteriv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetFramebufferParameteriv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetFramebufferParameteriv(target, pname, params);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -9217,57 +9227,57 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("FRAMEBUFFER_INCOMPLETE_MULTISAMPLE", GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE);
 	CREATE_CONSTANT_ACCESSOR("MAX_SAMPLES", GL_MAX_SAMPLES);
 
-	tpl->Set(String::NewFromUtf8(isolate, "bindFramebuffer"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "bindFramebuffer"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("bindFramebuffer requires 2 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLuint framebuffer = args[1]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint framebuffer = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glBindFramebuffer(target, framebuffer);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "bindRenderbuffer"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "bindRenderbuffer"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("bindRenderbuffer requires 2 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLuint renderbuffer = args[1]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint renderbuffer = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glBindRenderbuffer(target, renderbuffer);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "blitFramebuffer"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "blitFramebuffer"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 10) {
 			V8Helper::_instance->throwException("blitFramebuffer requires 10 arguments");
 			return;
 		}
 
-		GLint srcX0 = args[0]->Int32Value();
-		GLint srcY0 = args[1]->Int32Value();
-		GLint srcX1 = args[2]->Int32Value();
-		GLint srcY1 = args[3]->Int32Value();
-		GLint dstX0 = args[4]->Int32Value();
-		GLint dstY0 = args[5]->Int32Value();
-		GLint dstX1 = args[6]->Int32Value();
-		GLint dstY1 = args[7]->Int32Value();
-		GLbitfield mask = args[8]->Uint32Value();
-		GLenum filter = args[9]->Uint32Value();
+		GLint srcX0 = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint srcY0 = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint srcX1 = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint srcY1 = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint dstX0 = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint dstY0 = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint dstX1 = args[6]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint dstY1 = args[7]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLbitfield mask = args[8]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum filter = args[9]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "deleteFramebuffers"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "deleteFramebuffers"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("deleteFramebuffers requires 2 arguments");
 			return;
 		}
 
-		GLsizei n = args[0]->Int32Value();
+		GLsizei n = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* framebuffers = nullptr;
 		if (args[1]->IsUint32Array()) {
@@ -9276,21 +9286,21 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			framebuffers = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glDeleteFramebuffers): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glDeleteFramebuffers): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glDeleteFramebuffers(n, framebuffers);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "deleteRenderbuffers"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "deleteRenderbuffers"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("deleteRenderbuffers requires 2 arguments");
 			return;
 		}
 
-		GLsizei n = args[0]->Int32Value();
+		GLsizei n = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* renderbuffers = nullptr;
 		if (args[1]->IsUint32Array()) {
@@ -9299,96 +9309,96 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			renderbuffers = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glDeleteRenderbuffers): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glDeleteRenderbuffers): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glDeleteRenderbuffers(n, renderbuffers);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "framebufferRenderbuffer"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "framebufferRenderbuffer"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("framebufferRenderbuffer requires 4 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum attachment = args[1]->Uint32Value();
-		GLenum renderbuffertarget = args[2]->Uint32Value();
-		GLuint renderbuffer = args[3]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum attachment = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum renderbuffertarget = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint renderbuffer = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glFramebufferRenderbuffer(target, attachment, renderbuffertarget, renderbuffer);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "framebufferTexture1D"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "framebufferTexture1D"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("framebufferTexture1D requires 5 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum attachment = args[1]->Uint32Value();
-		GLenum textarget = args[2]->Uint32Value();
-		GLuint texture = args[3]->Uint32Value();
-		GLint level = args[4]->Int32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum attachment = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum textarget = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint texture = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint level = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glFramebufferTexture1D(target, attachment, textarget, texture, level);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "framebufferTexture2D"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "framebufferTexture2D"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("framebufferTexture2D requires 5 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum attachment = args[1]->Uint32Value();
-		GLenum textarget = args[2]->Uint32Value();
-		GLuint texture = args[3]->Uint32Value();
-		GLint level = args[4]->Int32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum attachment = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum textarget = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint texture = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint level = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glFramebufferTexture2D(target, attachment, textarget, texture, level);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "framebufferTexture3D"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "framebufferTexture3D"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 6) {
 			V8Helper::_instance->throwException("framebufferTexture3D requires 6 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum attachment = args[1]->Uint32Value();
-		GLenum textarget = args[2]->Uint32Value();
-		GLuint texture = args[3]->Uint32Value();
-		GLint level = args[4]->Int32Value();
-		GLint layer = args[5]->Int32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum attachment = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum textarget = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint texture = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint level = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint layer = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glFramebufferTexture3D(target, attachment, textarget, texture, level, layer);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "framebufferTextureLayer"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "framebufferTextureLayer"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("framebufferTextureLayer requires 5 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum attachment = args[1]->Uint32Value();
-		GLuint texture = args[2]->Uint32Value();
-		GLint level = args[3]->Int32Value();
-		GLint layer = args[4]->Int32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum attachment = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint texture = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint level = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint layer = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glFramebufferTextureLayer(target, attachment, texture, level, layer);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "genFramebuffers"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "genFramebuffers"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("genFramebuffers requires 2 arguments");
 			return;
 		}
 
-		GLsizei n = args[0]->Int32Value();
+		GLsizei n = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* framebuffers = nullptr;
 		if (args[1]->IsUint32Array()) {
@@ -9397,21 +9407,21 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			framebuffers = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glGenFramebuffers): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGenFramebuffers): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGenFramebuffers(n, framebuffers);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "genRenderbuffers"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "genRenderbuffers"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("genRenderbuffers requires 2 arguments");
 			return;
 		}
 
-		GLsizei n = args[0]->Int32Value();
+		GLsizei n = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* renderbuffers = nullptr;
 		if (args[1]->IsUint32Array()) {
@@ -9420,34 +9430,34 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			renderbuffers = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glGenRenderbuffers): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGenRenderbuffers): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGenRenderbuffers(n, renderbuffers);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "generateMipmap"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "generateMipmap"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("generateMipmap requires 1 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glGenerateMipmap(target);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getFramebufferAttachmentParameteriv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getFramebufferAttachmentParameteriv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("getFramebufferAttachmentParameteriv requires 4 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum attachment = args[1]->Uint32Value();
-		GLenum pname = args[2]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum attachment = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* params = nullptr;
 		if (args[3]->IsInt32Array()) {
@@ -9456,22 +9466,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetFramebufferAttachmentParameteriv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetFramebufferAttachmentParameteriv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetFramebufferAttachmentParameteriv(target, attachment, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getRenderbufferParameteriv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getRenderbufferParameteriv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getRenderbufferParameteriv requires 3 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* params = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -9480,42 +9490,42 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetRenderbufferParameteriv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetRenderbufferParameteriv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetRenderbufferParameteriv(target, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "renderbufferStorage"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "renderbufferStorage"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("renderbufferStorage requires 4 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum internalformat = args[1]->Uint32Value();
-		GLsizei width = args[2]->Int32Value();
-		GLsizei height = args[3]->Int32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum internalformat = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei height = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glRenderbufferStorage(target, internalformat, width, height);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "renderbufferStorageMultisample"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "renderbufferStorageMultisample"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("renderbufferStorageMultisample requires 5 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLsizei samples = args[1]->Int32Value();
-		GLenum internalformat = args[2]->Uint32Value();
-		GLsizei width = args[3]->Int32Value();
-		GLsizei height = args[4]->Int32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei samples = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum internalformat = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei height = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glRenderbufferStorageMultisample(target, samples, internalformat, width, height);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -9539,14 +9549,14 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("PROGRAM_BINARY_FORMATS", GL_PROGRAM_BINARY_FORMATS);
 
 
-	tpl->Set(String::NewFromUtf8(isolate, "programBinary"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "programBinary"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("programBinary requires 4 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLenum binaryFormat = args[1]->Uint32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum binaryFormat = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* binary = nullptr;
 		if (args[2]->IsArrayBuffer()) {
@@ -9559,48 +9569,48 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			binary = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glProgramBinary): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glProgramBinary): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
-		GLsizei length = args[3]->Int32Value();
+		GLsizei length = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glProgramBinary(program, binaryFormat, binary, length);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "programParameteri"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "programParameteri"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("programParameteri requires 3 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
-		GLint value = args[2]->Int32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint value = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glProgramParameteri(program, pname, value);
-	}));
+	}).ToLocalChecked());
 
 
 
 	/* ------------------------------ GL_ARB_get_texture_sub_image ------------------------------ */
 
 
-	tpl->Set(String::NewFromUtf8(isolate, "getCompressedTextureSubImage"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getCompressedTextureSubImage"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 10) {
 			V8Helper::_instance->throwException("getCompressedTextureSubImage requires 10 arguments");
 			return;
 		}
 
-		GLuint texture = args[0]->Uint32Value();
-		GLint level = args[1]->Int32Value();
-		GLint xoffset = args[2]->Int32Value();
-		GLint yoffset = args[3]->Int32Value();
-		GLint zoffset = args[4]->Int32Value();
-		GLsizei width = args[5]->Int32Value();
-		GLsizei height = args[6]->Int32Value();
-		GLsizei depth = args[7]->Int32Value();
-		GLsizei bufSize = args[8]->Int32Value();
+		GLuint texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint level = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint xoffset = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint yoffset = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint zoffset = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei height = args[6]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei depth = args[7]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei bufSize = args[8]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* pixels = nullptr;
 		if (args[9]->IsArrayBuffer()) {
@@ -9613,31 +9623,31 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			pixels = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glGetCompressedTextureSubImage): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glGetCompressedTextureSubImage): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glGetCompressedTextureSubImage(texture, level, xoffset, yoffset, zoffset, width, height, depth, bufSize, pixels);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getTextureSubImage"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getTextureSubImage"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 12) {
 			V8Helper::_instance->throwException("getTextureSubImage requires 12 arguments");
 			return;
 		}
 
-		GLuint texture = args[0]->Uint32Value();
-		GLint level = args[1]->Int32Value();
-		GLint xoffset = args[2]->Int32Value();
-		GLint yoffset = args[3]->Int32Value();
-		GLint zoffset = args[4]->Int32Value();
-		GLsizei width = args[5]->Int32Value();
-		GLsizei height = args[6]->Int32Value();
-		GLsizei depth = args[7]->Int32Value();
-		GLenum format = args[8]->Uint32Value();
-		GLenum type = args[9]->Uint32Value();
-		GLsizei bufSize = args[10]->Int32Value();
+		GLuint texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint level = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint xoffset = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint yoffset = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint zoffset = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei height = args[6]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei depth = args[7]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum format = args[8]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[9]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei bufSize = args[10]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* pixels = nullptr;
 		if (args[11]->IsArrayBuffer()) {
@@ -9650,13 +9660,13 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			pixels = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glGetTextureSubImage): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glGetTextureSubImage): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glGetTextureSubImage(texture, level, xoffset, yoffset, zoffset, width, height, depth, format, type, bufSize, pixels);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -9687,14 +9697,14 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("DOUBLE_VEC3", GL_DOUBLE_VEC3);
 	CREATE_CONSTANT_ACCESSOR("DOUBLE_VEC4", GL_DOUBLE_VEC4);
 
-	tpl->Set(String::NewFromUtf8(isolate, "getUniformdv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getUniformdv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getUniformdv requires 3 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLdouble* params = nullptr;
 		if (args[2]->IsFloat64Array()) {
@@ -9703,34 +9713,34 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLdouble*>(bdata);
 		} else {
-			cout << "ERROR(glGetUniformdv): array must be of type Float64Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetUniformdv): array must be of type Float64Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetUniformdv(program, location, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniform1d"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniform1d"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("uniform1d requires 2 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLdouble x = args[1]->NumberValue();
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble x = args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glUniform1d(location, x);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniform1dv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniform1dv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("uniform1dv requires 3 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLsizei count = args[1]->Int32Value();
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLdouble* value = nullptr;
 		if (args[2]->IsFloat64Array()) {
@@ -9739,35 +9749,35 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLdouble*>(bdata);
 		} else {
-			cout << "ERROR(glUniform1dv): array must be of type Float64Array" << endl;
-			exit(1);
+			//cout << "ERROR(glUniform1dv): array must be of type Float64Array" << endl;
+			//exit(1);
 		}
 
 
 		glUniform1dv(location, count, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniform2d"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniform2d"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("uniform2d requires 3 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLdouble x = args[1]->NumberValue();
-		GLdouble y = args[2]->NumberValue();
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble x = args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble y = args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glUniform2d(location, x, y);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniform2dv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniform2dv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("uniform2dv requires 3 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLsizei count = args[1]->Int32Value();
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLdouble* value = nullptr;
 		if (args[2]->IsFloat64Array()) {
@@ -9776,36 +9786,36 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLdouble*>(bdata);
 		} else {
-			cout << "ERROR(glUniform2dv): array must be of type Float64Array" << endl;
-			exit(1);
+			//cout << "ERROR(glUniform2dv): array must be of type Float64Array" << endl;
+			//exit(1);
 		}
 
 
 		glUniform2dv(location, count, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniform3d"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniform3d"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("uniform3d requires 4 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLdouble x = args[1]->NumberValue();
-		GLdouble y = args[2]->NumberValue();
-		GLdouble z = args[3]->NumberValue();
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble x = args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble y = args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble z = args[3]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glUniform3d(location, x, y, z);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniform3dv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniform3dv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("uniform3dv requires 3 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLsizei count = args[1]->Int32Value();
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLdouble* value = nullptr;
 		if (args[2]->IsFloat64Array()) {
@@ -9814,37 +9824,37 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLdouble*>(bdata);
 		} else {
-			cout << "ERROR(glUniform3dv): array must be of type Float64Array" << endl;
-			exit(1);
+			//cout << "ERROR(glUniform3dv): array must be of type Float64Array" << endl;
+			//exit(1);
 		}
 
 
 		glUniform3dv(location, count, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniform4d"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniform4d"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("uniform4d requires 5 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLdouble x = args[1]->NumberValue();
-		GLdouble y = args[2]->NumberValue();
-		GLdouble z = args[3]->NumberValue();
-		GLdouble w = args[4]->NumberValue();
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble x = args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble y = args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble z = args[3]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble w = args[4]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glUniform4d(location, x, y, z, w);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniform4dv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniform4dv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("uniform4dv requires 3 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLsizei count = args[1]->Int32Value();
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLdouble* value = nullptr;
 		if (args[2]->IsFloat64Array()) {
@@ -9853,23 +9863,23 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLdouble*>(bdata);
 		} else {
-			cout << "ERROR(glUniform4dv): array must be of type Float64Array" << endl;
-			exit(1);
+			//cout << "ERROR(glUniform4dv): array must be of type Float64Array" << endl;
+			//exit(1);
 		}
 
 
 		glUniform4dv(location, count, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniformMatrix2dv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniformMatrix2dv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("uniformMatrix2dv requires 4 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLsizei count = args[1]->Int32Value();
-		GLboolean transpose = GLboolean(args[2]->Uint32Value());
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLboolean transpose = GLboolean(args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		GLdouble* value = nullptr;
 		if (args[3]->IsFloat64Array()) {
@@ -9878,23 +9888,23 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLdouble*>(bdata);
 		} else {
-			cout << "ERROR(glUniformMatrix2dv): array must be of type Float64Array" << endl;
-			exit(1);
+			//cout << "ERROR(glUniformMatrix2dv): array must be of type Float64Array" << endl;
+			//exit(1);
 		}
 
 
 		glUniformMatrix2dv(location, count, transpose, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniformMatrix2x3dv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniformMatrix2x3dv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("uniformMatrix2x3dv requires 4 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLsizei count = args[1]->Int32Value();
-		GLboolean transpose = GLboolean(args[2]->Uint32Value());
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLboolean transpose = GLboolean(args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		GLdouble* value = nullptr;
 		if (args[3]->IsFloat64Array()) {
@@ -9903,23 +9913,23 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLdouble*>(bdata);
 		} else {
-			cout << "ERROR(glUniformMatrix2x3dv): array must be of type Float64Array" << endl;
-			exit(1);
+			//cout << "ERROR(glUniformMatrix2x3dv): array must be of type Float64Array" << endl;
+			//exit(1);
 		}
 
 
 		glUniformMatrix2x3dv(location, count, transpose, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniformMatrix2x4dv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniformMatrix2x4dv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("uniformMatrix2x4dv requires 4 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLsizei count = args[1]->Int32Value();
-		GLboolean transpose = GLboolean(args[2]->Uint32Value());
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLboolean transpose = GLboolean(args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		GLdouble* value = nullptr;
 		if (args[3]->IsFloat64Array()) {
@@ -9928,23 +9938,23 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLdouble*>(bdata);
 		} else {
-			cout << "ERROR(glUniformMatrix2x4dv): array must be of type Float64Array" << endl;
-			exit(1);
+			//cout << "ERROR(glUniformMatrix2x4dv): array must be of type Float64Array" << endl;
+			//exit(1);
 		}
 
 
 		glUniformMatrix2x4dv(location, count, transpose, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniformMatrix3dv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniformMatrix3dv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("uniformMatrix3dv requires 4 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLsizei count = args[1]->Int32Value();
-		GLboolean transpose = GLboolean(args[2]->Uint32Value());
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLboolean transpose = GLboolean(args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		GLdouble* value = nullptr;
 		if (args[3]->IsFloat64Array()) {
@@ -9953,23 +9963,23 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLdouble*>(bdata);
 		} else {
-			cout << "ERROR(glUniformMatrix3dv): array must be of type Float64Array" << endl;
-			exit(1);
+			//cout << "ERROR(glUniformMatrix3dv): array must be of type Float64Array" << endl;
+			//exit(1);
 		}
 
 
 		glUniformMatrix3dv(location, count, transpose, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniformMatrix3x2dv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniformMatrix3x2dv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("uniformMatrix3x2dv requires 4 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLsizei count = args[1]->Int32Value();
-		GLboolean transpose = GLboolean(args[2]->Uint32Value());
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLboolean transpose = GLboolean(args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		GLdouble* value = nullptr;
 		if (args[3]->IsFloat64Array()) {
@@ -9978,23 +9988,23 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLdouble*>(bdata);
 		} else {
-			cout << "ERROR(glUniformMatrix3x2dv): array must be of type Float64Array" << endl;
-			exit(1);
+			//cout << "ERROR(glUniformMatrix3x2dv): array must be of type Float64Array" << endl;
+			//exit(1);
 		}
 
 
 		glUniformMatrix3x2dv(location, count, transpose, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniformMatrix3x4dv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniformMatrix3x4dv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("uniformMatrix3x4dv requires 4 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLsizei count = args[1]->Int32Value();
-		GLboolean transpose = GLboolean(args[2]->Uint32Value());
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLboolean transpose = GLboolean(args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		GLdouble* value = nullptr;
 		if (args[3]->IsFloat64Array()) {
@@ -10003,23 +10013,23 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLdouble*>(bdata);
 		} else {
-			cout << "ERROR(glUniformMatrix3x4dv): array must be of type Float64Array" << endl;
-			exit(1);
+			//cout << "ERROR(glUniformMatrix3x4dv): array must be of type Float64Array" << endl;
+			//exit(1);
 		}
 
 
 		glUniformMatrix3x4dv(location, count, transpose, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniformMatrix4dv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniformMatrix4dv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("uniformMatrix4dv requires 4 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLsizei count = args[1]->Int32Value();
-		GLboolean transpose = GLboolean(args[2]->Uint32Value());
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLboolean transpose = GLboolean(args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		GLdouble* value = nullptr;
 		if (args[3]->IsFloat64Array()) {
@@ -10028,23 +10038,23 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLdouble*>(bdata);
 		} else {
-			cout << "ERROR(glUniformMatrix4dv): array must be of type Float64Array" << endl;
-			exit(1);
+			//cout << "ERROR(glUniformMatrix4dv): array must be of type Float64Array" << endl;
+			//exit(1);
 		}
 
 
 		glUniformMatrix4dv(location, count, transpose, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniformMatrix4x2dv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniformMatrix4x2dv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("uniformMatrix4x2dv requires 4 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLsizei count = args[1]->Int32Value();
-		GLboolean transpose = GLboolean(args[2]->Uint32Value());
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLboolean transpose = GLboolean(args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		GLdouble* value = nullptr;
 		if (args[3]->IsFloat64Array()) {
@@ -10053,23 +10063,23 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLdouble*>(bdata);
 		} else {
-			cout << "ERROR(glUniformMatrix4x2dv): array must be of type Float64Array" << endl;
-			exit(1);
+			//cout << "ERROR(glUniformMatrix4x2dv): array must be of type Float64Array" << endl;
+			//exit(1);
 		}
 
 
 		glUniformMatrix4x2dv(location, count, transpose, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniformMatrix4x3dv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniformMatrix4x3dv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("uniformMatrix4x3dv requires 4 arguments");
 			return;
 		}
 
-		GLint location = args[0]->Int32Value();
-		GLsizei count = args[1]->Int32Value();
-		GLboolean transpose = GLboolean(args[2]->Uint32Value());
+		GLint location = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLboolean transpose = GLboolean(args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		GLdouble* value = nullptr;
 		if (args[3]->IsFloat64Array()) {
@@ -10078,13 +10088,13 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLdouble*>(bdata);
 		} else {
-			cout << "ERROR(glUniformMatrix4x3dv): array must be of type Float64Array" << endl;
-			exit(1);
+			//cout << "ERROR(glUniformMatrix4x3dv): array must be of type Float64Array" << endl;
+			//exit(1);
 		}
 
 
 		glUniformMatrix4x3dv(location, count, transpose, value);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -10176,17 +10186,17 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("REPLICATE_BORDER", GL_REPLICATE_BORDER);
 	CREATE_CONSTANT_ACCESSOR("CONVOLUTION_BORDER_COLOR", GL_CONVOLUTION_BORDER_COLOR);
 
-	tpl->Set(String::NewFromUtf8(isolate, "colorTable"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "colorTable"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 6) {
 			V8Helper::_instance->throwException("colorTable requires 6 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum internalformat = args[1]->Uint32Value();
-		GLsizei width = args[2]->Int32Value();
-		GLenum format = args[3]->Uint32Value();
-		GLenum type = args[4]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum internalformat = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum format = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[4]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* table = nullptr;
 		if (args[5]->IsArrayBuffer()) {
@@ -10199,25 +10209,25 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			table = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glColorTable): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glColorTable): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glColorTable(target, internalformat, width, format, type, table);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "colorSubTable"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "colorSubTable"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 6) {
 			V8Helper::_instance->throwException("colorSubTable requires 6 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLsizei start = args[1]->Int32Value();
-		GLsizei count = args[2]->Int32Value();
-		GLenum format = args[3]->Uint32Value();
-		GLenum type = args[4]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei start = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum format = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[4]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* data = nullptr;
 		if (args[5]->IsArrayBuffer()) {
@@ -10230,22 +10240,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			data = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glColorSubTable): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glColorSubTable): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glColorSubTable(target, start, count, format, type, data);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "colorTableParameteriv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "colorTableParameteriv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("colorTableParameteriv requires 3 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* params = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -10254,22 +10264,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glColorTableParameteriv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glColorTableParameteriv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glColorTableParameteriv(target, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "colorTableParameterfv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "colorTableParameterfv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("colorTableParameterfv requires 3 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLfloat* params = nullptr;
 		if (args[2]->IsFloat32Array()) {
@@ -10278,53 +10288,53 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glColorTableParameterfv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glColorTableParameterfv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glColorTableParameterfv(target, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "copyColorSubTable"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "copyColorSubTable"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("copyColorSubTable requires 5 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLsizei start = args[1]->Int32Value();
-		GLint x = args[2]->Int32Value();
-		GLint y = args[3]->Int32Value();
-		GLsizei width = args[4]->Int32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei start = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint x = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint y = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glCopyColorSubTable(target, start, x, y, width);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "copyColorTable"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "copyColorTable"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("copyColorTable requires 5 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum internalformat = args[1]->Uint32Value();
-		GLint x = args[2]->Int32Value();
-		GLint y = args[3]->Int32Value();
-		GLsizei width = args[4]->Int32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum internalformat = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint x = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint y = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glCopyColorTable(target, internalformat, x, y, width);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getColorTable"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getColorTable"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("getColorTable requires 4 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum format = args[1]->Uint32Value();
-		GLenum type = args[2]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum format = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* table = nullptr;
 		if (args[3]->IsArrayBuffer()) {
@@ -10337,22 +10347,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			table = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glGetColorTable): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glGetColorTable): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glGetColorTable(target, format, type, table);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getColorTableParameterfv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getColorTableParameterfv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getColorTableParameterfv requires 3 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLfloat* params = nullptr;
 		if (args[2]->IsFloat32Array()) {
@@ -10361,22 +10371,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glGetColorTableParameterfv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetColorTableParameterfv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetColorTableParameterfv(target, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getColorTableParameteriv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getColorTableParameteriv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getColorTableParameteriv requires 3 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* params = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -10385,49 +10395,49 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetColorTableParameteriv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetColorTableParameteriv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetColorTableParameteriv(target, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "histogram"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "histogram"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("histogram requires 4 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLsizei width = args[1]->Int32Value();
-		GLenum internalformat = args[2]->Uint32Value();
-		GLboolean sink = GLboolean(args[3]->Uint32Value());
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum internalformat = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLboolean sink = GLboolean(args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glHistogram(target, width, internalformat, sink);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "resetHistogram"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "resetHistogram"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("resetHistogram requires 1 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glResetHistogram(target);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getHistogram"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getHistogram"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("getHistogram requires 5 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLboolean reset = GLboolean(args[1]->Uint32Value());
-		GLenum format = args[2]->Uint32Value();
-		GLenum type = args[3]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLboolean reset = GLboolean(args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLenum format = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* values = nullptr;
 		if (args[4]->IsArrayBuffer()) {
@@ -10440,22 +10450,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			values = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glGetHistogram): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glGetHistogram): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glGetHistogram(target, reset, format, type, values);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getHistogramParameterfv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getHistogramParameterfv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getHistogramParameterfv requires 3 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLfloat* params = nullptr;
 		if (args[2]->IsFloat32Array()) {
@@ -10464,22 +10474,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glGetHistogramParameterfv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetHistogramParameterfv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetHistogramParameterfv(target, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getHistogramParameteriv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getHistogramParameteriv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getHistogramParameteriv requires 3 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* params = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -10488,46 +10498,46 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetHistogramParameteriv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetHistogramParameteriv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetHistogramParameteriv(target, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "minmax"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "minmax"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("minmax requires 3 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum internalformat = args[1]->Uint32Value();
-		GLboolean sink = GLboolean(args[2]->Uint32Value());
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum internalformat = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLboolean sink = GLboolean(args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glMinmax(target, internalformat, sink);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "resetMinmax"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "resetMinmax"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("resetMinmax requires 1 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glResetMinmax(target);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getMinmaxParameterfv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getMinmaxParameterfv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getMinmaxParameterfv requires 3 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLfloat* params = nullptr;
 		if (args[2]->IsFloat32Array()) {
@@ -10536,22 +10546,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glGetMinmaxParameterfv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetMinmaxParameterfv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetMinmaxParameterfv(target, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getMinmaxParameteriv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getMinmaxParameteriv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getMinmaxParameteriv requires 3 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* params = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -10560,25 +10570,25 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetMinmaxParameteriv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetMinmaxParameteriv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetMinmaxParameteriv(target, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "convolutionFilter1D"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "convolutionFilter1D"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 6) {
 			V8Helper::_instance->throwException("convolutionFilter1D requires 6 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum internalformat = args[1]->Uint32Value();
-		GLsizei width = args[2]->Int32Value();
-		GLenum format = args[3]->Uint32Value();
-		GLenum type = args[4]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum internalformat = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum format = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[4]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* image = nullptr;
 		if (args[5]->IsArrayBuffer()) {
@@ -10591,26 +10601,26 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			image = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glConvolutionFilter1D): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glConvolutionFilter1D): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glConvolutionFilter1D(target, internalformat, width, format, type, image);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "convolutionFilter2D"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "convolutionFilter2D"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 7) {
 			V8Helper::_instance->throwException("convolutionFilter2D requires 7 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum internalformat = args[1]->Uint32Value();
-		GLsizei width = args[2]->Int32Value();
-		GLsizei height = args[3]->Int32Value();
-		GLenum format = args[4]->Uint32Value();
-		GLenum type = args[5]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum internalformat = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei height = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum format = args[4]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[5]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* image = nullptr;
 		if (args[6]->IsArrayBuffer()) {
@@ -10623,35 +10633,35 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			image = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glConvolutionFilter2D): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glConvolutionFilter2D): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glConvolutionFilter2D(target, internalformat, width, height, format, type, image);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "convolutionParameterf"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "convolutionParameterf"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("convolutionParameterf requires 3 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
-		GLfloat params = GLfloat(args[2]->NumberValue());
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLfloat params = GLfloat(args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glConvolutionParameterf(target, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "convolutionParameterfv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "convolutionParameterfv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("convolutionParameterfv requires 3 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLfloat* params = nullptr;
 		if (args[2]->IsFloat32Array()) {
@@ -10660,35 +10670,35 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glConvolutionParameterfv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glConvolutionParameterfv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glConvolutionParameterfv(target, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "convolutionParameteri"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "convolutionParameteri"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("convolutionParameteri requires 3 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
-		GLint params = args[2]->Int32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint params = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glConvolutionParameteri(target, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "convolutionParameteriv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "convolutionParameteriv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("convolutionParameteriv requires 3 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* params = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -10697,54 +10707,54 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glConvolutionParameteriv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glConvolutionParameteriv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glConvolutionParameteriv(target, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "copyConvolutionFilter1D"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "copyConvolutionFilter1D"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("copyConvolutionFilter1D requires 5 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum internalformat = args[1]->Uint32Value();
-		GLint x = args[2]->Int32Value();
-		GLint y = args[3]->Int32Value();
-		GLsizei width = args[4]->Int32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum internalformat = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint x = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint y = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glCopyConvolutionFilter1D(target, internalformat, x, y, width);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "copyConvolutionFilter2D"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "copyConvolutionFilter2D"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 6) {
 			V8Helper::_instance->throwException("copyConvolutionFilter2D requires 6 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum internalformat = args[1]->Uint32Value();
-		GLint x = args[2]->Int32Value();
-		GLint y = args[3]->Int32Value();
-		GLsizei width = args[4]->Int32Value();
-		GLsizei height = args[5]->Int32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum internalformat = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint x = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint y = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei height = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glCopyConvolutionFilter2D(target, internalformat, x, y, width, height);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getConvolutionFilter"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getConvolutionFilter"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("getConvolutionFilter requires 4 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum format = args[1]->Uint32Value();
-		GLenum type = args[2]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum format = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* image = nullptr;
 		if (args[3]->IsArrayBuffer()) {
@@ -10757,22 +10767,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			image = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glGetConvolutionFilter): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glGetConvolutionFilter): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glGetConvolutionFilter(target, format, type, image);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getConvolutionParameterfv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getConvolutionParameterfv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getConvolutionParameterfv requires 3 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLfloat* params = nullptr;
 		if (args[2]->IsFloat32Array()) {
@@ -10781,22 +10791,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glGetConvolutionParameterfv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetConvolutionParameterfv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetConvolutionParameterfv(target, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getConvolutionParameteriv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getConvolutionParameteriv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getConvolutionParameteriv requires 3 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* params = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -10805,26 +10815,26 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetConvolutionParameteriv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetConvolutionParameteriv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetConvolutionParameteriv(target, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "separableFilter2D"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "separableFilter2D"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 8) {
 			V8Helper::_instance->throwException("separableFilter2D requires 8 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum internalformat = args[1]->Uint32Value();
-		GLsizei width = args[2]->Int32Value();
-		GLsizei height = args[3]->Int32Value();
-		GLenum format = args[4]->Uint32Value();
-		GLenum type = args[5]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum internalformat = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei height = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum format = args[4]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[5]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* row = nullptr;
 		if (args[6]->IsArrayBuffer()) {
@@ -10837,8 +10847,8 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			row = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glSeparableFilter2D): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glSeparableFilter2D): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
@@ -10853,23 +10863,23 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			column = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glSeparableFilter2D): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glSeparableFilter2D): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glSeparableFilter2D(target, internalformat, width, height, format, type, row, column);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getSeparableFilter"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getSeparableFilter"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 6) {
 			V8Helper::_instance->throwException("getSeparableFilter requires 6 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum format = args[1]->Uint32Value();
-		GLenum type = args[2]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum format = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* row = nullptr;
 		if (args[3]->IsArrayBuffer()) {
@@ -10882,8 +10892,8 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			row = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glGetSeparableFilter): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glGetSeparableFilter): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
@@ -10898,8 +10908,8 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			column = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glGetSeparableFilter): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glGetSeparableFilter): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
@@ -10914,24 +10924,24 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			span = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glGetSeparableFilter): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glGetSeparableFilter): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glGetSeparableFilter(target, format, type, row, column, span);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getMinmax"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getMinmax"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("getMinmax requires 5 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLboolean reset = GLboolean(args[1]->Uint32Value());
-		GLenum format = args[2]->Uint32Value();
-		GLenum types = args[3]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLboolean reset = GLboolean(args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLenum format = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum types = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* values = nullptr;
 		if (args[4]->IsArrayBuffer()) {
@@ -10944,13 +10954,13 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			values = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glGetMinmax): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glGetMinmax): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glGetMinmax(target, reset, format, types, values);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -10960,16 +10970,16 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 
 	CREATE_CONSTANT_ACCESSOR("NUM_SAMPLE_COUNTS", GL_NUM_SAMPLE_COUNTS);
 
-	tpl->Set(String::NewFromUtf8(isolate, "getInternalformativ"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getInternalformativ"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("getInternalformativ requires 5 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum internalformat = args[1]->Uint32Value();
-		GLenum pname = args[2]->Uint32Value();
-		GLsizei bufSize = args[3]->Int32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum internalformat = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei bufSize = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* params = nullptr;
 		if (args[4]->IsInt32Array()) {
@@ -10978,13 +10988,13 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetInternalformativ): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetInternalformativ): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetInternalformativ(target, internalformat, pname, bufSize, params);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -11095,38 +11105,38 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	/* ------------------------------ GL_ARB_invalidate_subdata ------------------------------ */
 
 
-	tpl->Set(String::NewFromUtf8(isolate, "invalidateBufferData"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "invalidateBufferData"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("invalidateBufferData requires 1 arguments");
 			return;
 		}
 
-		GLuint buffer = args[0]->Uint32Value();
+		GLuint buffer = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glInvalidateBufferData(buffer);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "invalidateBufferSubData"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "invalidateBufferSubData"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("invalidateBufferSubData requires 3 arguments");
 			return;
 		}
 
-		GLuint buffer = args[0]->Uint32Value();
-		GLintptr offset = GLintptr(args[1]->Int32Value());
-		GLsizeiptr length = GLsizeiptr(args[2]->Int32Value());
+		GLuint buffer = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLintptr offset = GLintptr(args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLsizeiptr length = GLsizeiptr(args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glInvalidateBufferSubData(buffer, offset, length);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "invalidateFramebuffer"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "invalidateFramebuffer"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("invalidateFramebuffer requires 3 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLsizei numAttachments = args[1]->Int32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei numAttachments = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLenum* attachments = nullptr;
 		if (args[2]->IsUint32Array()) {
@@ -11135,22 +11145,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			attachments = reinterpret_cast<GLenum*>(bdata);
 		} else {
-			cout << "ERROR(glInvalidateFramebuffer): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glInvalidateFramebuffer): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glInvalidateFramebuffer(target, numAttachments, attachments);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "invalidateSubFramebuffer"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "invalidateSubFramebuffer"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 7) {
 			V8Helper::_instance->throwException("invalidateSubFramebuffer requires 7 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLsizei numAttachments = args[1]->Int32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei numAttachments = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLenum* attachments = nullptr;
 		if (args[2]->IsUint32Array()) {
@@ -11159,47 +11169,47 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			attachments = reinterpret_cast<GLenum*>(bdata);
 		} else {
-			cout << "ERROR(glInvalidateSubFramebuffer): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glInvalidateSubFramebuffer): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
-		GLint x = args[3]->Int32Value();
-		GLint y = args[4]->Int32Value();
-		GLsizei width = args[5]->Int32Value();
-		GLsizei height = args[6]->Int32Value();
+		GLint x = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint y = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei height = args[6]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glInvalidateSubFramebuffer(target, numAttachments, attachments, x, y, width, height);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "invalidateTexImage"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "invalidateTexImage"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("invalidateTexImage requires 2 arguments");
 			return;
 		}
 
-		GLuint texture = args[0]->Uint32Value();
-		GLint level = args[1]->Int32Value();
+		GLuint texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint level = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glInvalidateTexImage(texture, level);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "invalidateTexSubImage"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "invalidateTexSubImage"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 8) {
 			V8Helper::_instance->throwException("invalidateTexSubImage requires 8 arguments");
 			return;
 		}
 
-		GLuint texture = args[0]->Uint32Value();
-		GLint level = args[1]->Int32Value();
-		GLint xoffset = args[2]->Int32Value();
-		GLint yoffset = args[3]->Int32Value();
-		GLint zoffset = args[4]->Int32Value();
-		GLsizei width = args[5]->Int32Value();
-		GLsizei height = args[6]->Int32Value();
-		GLsizei depth = args[7]->Int32Value();
+		GLuint texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint level = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint xoffset = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint yoffset = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint zoffset = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei height = args[6]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei depth = args[7]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glInvalidateTexSubImage(texture, level, xoffset, yoffset, zoffset, width, height, depth);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -11218,18 +11228,18 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("MAP_FLUSH_EXPLICIT_BIT", GL_MAP_FLUSH_EXPLICIT_BIT);
 	CREATE_CONSTANT_ACCESSOR("MAP_UNSYNCHRONIZED_BIT", GL_MAP_UNSYNCHRONIZED_BIT);
 
-	tpl->Set(String::NewFromUtf8(isolate, "flushMappedBufferRange"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "flushMappedBufferRange"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("flushMappedBufferRange requires 3 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLintptr offset = GLintptr(args[1]->Int32Value());
-		GLsizeiptr length = GLsizeiptr(args[2]->Int32Value());
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLintptr offset = GLintptr(args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLsizeiptr length = GLsizeiptr(args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glFlushMappedBufferRange(target, offset, length);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -11239,15 +11249,15 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	/* ------------------------------ GL_ARB_multi_bind ------------------------------ */
 
 
-	tpl->Set(String::NewFromUtf8(isolate, "bindBuffersBase"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "bindBuffersBase"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("bindBuffersBase requires 4 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLuint first = args[1]->Uint32Value();
-		GLsizei count = args[2]->Int32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint first = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* buffers = nullptr;
 		if (args[3]->IsUint32Array()) {
@@ -11256,23 +11266,23 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			buffers = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glBindBuffersBase): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glBindBuffersBase): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glBindBuffersBase(target, first, count, buffers);
-	}));
+	}).ToLocalChecked());
 
 
-	tpl->Set(String::NewFromUtf8(isolate, "bindImageTextures"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "bindImageTextures"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("bindImageTextures requires 3 arguments");
 			return;
 		}
 
-		GLuint first = args[0]->Uint32Value();
-		GLsizei count = args[1]->Int32Value();
+		GLuint first = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* textures = nullptr;
 		if (args[2]->IsUint32Array()) {
@@ -11281,22 +11291,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			textures = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glBindImageTextures): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glBindImageTextures): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glBindImageTextures(first, count, textures);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "bindSamplers"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "bindSamplers"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("bindSamplers requires 3 arguments");
 			return;
 		}
 
-		GLuint first = args[0]->Uint32Value();
-		GLsizei count = args[1]->Int32Value();
+		GLuint first = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* samplers = nullptr;
 		if (args[2]->IsUint32Array()) {
@@ -11305,22 +11315,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			samplers = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glBindSamplers): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glBindSamplers): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glBindSamplers(first, count, samplers);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "bindTextures"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "bindTextures"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("bindTextures requires 3 arguments");
 			return;
 		}
 
-		GLuint first = args[0]->Uint32Value();
-		GLsizei count = args[1]->Int32Value();
+		GLuint first = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* textures = nullptr;
 		if (args[2]->IsUint32Array()) {
@@ -11329,13 +11339,13 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			textures = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glBindTextures): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glBindTextures): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glBindTextures(first, count, textures);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -11343,13 +11353,13 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	/* ------------------------------ GL_ARB_multi_draw_indirect ------------------------------ */
 
 
-	tpl->Set(String::NewFromUtf8(isolate, "multiDrawArraysIndirect"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "multiDrawArraysIndirect"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("multiDrawArraysIndirect requires 4 arguments");
 			return;
 		}
 
-		GLenum mode = args[0]->Uint32Value();
+		GLenum mode = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* indirect = nullptr;
 		if (args[1]->IsArrayBuffer()) {
@@ -11362,24 +11372,24 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			indirect = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glMultiDrawArraysIndirect): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glMultiDrawArraysIndirect): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
-		GLsizei primcount = args[2]->Int32Value();
-		GLsizei stride = args[3]->Int32Value();
+		GLsizei primcount = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei stride = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glMultiDrawArraysIndirect(mode, indirect, primcount, stride);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "multiDrawElementsIndirect"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "multiDrawElementsIndirect"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("multiDrawElementsIndirect requires 5 arguments");
 			return;
 		}
 
-		GLenum mode = args[0]->Uint32Value();
-		GLenum type = args[1]->Uint32Value();
+		GLenum mode = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* indirect = nullptr;
 		if (args[2]->IsArrayBuffer()) {
@@ -11392,15 +11402,15 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			indirect = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glMultiDrawElementsIndirect): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glMultiDrawElementsIndirect): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
-		GLsizei primcount = args[3]->Int32Value();
-		GLsizei stride = args[4]->Int32Value();
+		GLsizei primcount = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei stride = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glMultiDrawElementsIndirect(mode, type, indirect, primcount, stride);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -11425,18 +11435,18 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 
 	CREATE_CONSTANT_ACCESSOR("POLYGON_OFFSET_CLAMP", GL_POLYGON_OFFSET_CLAMP);
 
-	tpl->Set(String::NewFromUtf8(isolate, "polygonOffsetClamp"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "polygonOffsetClamp"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("polygonOffsetClamp requires 3 arguments");
 			return;
 		}
 
-		GLfloat factor = GLfloat(args[0]->NumberValue());
-		GLfloat units = GLfloat(args[1]->NumberValue());
-		GLfloat clamp = GLfloat(args[2]->NumberValue());
+		GLfloat factor = GLfloat(args[0]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLfloat units = GLfloat(args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLfloat clamp = GLfloat(args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glPolygonOffsetClamp(factor, units, clamp);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -11491,15 +11501,15 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("LOCATION", GL_LOCATION);
 	CREATE_CONSTANT_ACCESSOR("LOCATION_INDEX", GL_LOCATION_INDEX);
 
-	tpl->Set(String::NewFromUtf8(isolate, "getProgramInterfaceiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getProgramInterfaceiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("getProgramInterfaceiv requires 4 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLenum programInterface = args[1]->Uint32Value();
-		GLenum pname = args[2]->Uint32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum programInterface = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* params = nullptr;
 		if (args[3]->IsInt32Array()) {
@@ -11508,24 +11518,24 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetProgramInterfaceiv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetProgramInterfaceiv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetProgramInterfaceiv(program, programInterface, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getProgramResourceName"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getProgramResourceName"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 6) {
 			V8Helper::_instance->throwException("getProgramResourceName requires 6 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLenum programInterface = args[1]->Uint32Value();
-		GLuint index = args[2]->Uint32Value();
-		GLsizei bufSize = args[3]->Int32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum programInterface = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint index = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei bufSize = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLsizei* length = nullptr;
 		if (args[4]->IsInt32Array()) {
@@ -11534,8 +11544,8 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			length = reinterpret_cast<GLsizei*>(bdata);
 		} else {
-			cout << "ERROR(glGetProgramResourceName): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetProgramResourceName): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
@@ -11546,24 +11556,24 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			name = reinterpret_cast<GLchar*>(bdata);
 		} else {
-			cout << "ERROR(glGetProgramResourceName): array must be of type Int8Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetProgramResourceName): array must be of type Int8Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetProgramResourceName(program, programInterface, index, bufSize, length, name);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getProgramResourceiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getProgramResourceiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 8) {
 			V8Helper::_instance->throwException("getProgramResourceiv requires 8 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLenum programInterface = args[1]->Uint32Value();
-		GLuint index = args[2]->Uint32Value();
-		GLsizei propCount = args[3]->Int32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum programInterface = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint index = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei propCount = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLenum* props = nullptr;
 		if (args[4]->IsUint32Array()) {
@@ -11572,11 +11582,11 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			props = reinterpret_cast<GLenum*>(bdata);
 		} else {
-			cout << "ERROR(glGetProgramResourceiv): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetProgramResourceiv): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
-		GLsizei bufSize = args[5]->Int32Value();
+		GLsizei bufSize = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLsizei* length = nullptr;
 		if (args[6]->IsInt32Array()) {
@@ -11585,8 +11595,8 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			length = reinterpret_cast<GLsizei*>(bdata);
 		} else {
-			cout << "ERROR(glGetProgramResourceiv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetProgramResourceiv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
@@ -11597,13 +11607,13 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetProgramResourceiv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetProgramResourceiv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetProgramResourceiv(program, programInterface, index, propCount, props, bufSize, length, params);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -11614,16 +11624,16 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("LAST_VERTEX_CONVENTION", GL_LAST_VERTEX_CONVENTION);
 	CREATE_CONSTANT_ACCESSOR("PROVOKING_VERTEX", GL_PROVOKING_VERTEX);
 
-	tpl->Set(String::NewFromUtf8(isolate, "provokingVertex"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "provokingVertex"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("provokingVertex requires 1 arguments");
 			return;
 		}
 
-		GLenum mode = args[0]->Uint32Value();
+		GLenum mode = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glProvokingVertex(mode);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -11644,26 +11654,26 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 
 	CREATE_CONSTANT_ACCESSOR("SAMPLER_BINDING", GL_SAMPLER_BINDING);
 
-	tpl->Set(String::NewFromUtf8(isolate, "bindSampler"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "bindSampler"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("bindSampler requires 2 arguments");
 			return;
 		}
 
-		GLuint unit = args[0]->Uint32Value();
-		GLuint sampler = args[1]->Uint32Value();
+		GLuint unit = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint sampler = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glBindSampler(unit, sampler);
-	}));
+	}).ToLocalChecked());
 
 
-	tpl->Set(String::NewFromUtf8(isolate, "genSamplers"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "genSamplers"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("genSamplers requires 2 arguments");
 			return;
 		}
 
-		GLsizei count = args[0]->Int32Value();
+		GLsizei count = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* samplers = nullptr;
 		if (args[1]->IsUint32Array()) {
@@ -11672,22 +11682,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			samplers = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glGenSamplers): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGenSamplers): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGenSamplers(count, samplers);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getSamplerParameterIiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getSamplerParameterIiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getSamplerParameterIiv requires 3 arguments");
 			return;
 		}
 
-		GLuint sampler = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLuint sampler = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* params = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -11696,22 +11706,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetSamplerParameterIiv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetSamplerParameterIiv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetSamplerParameterIiv(sampler, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getSamplerParameterIuiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getSamplerParameterIuiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getSamplerParameterIuiv requires 3 arguments");
 			return;
 		}
 
-		GLuint sampler = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLuint sampler = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* params = nullptr;
 		if (args[2]->IsUint32Array()) {
@@ -11720,22 +11730,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glGetSamplerParameterIuiv): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetSamplerParameterIuiv): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetSamplerParameterIuiv(sampler, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getSamplerParameterfv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getSamplerParameterfv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getSamplerParameterfv requires 3 arguments");
 			return;
 		}
 
-		GLuint sampler = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLuint sampler = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLfloat* params = nullptr;
 		if (args[2]->IsFloat32Array()) {
@@ -11744,22 +11754,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glGetSamplerParameterfv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetSamplerParameterfv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetSamplerParameterfv(sampler, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getSamplerParameteriv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getSamplerParameteriv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getSamplerParameteriv requires 3 arguments");
 			return;
 		}
 
-		GLuint sampler = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLuint sampler = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* params = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -11768,22 +11778,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetSamplerParameteriv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetSamplerParameteriv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetSamplerParameteriv(sampler, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "samplerParameterIiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "samplerParameterIiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("samplerParameterIiv requires 3 arguments");
 			return;
 		}
 
-		GLuint sampler = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLuint sampler = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* params = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -11792,22 +11802,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glSamplerParameterIiv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glSamplerParameterIiv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glSamplerParameterIiv(sampler, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "samplerParameterIuiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "samplerParameterIuiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("samplerParameterIuiv requires 3 arguments");
 			return;
 		}
 
-		GLuint sampler = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLuint sampler = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* params = nullptr;
 		if (args[2]->IsUint32Array()) {
@@ -11816,35 +11826,35 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glSamplerParameterIuiv): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glSamplerParameterIuiv): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glSamplerParameterIuiv(sampler, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "samplerParameterf"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "samplerParameterf"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("samplerParameterf requires 3 arguments");
 			return;
 		}
 
-		GLuint sampler = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
-		GLfloat param = GLfloat(args[2]->NumberValue());
+		GLuint sampler = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLfloat param = GLfloat(args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glSamplerParameterf(sampler, pname, param);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "samplerParameterfv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "samplerParameterfv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("samplerParameterfv requires 3 arguments");
 			return;
 		}
 
-		GLuint sampler = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLuint sampler = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLfloat* params = nullptr;
 		if (args[2]->IsFloat32Array()) {
@@ -11853,35 +11863,35 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glSamplerParameterfv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glSamplerParameterfv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glSamplerParameterfv(sampler, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "samplerParameteri"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "samplerParameteri"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("samplerParameteri requires 3 arguments");
 			return;
 		}
 
-		GLuint sampler = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
-		GLint param = args[2]->Int32Value();
+		GLuint sampler = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint param = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glSamplerParameteri(sampler, pname, param);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "samplerParameteriv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "samplerParameteriv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("samplerParameteriv requires 3 arguments");
 			return;
 		}
 
-		GLuint sampler = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLuint sampler = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* params = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -11890,13 +11900,13 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glSamplerParameteriv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glSamplerParameteriv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glSamplerParameteriv(sampler, pname, params);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -11926,36 +11936,36 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("PROGRAM_PIPELINE_BINDING", GL_PROGRAM_PIPELINE_BINDING);
 	CREATE_CONSTANT_ACCESSOR("ALL_SHADER_BITS", GL_ALL_SHADER_BITS);
 
-	tpl->Set(String::NewFromUtf8(isolate, "activeShaderProgram"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "activeShaderProgram"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("activeShaderProgram requires 2 arguments");
 			return;
 		}
 
-		GLuint pipeline = args[0]->Uint32Value();
-		GLuint program = args[1]->Uint32Value();
+		GLuint pipeline = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint program = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glActiveShaderProgram(pipeline, program);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "bindProgramPipeline"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "bindProgramPipeline"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("bindProgramPipeline requires 1 arguments");
 			return;
 		}
 
-		GLuint pipeline = args[0]->Uint32Value();
+		GLuint pipeline = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glBindProgramPipeline(pipeline);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "deleteProgramPipelines"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "deleteProgramPipelines"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("deleteProgramPipelines requires 2 arguments");
 			return;
 		}
 
-		GLsizei n = args[0]->Int32Value();
+		GLsizei n = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* pipelines = nullptr;
 		if (args[1]->IsUint32Array()) {
@@ -11964,21 +11974,21 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			pipelines = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glDeleteProgramPipelines): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glDeleteProgramPipelines): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glDeleteProgramPipelines(n, pipelines);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "genProgramPipelines"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "genProgramPipelines"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("genProgramPipelines requires 2 arguments");
 			return;
 		}
 
-		GLsizei n = args[0]->Int32Value();
+		GLsizei n = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* pipelines = nullptr;
 		if (args[1]->IsUint32Array()) {
@@ -11987,22 +11997,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			pipelines = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glGenProgramPipelines): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGenProgramPipelines): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGenProgramPipelines(n, pipelines);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getProgramPipelineInfoLog"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getProgramPipelineInfoLog"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("getProgramPipelineInfoLog requires 4 arguments");
 			return;
 		}
 
-		GLuint pipeline = args[0]->Uint32Value();
-		GLsizei bufSize = args[1]->Int32Value();
+		GLuint pipeline = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei bufSize = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLsizei* length = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -12011,8 +12021,8 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			length = reinterpret_cast<GLsizei*>(bdata);
 		} else {
-			cout << "ERROR(glGetProgramPipelineInfoLog): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetProgramPipelineInfoLog): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
@@ -12023,22 +12033,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			infoLog = reinterpret_cast<GLchar*>(bdata);
 		} else {
-			cout << "ERROR(glGetProgramPipelineInfoLog): array must be of type Int8Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetProgramPipelineInfoLog): array must be of type Int8Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetProgramPipelineInfoLog(pipeline, bufSize, length, infoLog);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getProgramPipelineiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getProgramPipelineiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getProgramPipelineiv requires 3 arguments");
 			return;
 		}
 
-		GLuint pipeline = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLuint pipeline = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* params = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -12047,36 +12057,36 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetProgramPipelineiv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetProgramPipelineiv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetProgramPipelineiv(pipeline, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "programUniform1d"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "programUniform1d"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("programUniform1d requires 3 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLdouble x = args[2]->NumberValue();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble x = args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glProgramUniform1d(program, location, x);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "programUniform1dv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "programUniform1dv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("programUniform1dv requires 4 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLsizei count = args[2]->Int32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLdouble* value = nullptr;
 		if (args[3]->IsFloat64Array()) {
@@ -12085,36 +12095,36 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLdouble*>(bdata);
 		} else {
-			cout << "ERROR(glProgramUniform1dv): array must be of type Float64Array" << endl;
-			exit(1);
+			//cout << "ERROR(glProgramUniform1dv): array must be of type Float64Array" << endl;
+			//exit(1);
 		}
 
 
 		glProgramUniform1dv(program, location, count, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "programUniform1f"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "programUniform1f"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("programUniform1f requires 3 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLfloat x = GLfloat(args[2]->NumberValue());
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLfloat x = GLfloat(args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glProgramUniform1f(program, location, x);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "programUniform1fv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "programUniform1fv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("programUniform1fv requires 4 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLsizei count = args[2]->Int32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLfloat* value = nullptr;
 		if (args[3]->IsFloat32Array()) {
@@ -12123,36 +12133,36 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glProgramUniform1fv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glProgramUniform1fv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glProgramUniform1fv(program, location, count, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "programUniform1i"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "programUniform1i"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("programUniform1i requires 3 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLint x = args[2]->Int32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint x = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glProgramUniform1i(program, location, x);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "programUniform1iv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "programUniform1iv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("programUniform1iv requires 4 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLsizei count = args[2]->Int32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* value = nullptr;
 		if (args[3]->IsInt32Array()) {
@@ -12161,36 +12171,36 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glProgramUniform1iv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glProgramUniform1iv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glProgramUniform1iv(program, location, count, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "programUniform1ui"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "programUniform1ui"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("programUniform1ui requires 3 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLuint x = args[2]->Uint32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint x = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glProgramUniform1ui(program, location, x);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "programUniform1uiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "programUniform1uiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("programUniform1uiv requires 4 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLsizei count = args[2]->Int32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* value = nullptr;
 		if (args[3]->IsUint32Array()) {
@@ -12199,37 +12209,37 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glProgramUniform1uiv): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glProgramUniform1uiv): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glProgramUniform1uiv(program, location, count, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "programUniform2d"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "programUniform2d"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("programUniform2d requires 4 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLdouble x = args[2]->NumberValue();
-		GLdouble y = args[3]->NumberValue();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble x = args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble y = args[3]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glProgramUniform2d(program, location, x, y);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "programUniform2dv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "programUniform2dv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("programUniform2dv requires 4 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLsizei count = args[2]->Int32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLdouble* value = nullptr;
 		if (args[3]->IsFloat64Array()) {
@@ -12238,37 +12248,37 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLdouble*>(bdata);
 		} else {
-			cout << "ERROR(glProgramUniform2dv): array must be of type Float64Array" << endl;
-			exit(1);
+			//cout << "ERROR(glProgramUniform2dv): array must be of type Float64Array" << endl;
+			//exit(1);
 		}
 
 
 		glProgramUniform2dv(program, location, count, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "programUniform2f"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "programUniform2f"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("programUniform2f requires 4 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLfloat x = GLfloat(args[2]->NumberValue());
-		GLfloat y = GLfloat(args[3]->NumberValue());
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLfloat x = GLfloat(args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLfloat y = GLfloat(args[3]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glProgramUniform2f(program, location, x, y);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "programUniform2fv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "programUniform2fv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("programUniform2fv requires 4 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLsizei count = args[2]->Int32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLfloat* value = nullptr;
 		if (args[3]->IsFloat32Array()) {
@@ -12277,907 +12287,907 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			value = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glProgramUniform2fv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glProgramUniform2fv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glProgramUniform2fv(program, location, count, value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "programUniform2i"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	/*obj->Set(String::NewFromUtf8(isolate, "programUniform2i"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("programUniform2i requires 4 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLint x = args[2]->Int32Value();
-		GLint y = args[3]->Int32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint x = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint y = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glProgramUniform2i(program, location, x, y);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "programUniform2iv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 4) {
-			V8Helper::_instance->throwException("programUniform2iv requires 4 arguments");
-			return;
-		}
-
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLsizei count = args[2]->Int32Value();
-
-		GLint* value = nullptr;
-		if (args[3]->IsInt32Array()) {
-			v8::Local<v8::Int32Array> view = (args[3]).As<v8::Int32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			value = reinterpret_cast<GLint*>(bdata);
-		} else {
-			cout << "ERROR(glProgramUniform2iv): array must be of type Int32Array" << endl;
-			exit(1);
-		}
-
-
-		glProgramUniform2iv(program, location, count, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "programUniform2ui"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 4) {
-			V8Helper::_instance->throwException("programUniform2ui requires 4 arguments");
-			return;
-		}
-
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLuint x = args[2]->Uint32Value();
-		GLuint y = args[3]->Uint32Value();
-
-		glProgramUniform2ui(program, location, x, y);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "programUniform2uiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 4) {
-			V8Helper::_instance->throwException("programUniform2uiv requires 4 arguments");
-			return;
-		}
-
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLsizei count = args[2]->Int32Value();
-
-		GLuint* value = nullptr;
-		if (args[3]->IsUint32Array()) {
-			v8::Local<v8::Uint32Array> view = (args[3]).As<v8::Uint32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			value = reinterpret_cast<GLuint*>(bdata);
-		} else {
-			cout << "ERROR(glProgramUniform2uiv): array must be of type Uint32Array" << endl;
-			exit(1);
-		}
-
-
-		glProgramUniform2uiv(program, location, count, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "programUniform3d"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 5) {
-			V8Helper::_instance->throwException("programUniform3d requires 5 arguments");
-			return;
-		}
-
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLdouble x = args[2]->NumberValue();
-		GLdouble y = args[3]->NumberValue();
-		GLdouble z = args[4]->NumberValue();
-
-		glProgramUniform3d(program, location, x, y, z);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "programUniform3dv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 4) {
-			V8Helper::_instance->throwException("programUniform3dv requires 4 arguments");
-			return;
-		}
-
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLsizei count = args[2]->Int32Value();
-
-		GLdouble* value = nullptr;
-		if (args[3]->IsFloat64Array()) {
-			v8::Local<v8::Float64Array> view = (args[3]).As<v8::Float64Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			value = reinterpret_cast<GLdouble*>(bdata);
-		} else {
-			cout << "ERROR(glProgramUniform3dv): array must be of type Float64Array" << endl;
-			exit(1);
-		}
-
-
-		glProgramUniform3dv(program, location, count, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "programUniform3f"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 5) {
-			V8Helper::_instance->throwException("programUniform3f requires 5 arguments");
-			return;
-		}
-
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLfloat x = GLfloat(args[2]->NumberValue());
-		GLfloat y = GLfloat(args[3]->NumberValue());
-		GLfloat z = GLfloat(args[4]->NumberValue());
-
-		glProgramUniform3f(program, location, x, y, z);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "programUniform3fv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 4) {
-			V8Helper::_instance->throwException("programUniform3fv requires 4 arguments");
-			return;
-		}
-
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLsizei count = args[2]->Int32Value();
-
-		GLfloat* value = nullptr;
-		if (args[3]->IsFloat32Array()) {
-			v8::Local<v8::Float32Array> view = (args[3]).As<v8::Float32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			value = reinterpret_cast<GLfloat*>(bdata);
-		} else {
-			cout << "ERROR(glProgramUniform3fv): array must be of type Float32Array" << endl;
-			exit(1);
-		}
-
-
-		glProgramUniform3fv(program, location, count, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "programUniform3i"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 5) {
-			V8Helper::_instance->throwException("programUniform3i requires 5 arguments");
-			return;
-		}
-
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLint x = args[2]->Int32Value();
-		GLint y = args[3]->Int32Value();
-		GLint z = args[4]->Int32Value();
-
-		glProgramUniform3i(program, location, x, y, z);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "programUniform3iv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 4) {
-			V8Helper::_instance->throwException("programUniform3iv requires 4 arguments");
-			return;
-		}
-
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLsizei count = args[2]->Int32Value();
-
-		GLint* value = nullptr;
-		if (args[3]->IsInt32Array()) {
-			v8::Local<v8::Int32Array> view = (args[3]).As<v8::Int32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			value = reinterpret_cast<GLint*>(bdata);
-		} else {
-			cout << "ERROR(glProgramUniform3iv): array must be of type Int32Array" << endl;
-			exit(1);
-		}
-
-
-		glProgramUniform3iv(program, location, count, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "programUniform3ui"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 5) {
-			V8Helper::_instance->throwException("programUniform3ui requires 5 arguments");
-			return;
-		}
-
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLuint x = args[2]->Uint32Value();
-		GLuint y = args[3]->Uint32Value();
-		GLuint z = args[4]->Uint32Value();
-
-		glProgramUniform3ui(program, location, x, y, z);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "programUniform3uiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 4) {
-			V8Helper::_instance->throwException("programUniform3uiv requires 4 arguments");
-			return;
-		}
-
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLsizei count = args[2]->Int32Value();
-
-		GLuint* value = nullptr;
-		if (args[3]->IsUint32Array()) {
-			v8::Local<v8::Uint32Array> view = (args[3]).As<v8::Uint32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			value = reinterpret_cast<GLuint*>(bdata);
-		} else {
-			cout << "ERROR(glProgramUniform3uiv): array must be of type Uint32Array" << endl;
-			exit(1);
-		}
-
-
-		glProgramUniform3uiv(program, location, count, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "programUniform4d"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 6) {
-			V8Helper::_instance->throwException("programUniform4d requires 6 arguments");
-			return;
-		}
-
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLdouble x = args[2]->NumberValue();
-		GLdouble y = args[3]->NumberValue();
-		GLdouble z = args[4]->NumberValue();
-		GLdouble w = args[5]->NumberValue();
-
-		glProgramUniform4d(program, location, x, y, z, w);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "programUniform4dv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 4) {
-			V8Helper::_instance->throwException("programUniform4dv requires 4 arguments");
-			return;
-		}
-
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLsizei count = args[2]->Int32Value();
-
-		GLdouble* value = nullptr;
-		if (args[3]->IsFloat64Array()) {
-			v8::Local<v8::Float64Array> view = (args[3]).As<v8::Float64Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			value = reinterpret_cast<GLdouble*>(bdata);
-		} else {
-			cout << "ERROR(glProgramUniform4dv): array must be of type Float64Array" << endl;
-			exit(1);
-		}
-
-
-		glProgramUniform4dv(program, location, count, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "programUniform4f"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 6) {
-			V8Helper::_instance->throwException("programUniform4f requires 6 arguments");
-			return;
-		}
-
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLfloat x = GLfloat(args[2]->NumberValue());
-		GLfloat y = GLfloat(args[3]->NumberValue());
-		GLfloat z = GLfloat(args[4]->NumberValue());
-		GLfloat w = GLfloat(args[5]->NumberValue());
-
-		glProgramUniform4f(program, location, x, y, z, w);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "programUniform4fv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 4) {
-			V8Helper::_instance->throwException("programUniform4fv requires 4 arguments");
-			return;
-		}
-
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLsizei count = args[2]->Int32Value();
-
-		GLfloat* value = nullptr;
-		if (args[3]->IsFloat32Array()) {
-			v8::Local<v8::Float32Array> view = (args[3]).As<v8::Float32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			value = reinterpret_cast<GLfloat*>(bdata);
-		} else {
-			cout << "ERROR(glProgramUniform4fv): array must be of type Float32Array" << endl;
-			exit(1);
-		}
-
-
-		glProgramUniform4fv(program, location, count, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "programUniform4i"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 6) {
-			V8Helper::_instance->throwException("programUniform4i requires 6 arguments");
-			return;
-		}
-
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLint x = args[2]->Int32Value();
-		GLint y = args[3]->Int32Value();
-		GLint z = args[4]->Int32Value();
-		GLint w = args[5]->Int32Value();
-
-		glProgramUniform4i(program, location, x, y, z, w);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "programUniform4iv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 4) {
-			V8Helper::_instance->throwException("programUniform4iv requires 4 arguments");
-			return;
-		}
-
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLsizei count = args[2]->Int32Value();
-
-		GLint* value = nullptr;
-		if (args[3]->IsInt32Array()) {
-			v8::Local<v8::Int32Array> view = (args[3]).As<v8::Int32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			value = reinterpret_cast<GLint*>(bdata);
-		} else {
-			cout << "ERROR(glProgramUniform4iv): array must be of type Int32Array" << endl;
-			exit(1);
-		}
-
-
-		glProgramUniform4iv(program, location, count, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "programUniform4ui"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 6) {
-			V8Helper::_instance->throwException("programUniform4ui requires 6 arguments");
-			return;
-		}
-
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLuint x = args[2]->Uint32Value();
-		GLuint y = args[3]->Uint32Value();
-		GLuint z = args[4]->Uint32Value();
-		GLuint w = args[5]->Uint32Value();
-
-		glProgramUniform4ui(program, location, x, y, z, w);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "programUniform4uiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 4) {
-			V8Helper::_instance->throwException("programUniform4uiv requires 4 arguments");
-			return;
-		}
-
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLsizei count = args[2]->Int32Value();
-
-		GLuint* value = nullptr;
-		if (args[3]->IsUint32Array()) {
-			v8::Local<v8::Uint32Array> view = (args[3]).As<v8::Uint32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			value = reinterpret_cast<GLuint*>(bdata);
-		} else {
-			cout << "ERROR(glProgramUniform4uiv): array must be of type Uint32Array" << endl;
-			exit(1);
-		}
-
-
-		glProgramUniform4uiv(program, location, count, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "programUniformMatrix2dv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 5) {
-			V8Helper::_instance->throwException("programUniformMatrix2dv requires 5 arguments");
-			return;
-		}
-
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLsizei count = args[2]->Int32Value();
-		GLboolean transpose = GLboolean(args[3]->Uint32Value());
-
-		GLdouble* value = nullptr;
-		if (args[4]->IsFloat64Array()) {
-			v8::Local<v8::Float64Array> view = (args[4]).As<v8::Float64Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			value = reinterpret_cast<GLdouble*>(bdata);
-		} else {
-			cout << "ERROR(glProgramUniformMatrix2dv): array must be of type Float64Array" << endl;
-			exit(1);
-		}
-
-
-		glProgramUniformMatrix2dv(program, location, count, transpose, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "programUniformMatrix2fv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 5) {
-			V8Helper::_instance->throwException("programUniformMatrix2fv requires 5 arguments");
-			return;
-		}
-
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLsizei count = args[2]->Int32Value();
-		GLboolean transpose = GLboolean(args[3]->Uint32Value());
-
-		GLfloat* value = nullptr;
-		if (args[4]->IsFloat32Array()) {
-			v8::Local<v8::Float32Array> view = (args[4]).As<v8::Float32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			value = reinterpret_cast<GLfloat*>(bdata);
-		} else {
-			cout << "ERROR(glProgramUniformMatrix2fv): array must be of type Float32Array" << endl;
-			exit(1);
-		}
-
-
-		glProgramUniformMatrix2fv(program, location, count, transpose, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "programUniformMatrix2x3dv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 5) {
-			V8Helper::_instance->throwException("programUniformMatrix2x3dv requires 5 arguments");
-			return;
-		}
-
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLsizei count = args[2]->Int32Value();
-		GLboolean transpose = GLboolean(args[3]->Uint32Value());
-
-		GLdouble* value = nullptr;
-		if (args[4]->IsFloat64Array()) {
-			v8::Local<v8::Float64Array> view = (args[4]).As<v8::Float64Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			value = reinterpret_cast<GLdouble*>(bdata);
-		} else {
-			cout << "ERROR(glProgramUniformMatrix2x3dv): array must be of type Float64Array" << endl;
-			exit(1);
-		}
-
-
-		glProgramUniformMatrix2x3dv(program, location, count, transpose, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "programUniformMatrix2x3fv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 5) {
-			V8Helper::_instance->throwException("programUniformMatrix2x3fv requires 5 arguments");
-			return;
-		}
-
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLsizei count = args[2]->Int32Value();
-		GLboolean transpose = GLboolean(args[3]->Uint32Value());
-
-		GLfloat* value = nullptr;
-		if (args[4]->IsFloat32Array()) {
-			v8::Local<v8::Float32Array> view = (args[4]).As<v8::Float32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			value = reinterpret_cast<GLfloat*>(bdata);
-		} else {
-			cout << "ERROR(glProgramUniformMatrix2x3fv): array must be of type Float32Array" << endl;
-			exit(1);
-		}
-
-
-		glProgramUniformMatrix2x3fv(program, location, count, transpose, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "programUniformMatrix2x4dv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 5) {
-			V8Helper::_instance->throwException("programUniformMatrix2x4dv requires 5 arguments");
-			return;
-		}
-
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLsizei count = args[2]->Int32Value();
-		GLboolean transpose = GLboolean(args[3]->Uint32Value());
-
-		GLdouble* value = nullptr;
-		if (args[4]->IsFloat64Array()) {
-			v8::Local<v8::Float64Array> view = (args[4]).As<v8::Float64Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			value = reinterpret_cast<GLdouble*>(bdata);
-		} else {
-			cout << "ERROR(glProgramUniformMatrix2x4dv): array must be of type Float64Array" << endl;
-			exit(1);
-		}
-
-
-		glProgramUniformMatrix2x4dv(program, location, count, transpose, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "programUniformMatrix2x4fv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 5) {
-			V8Helper::_instance->throwException("programUniformMatrix2x4fv requires 5 arguments");
-			return;
-		}
-
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLsizei count = args[2]->Int32Value();
-		GLboolean transpose = GLboolean(args[3]->Uint32Value());
-
-		GLfloat* value = nullptr;
-		if (args[4]->IsFloat32Array()) {
-			v8::Local<v8::Float32Array> view = (args[4]).As<v8::Float32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			value = reinterpret_cast<GLfloat*>(bdata);
-		} else {
-			cout << "ERROR(glProgramUniformMatrix2x4fv): array must be of type Float32Array" << endl;
-			exit(1);
-		}
-
-
-		glProgramUniformMatrix2x4fv(program, location, count, transpose, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "programUniformMatrix3dv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 5) {
-			V8Helper::_instance->throwException("programUniformMatrix3dv requires 5 arguments");
-			return;
-		}
-
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLsizei count = args[2]->Int32Value();
-		GLboolean transpose = GLboolean(args[3]->Uint32Value());
-
-		GLdouble* value = nullptr;
-		if (args[4]->IsFloat64Array()) {
-			v8::Local<v8::Float64Array> view = (args[4]).As<v8::Float64Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			value = reinterpret_cast<GLdouble*>(bdata);
-		} else {
-			cout << "ERROR(glProgramUniformMatrix3dv): array must be of type Float64Array" << endl;
-			exit(1);
-		}
-
-
-		glProgramUniformMatrix3dv(program, location, count, transpose, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "programUniformMatrix3fv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 5) {
-			V8Helper::_instance->throwException("programUniformMatrix3fv requires 5 arguments");
-			return;
-		}
-
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLsizei count = args[2]->Int32Value();
-		GLboolean transpose = GLboolean(args[3]->Uint32Value());
-
-		GLfloat* value = nullptr;
-		if (args[4]->IsFloat32Array()) {
-			v8::Local<v8::Float32Array> view = (args[4]).As<v8::Float32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			value = reinterpret_cast<GLfloat*>(bdata);
-		} else {
-			cout << "ERROR(glProgramUniformMatrix3fv): array must be of type Float32Array" << endl;
-			exit(1);
-		}
-
-
-		glProgramUniformMatrix3fv(program, location, count, transpose, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "programUniformMatrix3x2dv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 5) {
-			V8Helper::_instance->throwException("programUniformMatrix3x2dv requires 5 arguments");
-			return;
-		}
-
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLsizei count = args[2]->Int32Value();
-		GLboolean transpose = GLboolean(args[3]->Uint32Value());
-
-		GLdouble* value = nullptr;
-		if (args[4]->IsFloat64Array()) {
-			v8::Local<v8::Float64Array> view = (args[4]).As<v8::Float64Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			value = reinterpret_cast<GLdouble*>(bdata);
-		} else {
-			cout << "ERROR(glProgramUniformMatrix3x2dv): array must be of type Float64Array" << endl;
-			exit(1);
-		}
-
-
-		glProgramUniformMatrix3x2dv(program, location, count, transpose, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "programUniformMatrix3x2fv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 5) {
-			V8Helper::_instance->throwException("programUniformMatrix3x2fv requires 5 arguments");
-			return;
-		}
-
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLsizei count = args[2]->Int32Value();
-		GLboolean transpose = GLboolean(args[3]->Uint32Value());
-
-		GLfloat* value = nullptr;
-		if (args[4]->IsFloat32Array()) {
-			v8::Local<v8::Float32Array> view = (args[4]).As<v8::Float32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			value = reinterpret_cast<GLfloat*>(bdata);
-		} else {
-			cout << "ERROR(glProgramUniformMatrix3x2fv): array must be of type Float32Array" << endl;
-			exit(1);
-		}
-
-
-		glProgramUniformMatrix3x2fv(program, location, count, transpose, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "programUniformMatrix3x4dv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 5) {
-			V8Helper::_instance->throwException("programUniformMatrix3x4dv requires 5 arguments");
-			return;
-		}
-
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLsizei count = args[2]->Int32Value();
-		GLboolean transpose = GLboolean(args[3]->Uint32Value());
-
-		GLdouble* value = nullptr;
-		if (args[4]->IsFloat64Array()) {
-			v8::Local<v8::Float64Array> view = (args[4]).As<v8::Float64Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			value = reinterpret_cast<GLdouble*>(bdata);
-		} else {
-			cout << "ERROR(glProgramUniformMatrix3x4dv): array must be of type Float64Array" << endl;
-			exit(1);
-		}
-
-
-		glProgramUniformMatrix3x4dv(program, location, count, transpose, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "programUniformMatrix3x4fv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 5) {
-			V8Helper::_instance->throwException("programUniformMatrix3x4fv requires 5 arguments");
-			return;
-		}
-
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLsizei count = args[2]->Int32Value();
-		GLboolean transpose = GLboolean(args[3]->Uint32Value());
-
-		GLfloat* value = nullptr;
-		if (args[4]->IsFloat32Array()) {
-			v8::Local<v8::Float32Array> view = (args[4]).As<v8::Float32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			value = reinterpret_cast<GLfloat*>(bdata);
-		} else {
-			cout << "ERROR(glProgramUniformMatrix3x4fv): array must be of type Float32Array" << endl;
-			exit(1);
-		}
-
-
-		glProgramUniformMatrix3x4fv(program, location, count, transpose, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "programUniformMatrix4dv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 5) {
-			V8Helper::_instance->throwException("programUniformMatrix4dv requires 5 arguments");
-			return;
-		}
-
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLsizei count = args[2]->Int32Value();
-		GLboolean transpose = GLboolean(args[3]->Uint32Value());
-
-		GLdouble* value = nullptr;
-		if (args[4]->IsFloat64Array()) {
-			v8::Local<v8::Float64Array> view = (args[4]).As<v8::Float64Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			value = reinterpret_cast<GLdouble*>(bdata);
-		} else {
-			cout << "ERROR(glProgramUniformMatrix4dv): array must be of type Float64Array" << endl;
-			exit(1);
-		}
-
-
-		glProgramUniformMatrix4dv(program, location, count, transpose, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "programUniformMatrix4fv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 5) {
-			V8Helper::_instance->throwException("programUniformMatrix4fv requires 5 arguments");
-			return;
-		}
-
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLsizei count = args[2]->Int32Value();
-		GLboolean transpose = GLboolean(args[3]->Uint32Value());
-
-		GLfloat* value = nullptr;
-		if (args[4]->IsFloat32Array()) {
-			v8::Local<v8::Float32Array> view = (args[4]).As<v8::Float32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			value = reinterpret_cast<GLfloat*>(bdata);
-		} else {
-			cout << "ERROR(glProgramUniformMatrix4fv): array must be of type Float32Array" << endl;
-			exit(1);
-		}
-
-
-		glProgramUniformMatrix4fv(program, location, count, transpose, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "programUniformMatrix4x2dv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 5) {
-			V8Helper::_instance->throwException("programUniformMatrix4x2dv requires 5 arguments");
-			return;
-		}
-
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLsizei count = args[2]->Int32Value();
-		GLboolean transpose = GLboolean(args[3]->Uint32Value());
-
-		GLdouble* value = nullptr;
-		if (args[4]->IsFloat64Array()) {
-			v8::Local<v8::Float64Array> view = (args[4]).As<v8::Float64Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			value = reinterpret_cast<GLdouble*>(bdata);
-		} else {
-			cout << "ERROR(glProgramUniformMatrix4x2dv): array must be of type Float64Array" << endl;
-			exit(1);
-		}
-
-
-		glProgramUniformMatrix4x2dv(program, location, count, transpose, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "programUniformMatrix4x2fv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 5) {
-			V8Helper::_instance->throwException("programUniformMatrix4x2fv requires 5 arguments");
-			return;
-		}
-
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLsizei count = args[2]->Int32Value();
-		GLboolean transpose = GLboolean(args[3]->Uint32Value());
-
-		GLfloat* value = nullptr;
-		if (args[4]->IsFloat32Array()) {
-			v8::Local<v8::Float32Array> view = (args[4]).As<v8::Float32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			value = reinterpret_cast<GLfloat*>(bdata);
-		} else {
-			cout << "ERROR(glProgramUniformMatrix4x2fv): array must be of type Float32Array" << endl;
-			exit(1);
-		}
-
-
-		glProgramUniformMatrix4x2fv(program, location, count, transpose, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "programUniformMatrix4x3dv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 5) {
-			V8Helper::_instance->throwException("programUniformMatrix4x3dv requires 5 arguments");
-			return;
-		}
-
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLsizei count = args[2]->Int32Value();
-		GLboolean transpose = GLboolean(args[3]->Uint32Value());
-
-		GLdouble* value = nullptr;
-		if (args[4]->IsFloat64Array()) {
-			v8::Local<v8::Float64Array> view = (args[4]).As<v8::Float64Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			value = reinterpret_cast<GLdouble*>(bdata);
-		} else {
-			cout << "ERROR(glProgramUniformMatrix4x3dv): array must be of type Float64Array" << endl;
-			exit(1);
-		}
-
-
-		glProgramUniformMatrix4x3dv(program, location, count, transpose, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "programUniformMatrix4x3fv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 5) {
-			V8Helper::_instance->throwException("programUniformMatrix4x3fv requires 5 arguments");
-			return;
-		}
-
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLsizei count = args[2]->Int32Value();
-		GLboolean transpose = GLboolean(args[3]->Uint32Value());
-
-		GLfloat* value = nullptr;
-		if (args[4]->IsFloat32Array()) {
-			v8::Local<v8::Float32Array> view = (args[4]).As<v8::Float32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			value = reinterpret_cast<GLfloat*>(bdata);
-		} else {
-			cout << "ERROR(glProgramUniformMatrix4x3fv): array must be of type Float32Array" << endl;
-			exit(1);
-		}
-
-
-		glProgramUniformMatrix4x3fv(program, location, count, transpose, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "useProgramStages"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	}).ToLocalChecked());*/
+
+	//obj->Set(String::NewFromUtf8(isolate, "programUniform2iv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	//	if (args.Length() != 4) {
+	//		V8Helper::_instance->throwException("programUniform2iv requires 4 arguments");
+	//		return;
+	//	}
+
+	//	GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	//	GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	//	GLsizei count = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	//	GLint* value = nullptr;
+	//	if (args[3]->IsInt32Array()) {
+	//		v8::Local<v8::Int32Array> view = (args[3]).As<v8::Int32Array>();
+	//		auto buffer = view->Buffer();
+	//		void *bdata = view->Buffer()->GetContents().Data();
+	//		value = reinterpret_cast<GLint*>(bdata);
+	//	} else {
+	//		//cout << "ERROR(glProgramUniform2iv): array must be of type Int32Array" << endl;
+	//		//exit(1);
+	//	}
+
+
+	//	glProgramUniform2iv(program, location, count, value);
+	//}).ToLocalChecked());
+
+	//obj->Set(String::NewFromUtf8(isolate, "programUniform2ui"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	//	if (args.Length() != 4) {
+	//		V8Helper::_instance->throwException("programUniform2ui requires 4 arguments");
+	//		return;
+	//	}
+
+	//	GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	//	GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	//	GLuint x = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	//	GLuint y = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	//	glProgramUniform2ui(program, location, x, y);
+	//}).ToLocalChecked());
+
+	//obj->Set(String::NewFromUtf8(isolate, "programUniform2uiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	//	if (args.Length() != 4) {
+	//		V8Helper::_instance->throwException("programUniform2uiv requires 4 arguments");
+	//		return;
+	//	}
+
+	//	GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	//	GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	//	GLsizei count = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	//	GLuint* value = nullptr;
+	//	if (args[3]->IsUint32Array()) {
+	//		v8::Local<v8::Uint32Array> view = (args[3]).As<v8::Uint32Array>();
+	//		auto buffer = view->Buffer();
+	//		void *bdata = view->Buffer()->GetContents().Data();
+	//		value = reinterpret_cast<GLuint*>(bdata);
+	//	} else {
+	//		//cout << "ERROR(glProgramUniform2uiv): array must be of type Uint32Array" << endl;
+	//		//exit(1);
+	//	}
+
+
+	//	glProgramUniform2uiv(program, location, count, value);
+	//}).ToLocalChecked());
+
+	//obj->Set(String::NewFromUtf8(isolate, "programUniform3d"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	//	if (args.Length() != 5) {
+	//		V8Helper::_instance->throwException("programUniform3d requires 5 arguments");
+	//		return;
+	//	}
+
+	//	GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	//	GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	//	GLdouble x = args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	//	GLdouble y = args[3]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	//	GLdouble z = args[4]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	//	glProgramUniform3d(program, location, x, y, z);
+	//}).ToLocalChecked());
+
+	//obj->Set(String::NewFromUtf8(isolate, "programUniform3dv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	//	if (args.Length() != 4) {
+	//		V8Helper::_instance->throwException("programUniform3dv requires 4 arguments");
+	//		return;
+	//	}
+
+	//	GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	//	GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	//	GLsizei count = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	//	GLdouble* value = nullptr;
+	//	if (args[3]->IsFloat64Array()) {
+	//		v8::Local<v8::Float64Array> view = (args[3]).As<v8::Float64Array>();
+	//		auto buffer = view->Buffer();
+	//		void *bdata = view->Buffer()->GetContents().Data();
+	//		value = reinterpret_cast<GLdouble*>(bdata);
+	//	} else {
+	//		//cout << "ERROR(glProgramUniform3dv): array must be of type Float64Array" << endl;
+	//		//exit(1);
+	//	}
+
+
+	//	glProgramUniform3dv(program, location, count, value);
+	//}).ToLocalChecked());
+
+	//obj->Set(String::NewFromUtf8(isolate, "programUniform3f"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	//	if (args.Length() != 5) {
+	//		V8Helper::_instance->throwException("programUniform3f requires 5 arguments");
+	//		return;
+	//	}
+
+	//	GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	//	GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	//	GLfloat x = GLfloat(args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+	//	GLfloat y = GLfloat(args[3]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+	//	GLfloat z = GLfloat(args[4]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+
+	//	glProgramUniform3f(program, location, x, y, z);
+	//}).ToLocalChecked());
+
+	//obj->Set(String::NewFromUtf8(isolate, "programUniform3fv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	//	if (args.Length() != 4) {
+	//		V8Helper::_instance->throwException("programUniform3fv requires 4 arguments");
+	//		return;
+	//	}
+
+	//	GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	//	GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	//	GLsizei count = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	//	GLfloat* value = nullptr;
+	//	if (args[3]->IsFloat32Array()) {
+	//		v8::Local<v8::Float32Array> view = (args[3]).As<v8::Float32Array>();
+	//		auto buffer = view->Buffer();
+	//		void *bdata = view->Buffer()->GetContents().Data();
+	//		value = reinterpret_cast<GLfloat*>(bdata);
+	//	} else {
+	//		//cout << "ERROR(glProgramUniform3fv): array must be of type Float32Array" << endl;
+	//		//exit(1);
+	//	}
+
+
+	//	glProgramUniform3fv(program, location, count, value);
+	//}).ToLocalChecked());
+
+	//obj->Set(String::NewFromUtf8(isolate, "programUniform3i"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	//	if (args.Length() != 5) {
+	//		V8Helper::_instance->throwException("programUniform3i requires 5 arguments");
+	//		return;
+	//	}
+
+	//	GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	//	GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	//	GLint x = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	//	GLint y = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	//	GLint z = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	//	glProgramUniform3i(program, location, x, y, z);
+	//}).ToLocalChecked());
+
+	//obj->Set(String::NewFromUtf8(isolate, "programUniform3iv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	//	if (args.Length() != 4) {
+	//		V8Helper::_instance->throwException("programUniform3iv requires 4 arguments");
+	//		return;
+	//	}
+
+	//	GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	//	GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	//	GLsizei count = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	//	GLint* value = nullptr;
+	//	if (args[3]->IsInt32Array()) {
+	//		v8::Local<v8::Int32Array> view = (args[3]).As<v8::Int32Array>();
+	//		auto buffer = view->Buffer();
+	//		void *bdata = view->Buffer()->GetContents().Data();
+	//		value = reinterpret_cast<GLint*>(bdata);
+	//	} else {
+	//		//cout << "ERROR(glProgramUniform3iv): array must be of type Int32Array" << endl;
+	//		//exit(1);
+	//	}
+
+
+	//	glProgramUniform3iv(program, location, count, value);
+	//}).ToLocalChecked());
+
+	//obj->Set(String::NewFromUtf8(isolate, "programUniform3ui"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	//	if (args.Length() != 5) {
+	//		V8Helper::_instance->throwException("programUniform3ui requires 5 arguments");
+	//		return;
+	//	}
+
+	//	GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	//	GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	//	GLuint x = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	//	GLuint y = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	//	GLuint z = args[4]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	//	glProgramUniform3ui(program, location, x, y, z);
+	//}).ToLocalChecked());
+
+	//obj->Set(String::NewFromUtf8(isolate, "programUniform3uiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	//	if (args.Length() != 4) {
+	//		V8Helper::_instance->throwException("programUniform3uiv requires 4 arguments");
+	//		return;
+	//	}
+
+	//	GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	//	GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	//	GLsizei count = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	//	GLuint* value = nullptr;
+	//	if (args[3]->IsUint32Array()) {
+	//		v8::Local<v8::Uint32Array> view = (args[3]).As<v8::Uint32Array>();
+	//		auto buffer = view->Buffer();
+	//		void *bdata = view->Buffer()->GetContents().Data();
+	//		value = reinterpret_cast<GLuint*>(bdata);
+	//	} else {
+	//		//cout << "ERROR(glProgramUniform3uiv): array must be of type Uint32Array" << endl;
+	//		//exit(1);
+	//	}
+
+
+	//	glProgramUniform3uiv(program, location, count, value);
+	//}).ToLocalChecked());
+
+	//obj->Set(String::NewFromUtf8(isolate, "programUniform4d"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	//	if (args.Length() != 6) {
+	//		V8Helper::_instance->throwException("programUniform4d requires 6 arguments");
+	//		return;
+	//	}
+
+	//	GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	//	GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	//	GLdouble x = args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	//	GLdouble y = args[3]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	//	GLdouble z = args[4]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	//	GLdouble w = args[5]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	//	glProgramUniform4d(program, location, x, y, z, w);
+	//}).ToLocalChecked());
+
+	//obj->Set(String::NewFromUtf8(isolate, "programUniform4dv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	//	if (args.Length() != 4) {
+	//		V8Helper::_instance->throwException("programUniform4dv requires 4 arguments");
+	//		return;
+	//	}
+
+	//	GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	//	GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	//	GLsizei count = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	//	GLdouble* value = nullptr;
+	//	if (args[3]->IsFloat64Array()) {
+	//		v8::Local<v8::Float64Array> view = (args[3]).As<v8::Float64Array>();
+	//		auto buffer = view->Buffer();
+	//		void *bdata = view->Buffer()->GetContents().Data();
+	//		value = reinterpret_cast<GLdouble*>(bdata);
+	//	} else {
+	//		//cout << "ERROR(glProgramUniform4dv): array must be of type Float64Array" << endl;
+	//		//exit(1);
+	//	}
+
+
+	//	glProgramUniform4dv(program, location, count, value);
+	//}).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "programUniform4f"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 6) {
+	// 		V8Helper::_instance->throwException("programUniform4f requires 6 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLfloat x = GLfloat(args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+	// 	GLfloat y = GLfloat(args[3]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+	// 	GLfloat z = GLfloat(args[4]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+	// 	GLfloat w = GLfloat(args[5]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+
+	// 	glProgramUniform4f(program, location, x, y, z, w);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "programUniform4fv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 4) {
+	// 		V8Helper::_instance->throwException("programUniform4fv requires 4 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLsizei count = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLfloat* value = nullptr;
+	// 	if (args[3]->IsFloat32Array()) {
+	// 		v8::Local<v8::Float32Array> view = (args[3]).As<v8::Float32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		value = reinterpret_cast<GLfloat*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glProgramUniform4fv): array must be of type Float32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glProgramUniform4fv(program, location, count, value);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "programUniform4i"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 6) {
+	// 		V8Helper::_instance->throwException("programUniform4i requires 6 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint x = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint y = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint z = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint w = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	glProgramUniform4i(program, location, x, y, z, w);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "programUniform4iv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 4) {
+	// 		V8Helper::_instance->throwException("programUniform4iv requires 4 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLsizei count = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLint* value = nullptr;
+	// 	if (args[3]->IsInt32Array()) {
+	// 		v8::Local<v8::Int32Array> view = (args[3]).As<v8::Int32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		value = reinterpret_cast<GLint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glProgramUniform4iv): array must be of type Int32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glProgramUniform4iv(program, location, count, value);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "programUniform4ui"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 6) {
+	// 		V8Helper::_instance->throwException("programUniform4ui requires 6 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint x = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint y = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint z = args[4]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint w = args[5]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	glProgramUniform4ui(program, location, x, y, z, w);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "programUniform4uiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 4) {
+	// 		V8Helper::_instance->throwException("programUniform4uiv requires 4 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLsizei count = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLuint* value = nullptr;
+	// 	if (args[3]->IsUint32Array()) {
+	// 		v8::Local<v8::Uint32Array> view = (args[3]).As<v8::Uint32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		value = reinterpret_cast<GLuint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glProgramUniform4uiv): array must be of type Uint32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glProgramUniform4uiv(program, location, count, value);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "programUniformMatrix2dv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 5) {
+	// 		V8Helper::_instance->throwException("programUniformMatrix2dv requires 5 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLsizei count = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLboolean transpose = GLboolean(args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+
+	// 	GLdouble* value = nullptr;
+	// 	if (args[4]->IsFloat64Array()) {
+	// 		v8::Local<v8::Float64Array> view = (args[4]).As<v8::Float64Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		value = reinterpret_cast<GLdouble*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glProgramUniformMatrix2dv): array must be of type Float64Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glProgramUniformMatrix2dv(program, location, count, transpose, value);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "programUniformMatrix2fv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 5) {
+	// 		V8Helper::_instance->throwException("programUniformMatrix2fv requires 5 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLsizei count = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLboolean transpose = GLboolean(args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+
+	// 	GLfloat* value = nullptr;
+	// 	if (args[4]->IsFloat32Array()) {
+	// 		v8::Local<v8::Float32Array> view = (args[4]).As<v8::Float32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		value = reinterpret_cast<GLfloat*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glProgramUniformMatrix2fv): array must be of type Float32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glProgramUniformMatrix2fv(program, location, count, transpose, value);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "programUniformMatrix2x3dv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 5) {
+	// 		V8Helper::_instance->throwException("programUniformMatrix2x3dv requires 5 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLsizei count = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLboolean transpose = GLboolean(args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+
+	// 	GLdouble* value = nullptr;
+	// 	if (args[4]->IsFloat64Array()) {
+	// 		v8::Local<v8::Float64Array> view = (args[4]).As<v8::Float64Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		value = reinterpret_cast<GLdouble*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glProgramUniformMatrix2x3dv): array must be of type Float64Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glProgramUniformMatrix2x3dv(program, location, count, transpose, value);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "programUniformMatrix2x3fv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 5) {
+	// 		V8Helper::_instance->throwException("programUniformMatrix2x3fv requires 5 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLsizei count = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLboolean transpose = GLboolean(args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+
+	// 	GLfloat* value = nullptr;
+	// 	if (args[4]->IsFloat32Array()) {
+	// 		v8::Local<v8::Float32Array> view = (args[4]).As<v8::Float32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		value = reinterpret_cast<GLfloat*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glProgramUniformMatrix2x3fv): array must be of type Float32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glProgramUniformMatrix2x3fv(program, location, count, transpose, value);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "programUniformMatrix2x4dv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 5) {
+	// 		V8Helper::_instance->throwException("programUniformMatrix2x4dv requires 5 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLsizei count = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLboolean transpose = GLboolean(args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+
+	// 	GLdouble* value = nullptr;
+	// 	if (args[4]->IsFloat64Array()) {
+	// 		v8::Local<v8::Float64Array> view = (args[4]).As<v8::Float64Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		value = reinterpret_cast<GLdouble*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glProgramUniformMatrix2x4dv): array must be of type Float64Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glProgramUniformMatrix2x4dv(program, location, count, transpose, value);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "programUniformMatrix2x4fv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 5) {
+	// 		V8Helper::_instance->throwException("programUniformMatrix2x4fv requires 5 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLsizei count = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLboolean transpose = GLboolean(args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+
+	// 	GLfloat* value = nullptr;
+	// 	if (args[4]->IsFloat32Array()) {
+	// 		v8::Local<v8::Float32Array> view = (args[4]).As<v8::Float32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		value = reinterpret_cast<GLfloat*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glProgramUniformMatrix2x4fv): array must be of type Float32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glProgramUniformMatrix2x4fv(program, location, count, transpose, value);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "programUniformMatrix3dv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 5) {
+	// 		V8Helper::_instance->throwException("programUniformMatrix3dv requires 5 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLsizei count = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLboolean transpose = GLboolean(args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+
+	// 	GLdouble* value = nullptr;
+	// 	if (args[4]->IsFloat64Array()) {
+	// 		v8::Local<v8::Float64Array> view = (args[4]).As<v8::Float64Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		value = reinterpret_cast<GLdouble*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glProgramUniformMatrix3dv): array must be of type Float64Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glProgramUniformMatrix3dv(program, location, count, transpose, value);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "programUniformMatrix3fv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 5) {
+	// 		V8Helper::_instance->throwException("programUniformMatrix3fv requires 5 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLsizei count = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLboolean transpose = GLboolean(args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+
+	// 	GLfloat* value = nullptr;
+	// 	if (args[4]->IsFloat32Array()) {
+	// 		v8::Local<v8::Float32Array> view = (args[4]).As<v8::Float32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		value = reinterpret_cast<GLfloat*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glProgramUniformMatrix3fv): array must be of type Float32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glProgramUniformMatrix3fv(program, location, count, transpose, value);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "programUniformMatrix3x2dv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 5) {
+	// 		V8Helper::_instance->throwException("programUniformMatrix3x2dv requires 5 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLsizei count = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLboolean transpose = GLboolean(args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+
+	// 	GLdouble* value = nullptr;
+	// 	if (args[4]->IsFloat64Array()) {
+	// 		v8::Local<v8::Float64Array> view = (args[4]).As<v8::Float64Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		value = reinterpret_cast<GLdouble*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glProgramUniformMatrix3x2dv): array must be of type Float64Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glProgramUniformMatrix3x2dv(program, location, count, transpose, value);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "programUniformMatrix3x2fv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 5) {
+	// 		V8Helper::_instance->throwException("programUniformMatrix3x2fv requires 5 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLsizei count = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLboolean transpose = GLboolean(args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+
+	// 	GLfloat* value = nullptr;
+	// 	if (args[4]->IsFloat32Array()) {
+	// 		v8::Local<v8::Float32Array> view = (args[4]).As<v8::Float32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		value = reinterpret_cast<GLfloat*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glProgramUniformMatrix3x2fv): array must be of type Float32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glProgramUniformMatrix3x2fv(program, location, count, transpose, value);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "programUniformMatrix3x4dv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 5) {
+	// 		V8Helper::_instance->throwException("programUniformMatrix3x4dv requires 5 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLsizei count = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLboolean transpose = GLboolean(args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+
+	// 	GLdouble* value = nullptr;
+	// 	if (args[4]->IsFloat64Array()) {
+	// 		v8::Local<v8::Float64Array> view = (args[4]).As<v8::Float64Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		value = reinterpret_cast<GLdouble*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glProgramUniformMatrix3x4dv): array must be of type Float64Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glProgramUniformMatrix3x4dv(program, location, count, transpose, value);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "programUniformMatrix3x4fv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 5) {
+	// 		V8Helper::_instance->throwException("programUniformMatrix3x4fv requires 5 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLsizei count = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLboolean transpose = GLboolean(args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+
+	// 	GLfloat* value = nullptr;
+	// 	if (args[4]->IsFloat32Array()) {
+	// 		v8::Local<v8::Float32Array> view = (args[4]).As<v8::Float32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		value = reinterpret_cast<GLfloat*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glProgramUniformMatrix3x4fv): array must be of type Float32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glProgramUniformMatrix3x4fv(program, location, count, transpose, value);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "programUniformMatrix4dv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 5) {
+	// 		V8Helper::_instance->throwException("programUniformMatrix4dv requires 5 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLsizei count = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLboolean transpose = GLboolean(args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+
+	// 	GLdouble* value = nullptr;
+	// 	if (args[4]->IsFloat64Array()) {
+	// 		v8::Local<v8::Float64Array> view = (args[4]).As<v8::Float64Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		value = reinterpret_cast<GLdouble*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glProgramUniformMatrix4dv): array must be of type Float64Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glProgramUniformMatrix4dv(program, location, count, transpose, value);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "programUniformMatrix4fv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 5) {
+	// 		V8Helper::_instance->throwException("programUniformMatrix4fv requires 5 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLsizei count = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLboolean transpose = GLboolean(args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+
+	// 	GLfloat* value = nullptr;
+	// 	if (args[4]->IsFloat32Array()) {
+	// 		v8::Local<v8::Float32Array> view = (args[4]).As<v8::Float32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		value = reinterpret_cast<GLfloat*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glProgramUniformMatrix4fv): array must be of type Float32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glProgramUniformMatrix4fv(program, location, count, transpose, value);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "programUniformMatrix4x2dv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 5) {
+	// 		V8Helper::_instance->throwException("programUniformMatrix4x2dv requires 5 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLsizei count = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLboolean transpose = GLboolean(args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+
+	// 	GLdouble* value = nullptr;
+	// 	if (args[4]->IsFloat64Array()) {
+	// 		v8::Local<v8::Float64Array> view = (args[4]).As<v8::Float64Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		value = reinterpret_cast<GLdouble*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glProgramUniformMatrix4x2dv): array must be of type Float64Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glProgramUniformMatrix4x2dv(program, location, count, transpose, value);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "programUniformMatrix4x2fv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 5) {
+	// 		V8Helper::_instance->throwException("programUniformMatrix4x2fv requires 5 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLsizei count = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLboolean transpose = GLboolean(args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+
+	// 	GLfloat* value = nullptr;
+	// 	if (args[4]->IsFloat32Array()) {
+	// 		v8::Local<v8::Float32Array> view = (args[4]).As<v8::Float32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		value = reinterpret_cast<GLfloat*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glProgramUniformMatrix4x2fv): array must be of type Float32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glProgramUniformMatrix4x2fv(program, location, count, transpose, value);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "programUniformMatrix4x3dv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 5) {
+	// 		V8Helper::_instance->throwException("programUniformMatrix4x3dv requires 5 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLsizei count = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLboolean transpose = GLboolean(args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+
+	// 	GLdouble* value = nullptr;
+	// 	if (args[4]->IsFloat64Array()) {
+	// 		v8::Local<v8::Float64Array> view = (args[4]).As<v8::Float64Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		value = reinterpret_cast<GLdouble*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glProgramUniformMatrix4x3dv): array must be of type Float64Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glProgramUniformMatrix4x3dv(program, location, count, transpose, value);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "programUniformMatrix4x3fv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 5) {
+	// 		V8Helper::_instance->throwException("programUniformMatrix4x3fv requires 5 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLsizei count = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLboolean transpose = GLboolean(args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+
+	// 	GLfloat* value = nullptr;
+	// 	if (args[4]->IsFloat32Array()) {
+	// 		v8::Local<v8::Float32Array> view = (args[4]).As<v8::Float32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		value = reinterpret_cast<GLfloat*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glProgramUniformMatrix4x3fv): array must be of type Float32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glProgramUniformMatrix4x3fv(program, location, count, transpose, value);
+	// }).ToLocalChecked());
+
+	obj->Set(String::NewFromUtf8(isolate, "useProgramStages"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("useProgramStages requires 3 arguments");
 			return;
 		}
 
-		GLuint pipeline = args[0]->Uint32Value();
-		GLbitfield stages = args[1]->Uint32Value();
-		GLuint program = args[2]->Uint32Value();
+		GLuint pipeline = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLbitfield stages = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint program = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glUseProgramStages(pipeline, stages, program);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "validateProgramPipeline"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "validateProgramPipeline"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("validateProgramPipeline requires 1 arguments");
 			return;
 		}
 
-		GLuint pipeline = args[0]->Uint32Value();
+		GLuint pipeline = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glValidateProgramPipeline(pipeline);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -13213,15 +13223,15 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("UNSIGNED_INT_ATOMIC_COUNTER", GL_UNSIGNED_INT_ATOMIC_COUNTER);
 	CREATE_CONSTANT_ACCESSOR("MAX_ATOMIC_COUNTER_BUFFER_BINDINGS", GL_MAX_ATOMIC_COUNTER_BUFFER_BINDINGS);
 
-	tpl->Set(String::NewFromUtf8(isolate, "getActiveAtomicCounterBufferiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getActiveAtomicCounterBufferiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("getActiveAtomicCounterBufferiv requires 4 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLuint bufferIndex = args[1]->Uint32Value();
-		GLenum pname = args[2]->Uint32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint bufferIndex = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* params = nullptr;
 		if (args[3]->IsInt32Array()) {
@@ -13230,13 +13240,13 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetActiveAtomicCounterBufferiv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetActiveAtomicCounterBufferiv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetActiveAtomicCounterBufferiv(program, bufferIndex, pname, params);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -13313,33 +13323,33 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("MAX_COMBINED_IMAGE_UNIFORMS", GL_MAX_COMBINED_IMAGE_UNIFORMS);
 	CREATE_CONSTANT_ACCESSOR("ALL_BARRIER_BITS", GL_ALL_BARRIER_BITS);
 
-	tpl->Set(String::NewFromUtf8(isolate, "bindImageTexture"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "bindImageTexture"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 7) {
 			V8Helper::_instance->throwException("bindImageTexture requires 7 arguments");
 			return;
 		}
 
-		GLuint unit = args[0]->Uint32Value();
-		GLuint texture = args[1]->Uint32Value();
-		GLint level = args[2]->Int32Value();
-		GLboolean layered = GLboolean(args[3]->Uint32Value());
-		GLint layer = args[4]->Int32Value();
-		GLenum access = args[5]->Uint32Value();
-		GLenum format = args[6]->Uint32Value();
+		GLuint unit = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint texture = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint level = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLboolean layered = GLboolean(args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLint layer = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum access = args[5]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum format = args[6]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glBindImageTexture(unit, texture, level, layered, layer, access, format);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "memoryBarrier"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "memoryBarrier"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("memoryBarrier requires 1 arguments");
 			return;
 		}
 
-		GLbitfield barriers = args[0]->Uint32Value();
+		GLbitfield barriers = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glMemoryBarrier(barriers);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -13366,18 +13376,18 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("MAX_SHADER_STORAGE_BLOCK_SIZE", GL_MAX_SHADER_STORAGE_BLOCK_SIZE);
 	CREATE_CONSTANT_ACCESSOR("SHADER_STORAGE_BUFFER_OFFSET_ALIGNMENT", GL_SHADER_STORAGE_BUFFER_OFFSET_ALIGNMENT);
 
-	tpl->Set(String::NewFromUtf8(isolate, "shaderStorageBlockBinding"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "shaderStorageBlockBinding"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("shaderStorageBlockBinding requires 3 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLuint storageBlockIndex = args[1]->Uint32Value();
-		GLuint storageBlockBinding = args[2]->Uint32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint storageBlockIndex = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint storageBlockBinding = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glShaderStorageBlockBinding(program, storageBlockIndex, storageBlockBinding);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -13393,16 +13403,16 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("NUM_COMPATIBLE_SUBROUTINES", GL_NUM_COMPATIBLE_SUBROUTINES);
 	CREATE_CONSTANT_ACCESSOR("COMPATIBLE_SUBROUTINES", GL_COMPATIBLE_SUBROUTINES);
 
-	tpl->Set(String::NewFromUtf8(isolate, "getActiveSubroutineName"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getActiveSubroutineName"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 6) {
 			V8Helper::_instance->throwException("getActiveSubroutineName requires 6 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLenum shadertype = args[1]->Uint32Value();
-		GLuint index = args[2]->Uint32Value();
-		GLsizei bufsize = args[3]->Int32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum shadertype = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint index = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei bufsize = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLsizei* length = nullptr;
 		if (args[4]->IsInt32Array()) {
@@ -13411,8 +13421,8 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			length = reinterpret_cast<GLsizei*>(bdata);
 		} else {
-			cout << "ERROR(glGetActiveSubroutineName): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetActiveSubroutineName): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
@@ -13423,24 +13433,24 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			name = reinterpret_cast<GLchar*>(bdata);
 		} else {
-			cout << "ERROR(glGetActiveSubroutineName): array must be of type Int8Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetActiveSubroutineName): array must be of type Int8Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetActiveSubroutineName(program, shadertype, index, bufsize, length, name);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getActiveSubroutineUniformName"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getActiveSubroutineUniformName"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 6) {
 			V8Helper::_instance->throwException("getActiveSubroutineUniformName requires 6 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLenum shadertype = args[1]->Uint32Value();
-		GLuint index = args[2]->Uint32Value();
-		GLsizei bufsize = args[3]->Int32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum shadertype = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint index = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei bufsize = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLsizei* length = nullptr;
 		if (args[4]->IsInt32Array()) {
@@ -13449,8 +13459,8 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			length = reinterpret_cast<GLsizei*>(bdata);
 		} else {
-			cout << "ERROR(glGetActiveSubroutineUniformName): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetActiveSubroutineUniformName): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
@@ -13461,24 +13471,24 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			name = reinterpret_cast<GLchar*>(bdata);
 		} else {
-			cout << "ERROR(glGetActiveSubroutineUniformName): array must be of type Int8Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetActiveSubroutineUniformName): array must be of type Int8Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetActiveSubroutineUniformName(program, shadertype, index, bufsize, length, name);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getActiveSubroutineUniformiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getActiveSubroutineUniformiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("getActiveSubroutineUniformiv requires 5 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLenum shadertype = args[1]->Uint32Value();
-		GLuint index = args[2]->Uint32Value();
-		GLenum pname = args[3]->Uint32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum shadertype = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint index = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* values = nullptr;
 		if (args[4]->IsInt32Array()) {
@@ -13487,23 +13497,23 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			values = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetActiveSubroutineUniformiv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetActiveSubroutineUniformiv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetActiveSubroutineUniformiv(program, shadertype, index, pname, values);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getProgramStageiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getProgramStageiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("getProgramStageiv requires 4 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLenum shadertype = args[1]->Uint32Value();
-		GLenum pname = args[2]->Uint32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum shadertype = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* values = nullptr;
 		if (args[3]->IsInt32Array()) {
@@ -13512,22 +13522,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			values = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetProgramStageiv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetProgramStageiv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetProgramStageiv(program, shadertype, pname, values);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getUniformSubroutineuiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getUniformSubroutineuiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getUniformSubroutineuiv requires 3 arguments");
 			return;
 		}
 
-		GLenum shadertype = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
+		GLenum shadertype = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* params = nullptr;
 		if (args[2]->IsUint32Array()) {
@@ -13536,22 +13546,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glGetUniformSubroutineuiv): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetUniformSubroutineuiv): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetUniformSubroutineuiv(shadertype, location, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniformSubroutinesuiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniformSubroutinesuiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("uniformSubroutinesuiv requires 3 arguments");
 			return;
 		}
 
-		GLenum shadertype = args[0]->Uint32Value();
-		GLsizei count = args[1]->Int32Value();
+		GLenum shadertype = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* indices = nullptr;
 		if (args[2]->IsUint32Array()) {
@@ -13560,13 +13570,13 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			indices = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glUniformSubroutinesuiv): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glUniformSubroutinesuiv): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glUniformSubroutinesuiv(shadertype, count, indices);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -13654,13 +13664,13 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("MAX_TESS_CONTROL_UNIFORM_BLOCKS", GL_MAX_TESS_CONTROL_UNIFORM_BLOCKS);
 	CREATE_CONSTANT_ACCESSOR("MAX_TESS_EVALUATION_UNIFORM_BLOCKS", GL_MAX_TESS_EVALUATION_UNIFORM_BLOCKS);
 
-	tpl->Set(String::NewFromUtf8(isolate, "patchParameterfv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "patchParameterfv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("patchParameterfv requires 2 arguments");
 			return;
 		}
 
-		GLenum pname = args[0]->Uint32Value();
+		GLenum pname = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLfloat* values = nullptr;
 		if (args[1]->IsFloat32Array()) {
@@ -13669,25 +13679,25 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			values = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glPatchParameterfv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glPatchParameterfv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glPatchParameterfv(pname, values);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "patchParameteri"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "patchParameteri"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("patchParameteri requires 2 arguments");
 			return;
 		}
 
-		GLenum pname = args[0]->Uint32Value();
-		GLint value = args[1]->Int32Value();
+		GLenum pname = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint value = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glPatchParameteri(pname, value);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -13706,20 +13716,20 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("TEXTURE_BUFFER_SIZE", GL_TEXTURE_BUFFER_SIZE);
 	CREATE_CONSTANT_ACCESSOR("TEXTURE_BUFFER_OFFSET_ALIGNMENT", GL_TEXTURE_BUFFER_OFFSET_ALIGNMENT);
 
-	tpl->Set(String::NewFromUtf8(isolate, "texBufferRange"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "texBufferRange"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("texBufferRange requires 5 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum internalformat = args[1]->Uint32Value();
-		GLuint buffer = args[2]->Uint32Value();
-		GLintptr offset = GLintptr(args[3]->Int32Value());
-		GLsizeiptr size = GLsizeiptr(args[4]->Int32Value());
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum internalformat = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint buffer = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLintptr offset = GLintptr(args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLsizeiptr size = GLsizeiptr(args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glTexBufferRange(target, internalformat, buffer, offset, size);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -13781,14 +13791,14 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("MAX_DEPTH_TEXTURE_SAMPLES", GL_MAX_DEPTH_TEXTURE_SAMPLES);
 	CREATE_CONSTANT_ACCESSOR("MAX_INTEGER_SAMPLES", GL_MAX_INTEGER_SAMPLES);
 
-	tpl->Set(String::NewFromUtf8(isolate, "getMultisamplefv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getMultisamplefv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getMultisamplefv requires 3 arguments");
 			return;
 		}
 
-		GLenum pname = args[0]->Uint32Value();
-		GLuint index = args[1]->Uint32Value();
+		GLenum pname = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint index = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLfloat* val = nullptr;
 		if (args[2]->IsFloat32Array()) {
@@ -13797,58 +13807,58 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			val = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glGetMultisamplefv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetMultisamplefv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetMultisamplefv(pname, index, val);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "sampleMaski"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "sampleMaski"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("sampleMaski requires 2 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
-		GLbitfield mask = args[1]->Uint32Value();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLbitfield mask = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glSampleMaski(index, mask);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "texImage2DMultisample"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "texImage2DMultisample"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 6) {
 			V8Helper::_instance->throwException("texImage2DMultisample requires 6 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLsizei samples = args[1]->Int32Value();
-		GLenum internalformat = args[2]->Uint32Value();
-		GLsizei width = args[3]->Int32Value();
-		GLsizei height = args[4]->Int32Value();
-		GLboolean fixedsamplelocations = GLboolean(args[5]->Uint32Value());
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei samples = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum internalformat = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei height = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLboolean fixedsamplelocations = GLboolean(args[5]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glTexImage2DMultisample(target, samples, internalformat, width, height, fixedsamplelocations);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "texImage3DMultisample"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "texImage3DMultisample"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 7) {
 			V8Helper::_instance->throwException("texImage3DMultisample requires 7 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLsizei samples = args[1]->Int32Value();
-		GLenum internalformat = args[2]->Uint32Value();
-		GLsizei width = args[3]->Int32Value();
-		GLsizei height = args[4]->Int32Value();
-		GLsizei depth = args[5]->Int32Value();
-		GLboolean fixedsamplelocations = GLboolean(args[6]->Uint32Value());
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei samples = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum internalformat = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei height = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei depth = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLboolean fixedsamplelocations = GLboolean(args[6]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glTexImage3DMultisample(target, samples, internalformat, width, height, depth, fixedsamplelocations);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -13902,88 +13912,90 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 
 	CREATE_CONSTANT_ACCESSOR("TEXTURE_IMMUTABLE_FORMAT", GL_TEXTURE_IMMUTABLE_FORMAT);
 
-	tpl->Set(String::NewFromUtf8(isolate, "texStorage1D"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "texStorage1D"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("texStorage1D requires 4 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLsizei levels = args[1]->Int32Value();
-		GLenum internalformat = args[2]->Uint32Value();
-		GLsizei width = args[3]->Int32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei levels = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum internalformat = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glTexStorage1D(target, levels, internalformat, width);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "texStorage2D"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "texStorage2D"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("texStorage2D requires 5 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLsizei levels = args[1]->Int32Value();
-		GLenum internalformat = args[2]->Uint32Value();
-		GLsizei width = args[3]->Int32Value();
-		GLsizei height = args[4]->Int32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei levels = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum internalformat = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei height = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glTexStorage2D(target, levels, internalformat, width, height);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "texStorage3D"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "texStorage3D"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 6) {
 			V8Helper::_instance->throwException("texStorage3D requires 6 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLsizei levels = args[1]->Int32Value();
-		GLenum internalformat = args[2]->Uint32Value();
-		GLsizei width = args[3]->Int32Value();
-		GLsizei height = args[4]->Int32Value();
-		GLsizei depth = args[5]->Int32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei levels = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum internalformat = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei height = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei depth = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glTexStorage3D(target, levels, internalformat, width, height, depth);
-	}));
+	}).ToLocalChecked());
 
 
 
 	/* ------------------------------ GL_ARB_texture_storage_multisample ------------------------------ */
 
 
-	tpl->Set(String::NewFromUtf8(isolate, "texStorage2DMultisample"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "texStorage2DMultisample"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 6) {
 			V8Helper::_instance->throwException("texStorage2DMultisample requires 6 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLsizei samples = args[1]->Int32Value();
-		GLenum internalformat = args[2]->Uint32Value();
-		GLsizei width = args[3]->Int32Value();
-		GLsizei height = args[4]->Int32Value();
-		GLboolean fixedsamplelocations = GLboolean(args[5]->Uint32Value());
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei samples = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum internalformat = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei height = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLboolean fixedsamplelocations = GLboolean(args[5]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glTexStorage2DMultisample(target, samples, internalformat, width, height, fixedsamplelocations);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "texStorage3DMultisample"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "texStorage3DMultisample"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 7) {
 			V8Helper::_instance->throwException("texStorage3DMultisample requires 7 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLsizei samples = args[1]->Int32Value();
-		GLenum internalformat = args[2]->Uint32Value();
-		GLsizei width = args[3]->Int32Value();
-		GLsizei height = args[4]->Int32Value();
-		GLsizei depth = args[5]->Int32Value();
-		GLboolean fixedsamplelocations = GLboolean(args[6]->Uint32Value());
+		auto context = v8::Isolate::GetCurrent()->GetCurrentContext();
+
+		GLenum target = args[0]->Uint32Value(context).FromMaybe(-1);
+		GLsizei samples = args[1]->Int32Value(context).FromMaybe(-1);
+		GLenum internalformat = args[2]->Uint32Value(context).FromMaybe(-1);
+		GLsizei width = args[3]->Int32Value(context).FromMaybe(-1);
+		GLsizei height = args[4]->Int32Value(context).FromMaybe(-1);
+		GLsizei depth = args[5]->Int32Value(context).FromMaybe(-1);
+		GLboolean fixedsamplelocations = GLboolean(args[6]->Uint32Value(context).FromMaybe(-1));
 
 		glTexStorage3DMultisample(target, samples, internalformat, width, height, depth, fixedsamplelocations);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -13999,29 +14011,29 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 
 	/* ------------------------------ GL_ARB_texture_view ------------------------------ */
 
-	CREATE_CONSTANT_ACCESSOR("TEXTURE_VIEW_MIN_LEVEL", GL_TEXTURE_VIEW_MIN_LEVEL);
-	CREATE_CONSTANT_ACCESSOR("TEXTURE_VIEW_NUM_LEVELS", GL_TEXTURE_VIEW_NUM_LEVELS);
-	CREATE_CONSTANT_ACCESSOR("TEXTURE_VIEW_MIN_LAYER", GL_TEXTURE_VIEW_MIN_LAYER);
-	CREATE_CONSTANT_ACCESSOR("TEXTURE_VIEW_NUM_LAYERS", GL_TEXTURE_VIEW_NUM_LAYERS);
-	CREATE_CONSTANT_ACCESSOR("TEXTURE_IMMUTABLE_LEVELS", GL_TEXTURE_IMMUTABLE_LEVELS);
+	//CREATE_CONSTANT_ACCESSOR("TEXTURE_VIEW_MIN_LEVEL", GL_TEXTURE_VIEW_MIN_LEVEL);
+	//CREATE_CONSTANT_ACCESSOR("TEXTURE_VIEW_NUM_LEVELS", GL_TEXTURE_VIEW_NUM_LEVELS);
+	//CREATE_CONSTANT_ACCESSOR("TEXTURE_VIEW_MIN_LAYER", GL_TEXTURE_VIEW_MIN_LAYER);
+	//CREATE_CONSTANT_ACCESSOR("TEXTURE_VIEW_NUM_LAYERS", GL_TEXTURE_VIEW_NUM_LAYERS);
+	//CREATE_CONSTANT_ACCESSOR("TEXTURE_IMMUTABLE_LEVELS", GL_TEXTURE_IMMUTABLE_LEVELS);
 
-	tpl->Set(String::NewFromUtf8(isolate, "textureView"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "textureView"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 8) {
 			V8Helper::_instance->throwException("textureView requires 8 arguments");
 			return;
 		}
 
-		GLuint texture = args[0]->Uint32Value();
-		GLenum target = args[1]->Uint32Value();
-		GLuint origtexture = args[2]->Uint32Value();
-		GLenum internalformat = args[3]->Uint32Value();
-		GLuint minlevel = args[4]->Uint32Value();
-		GLuint numlevels = args[5]->Uint32Value();
-		GLuint minlayer = args[6]->Uint32Value();
-		GLuint numlayers = args[7]->Uint32Value();
+		GLuint texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum target = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint origtexture = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum internalformat = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint minlevel = args[4]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint numlevels = args[5]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint minlayer = args[6]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint numlayers = args[7]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glTextureView(texture, target, origtexture, internalformat, minlevel, numlevels, minlayer, numlayers);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -14032,17 +14044,17 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 
 
 
-	tpl->Set(String::NewFromUtf8(isolate, "queryCounter"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "queryCounter"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("queryCounter requires 2 arguments");
 			return;
 		}
 
-		GLuint id = args[0]->Uint32Value();
-		GLenum target = args[1]->Uint32Value();
+		GLuint id = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum target = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glQueryCounter(id, target);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -14053,25 +14065,25 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("TRANSFORM_FEEDBACK_BUFFER_ACTIVE", GL_TRANSFORM_FEEDBACK_BUFFER_ACTIVE);
 	CREATE_CONSTANT_ACCESSOR("TRANSFORM_FEEDBACK_BINDING", GL_TRANSFORM_FEEDBACK_BINDING);
 
-	tpl->Set(String::NewFromUtf8(isolate, "bindTransformFeedback"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "bindTransformFeedback"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("bindTransformFeedback requires 2 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLuint id = args[1]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint id = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glBindTransformFeedback(target, id);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "deleteTransformFeedbacks"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "deleteTransformFeedbacks"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("deleteTransformFeedbacks requires 2 arguments");
 			return;
 		}
 
-		GLsizei n = args[0]->Int32Value();
+		GLsizei n = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* ids = nullptr;
 		if (args[1]->IsUint32Array()) {
@@ -14080,33 +14092,33 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			ids = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glDeleteTransformFeedbacks): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glDeleteTransformFeedbacks): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glDeleteTransformFeedbacks(n, ids);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "drawTransformFeedback"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "drawTransformFeedback"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("drawTransformFeedback requires 2 arguments");
 			return;
 		}
 
-		GLenum mode = args[0]->Uint32Value();
-		GLuint id = args[1]->Uint32Value();
+		GLenum mode = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint id = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glDrawTransformFeedback(mode, id);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "genTransformFeedbacks"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "genTransformFeedbacks"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("genTransformFeedbacks requires 2 arguments");
 			return;
 		}
 
-		GLsizei n = args[0]->Int32Value();
+		GLsizei n = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* ids = nullptr;
 		if (args[1]->IsUint32Array()) {
@@ -14115,13 +14127,13 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			ids = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glGenTransformFeedbacks): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGenTransformFeedbacks): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGenTransformFeedbacks(n, ids);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -14132,53 +14144,53 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("MAX_TRANSFORM_FEEDBACK_BUFFERS", GL_MAX_TRANSFORM_FEEDBACK_BUFFERS);
 	CREATE_CONSTANT_ACCESSOR("MAX_VERTEX_STREAMS", GL_MAX_VERTEX_STREAMS);
 
-	tpl->Set(String::NewFromUtf8(isolate, "beginQueryIndexed"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "beginQueryIndexed"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("beginQueryIndexed requires 3 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLuint index = args[1]->Uint32Value();
-		GLuint id = args[2]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint index = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint id = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glBeginQueryIndexed(target, index, id);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "drawTransformFeedbackStream"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "drawTransformFeedbackStream"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("drawTransformFeedbackStream requires 3 arguments");
 			return;
 		}
 
-		GLenum mode = args[0]->Uint32Value();
-		GLuint id = args[1]->Uint32Value();
-		GLuint stream = args[2]->Uint32Value();
+		GLenum mode = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint id = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint stream = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glDrawTransformFeedbackStream(mode, id, stream);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "endQueryIndexed"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "endQueryIndexed"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("endQueryIndexed requires 2 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLuint index = args[1]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint index = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glEndQueryIndexed(target, index);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getQueryIndexediv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getQueryIndexediv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("getQueryIndexediv requires 4 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLuint index = args[1]->Uint32Value();
-		GLenum pname = args[2]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint index = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* params = nullptr;
 		if (args[3]->IsInt32Array()) {
@@ -14187,45 +14199,45 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetQueryIndexediv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetQueryIndexediv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetQueryIndexediv(target, index, pname, params);
-	}));
+	}).ToLocalChecked());
 
 
 
 	/* ------------------------------ GL_ARB_transform_feedback_instanced ------------------------------ */
 
 
-	tpl->Set(String::NewFromUtf8(isolate, "drawTransformFeedbackInstanced"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "drawTransformFeedbackInstanced"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("drawTransformFeedbackInstanced requires 3 arguments");
 			return;
 		}
 
-		GLenum mode = args[0]->Uint32Value();
-		GLuint id = args[1]->Uint32Value();
-		GLsizei primcount = args[2]->Int32Value();
+		GLenum mode = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint id = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei primcount = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glDrawTransformFeedbackInstanced(mode, id, primcount);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "drawTransformFeedbackStreamInstanced"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "drawTransformFeedbackStreamInstanced"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("drawTransformFeedbackStreamInstanced requires 4 arguments");
 			return;
 		}
 
-		GLenum mode = args[0]->Uint32Value();
-		GLuint id = args[1]->Uint32Value();
-		GLuint stream = args[2]->Uint32Value();
-		GLsizei primcount = args[3]->Int32Value();
+		GLenum mode = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint id = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint stream = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei primcount = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glDrawTransformFeedbackStreamInstanced(mode, id, stream, primcount);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -14267,43 +14279,43 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("UNIFORM_BLOCK_REFERENCED_BY_GEOMETRY_SHADER", GL_UNIFORM_BLOCK_REFERENCED_BY_GEOMETRY_SHADER);
 	CREATE_CONSTANT_ACCESSOR("UNIFORM_BLOCK_REFERENCED_BY_FRAGMENT_SHADER", GL_UNIFORM_BLOCK_REFERENCED_BY_FRAGMENT_SHADER);
 
-	tpl->Set(String::NewFromUtf8(isolate, "bindBufferBase"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "bindBufferBase"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("bindBufferBase requires 3 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLuint index = args[1]->Uint32Value();
-		GLuint buffer = args[2]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint index = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint buffer = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glBindBufferBase(target, index, buffer);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "bindBufferRange"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "bindBufferRange"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("bindBufferRange requires 5 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLuint index = args[1]->Uint32Value();
-		GLuint buffer = args[2]->Uint32Value();
-		GLintptr offset = GLintptr(args[3]->Int32Value());
-		GLsizeiptr size = GLsizeiptr(args[4]->Int32Value());
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint index = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint buffer = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLintptr offset = GLintptr(args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLsizeiptr size = GLsizeiptr(args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glBindBufferRange(target, index, buffer, offset, size);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getActiveUniformBlockName"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getActiveUniformBlockName"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("getActiveUniformBlockName requires 5 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLuint uniformBlockIndex = args[1]->Uint32Value();
-		GLsizei bufSize = args[2]->Int32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint uniformBlockIndex = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei bufSize = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLsizei* length = nullptr;
 		if (args[3]->IsInt32Array()) {
@@ -14312,8 +14324,8 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			length = reinterpret_cast<GLsizei*>(bdata);
 		} else {
-			cout << "ERROR(glGetActiveUniformBlockName): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetActiveUniformBlockName): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
@@ -14324,23 +14336,23 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			uniformBlockName = reinterpret_cast<GLchar*>(bdata);
 		} else {
-			cout << "ERROR(glGetActiveUniformBlockName): array must be of type Int8Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetActiveUniformBlockName): array must be of type Int8Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetActiveUniformBlockName(program, uniformBlockIndex, bufSize, length, uniformBlockName);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getActiveUniformBlockiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getActiveUniformBlockiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("getActiveUniformBlockiv requires 4 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLuint uniformBlockIndex = args[1]->Uint32Value();
-		GLenum pname = args[2]->Uint32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint uniformBlockIndex = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* params = nullptr;
 		if (args[3]->IsInt32Array()) {
@@ -14349,23 +14361,23 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetActiveUniformBlockiv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetActiveUniformBlockiv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetActiveUniformBlockiv(program, uniformBlockIndex, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getActiveUniformName"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getActiveUniformName"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("getActiveUniformName requires 5 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLuint uniformIndex = args[1]->Uint32Value();
-		GLsizei bufSize = args[2]->Int32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint uniformIndex = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei bufSize = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLsizei* length = nullptr;
 		if (args[3]->IsInt32Array()) {
@@ -14374,8 +14386,8 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			length = reinterpret_cast<GLsizei*>(bdata);
 		} else {
-			cout << "ERROR(glGetActiveUniformName): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetActiveUniformName): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
@@ -14386,22 +14398,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			uniformName = reinterpret_cast<GLchar*>(bdata);
 		} else {
-			cout << "ERROR(glGetActiveUniformName): array must be of type Int8Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetActiveUniformName): array must be of type Int8Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetActiveUniformName(program, uniformIndex, bufSize, length, uniformName);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getActiveUniformsiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getActiveUniformsiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("getActiveUniformsiv requires 5 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLsizei uniformCount = args[1]->Int32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei uniformCount = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* uniformIndices = nullptr;
 		if (args[2]->IsUint32Array()) {
@@ -14410,11 +14422,11 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			uniformIndices = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glGetActiveUniformsiv): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetActiveUniformsiv): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
-		GLenum pname = args[3]->Uint32Value();
+		GLenum pname = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* params = nullptr;
 		if (args[4]->IsInt32Array()) {
@@ -14423,22 +14435,22 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetActiveUniformsiv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetActiveUniformsiv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetActiveUniformsiv(program, uniformCount, uniformIndices, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getIntegeri_v"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getIntegeri_v"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getIntegeri_v requires 3 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLuint index = args[1]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint index = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* data = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -14447,27 +14459,27 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			data = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetIntegeri_v): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetIntegeri_v): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetIntegeri_v(target, index, data);
-	}));
+	}).ToLocalChecked());
 
 
-	tpl->Set(String::NewFromUtf8(isolate, "uniformBlockBinding"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "uniformBlockBinding"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("uniformBlockBinding requires 3 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLuint uniformBlockIndex = args[1]->Uint32Value();
-		GLuint uniformBlockBinding = args[2]->Uint32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint uniformBlockIndex = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint uniformBlockBinding = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glUniformBlockBinding(program, uniformBlockIndex, uniformBlockBinding);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -14481,24 +14493,24 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 
 	CREATE_CONSTANT_ACCESSOR("VERTEX_ARRAY_BINDING", GL_VERTEX_ARRAY_BINDING);
 
-	tpl->Set(String::NewFromUtf8(isolate, "bindVertexArray"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "bindVertexArray"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("bindVertexArray requires 1 arguments");
 			return;
 		}
 
-		GLuint array = args[0]->Uint32Value();
+		GLuint array = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glBindVertexArray(array);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "deleteVertexArrays"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "deleteVertexArrays"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("deleteVertexArrays requires 2 arguments");
 			return;
 		}
 
-		GLsizei n = args[0]->Int32Value();
+		GLsizei n = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* arrays = nullptr;
 		if (args[1]->IsUint32Array()) {
@@ -14507,21 +14519,21 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			arrays = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glDeleteVertexArrays): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glDeleteVertexArrays): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glDeleteVertexArrays(n, arrays);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "genVertexArrays"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "genVertexArrays"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("genVertexArrays requires 2 arguments");
 			return;
 		}
 
-		GLsizei n = args[0]->Int32Value();
+		GLsizei n = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* arrays = nullptr;
 		if (args[1]->IsUint32Array()) {
@@ -14530,27 +14542,27 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			arrays = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glGenVertexArrays): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGenVertexArrays): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGenVertexArrays(n, arrays);
-	}));
+	}).ToLocalChecked());
 
 
 
 	/* ------------------------------ GL_ARB_vertex_attrib_64bit ------------------------------ */
 
 
-	tpl->Set(String::NewFromUtf8(isolate, "getVertexAttribLdv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getVertexAttribLdv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getVertexAttribLdv requires 3 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLdouble* params = nullptr;
 		if (args[2]->IsFloat64Array()) {
@@ -14559,33 +14571,33 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLdouble*>(bdata);
 		} else {
-			cout << "ERROR(glGetVertexAttribLdv): array must be of type Float64Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetVertexAttribLdv): array must be of type Float64Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetVertexAttribLdv(index, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribL1d"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttribL1d"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("vertexAttribL1d requires 2 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
-		GLdouble x = args[1]->NumberValue();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble x = args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glVertexAttribL1d(index, x);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribL1dv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttribL1dv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("vertexAttribL1dv requires 2 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLdouble* v = nullptr;
 		if (args[1]->IsFloat64Array()) {
@@ -14594,34 +14606,34 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLdouble*>(bdata);
 		} else {
-			cout << "ERROR(glVertexAttribL1dv): array must be of type Float64Array" << endl;
-			exit(1);
+			//cout << "ERROR(glVertexAttribL1dv): array must be of type Float64Array" << endl;
+			//exit(1);
 		}
 
 
 		glVertexAttribL1dv(index, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribL2d"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttribL2d"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("vertexAttribL2d requires 3 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
-		GLdouble x = args[1]->NumberValue();
-		GLdouble y = args[2]->NumberValue();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble x = args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble y = args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glVertexAttribL2d(index, x, y);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribL2dv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttribL2dv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("vertexAttribL2dv requires 2 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLdouble* v = nullptr;
 		if (args[1]->IsFloat64Array()) {
@@ -14630,35 +14642,35 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLdouble*>(bdata);
 		} else {
-			cout << "ERROR(glVertexAttribL2dv): array must be of type Float64Array" << endl;
-			exit(1);
+			//cout << "ERROR(glVertexAttribL2dv): array must be of type Float64Array" << endl;
+			//exit(1);
 		}
 
 
 		glVertexAttribL2dv(index, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribL3d"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttribL3d"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("vertexAttribL3d requires 4 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
-		GLdouble x = args[1]->NumberValue();
-		GLdouble y = args[2]->NumberValue();
-		GLdouble z = args[3]->NumberValue();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble x = args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble y = args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble z = args[3]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glVertexAttribL3d(index, x, y, z);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribL3dv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttribL3dv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("vertexAttribL3dv requires 2 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLdouble* v = nullptr;
 		if (args[1]->IsFloat64Array()) {
@@ -14667,36 +14679,36 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLdouble*>(bdata);
 		} else {
-			cout << "ERROR(glVertexAttribL3dv): array must be of type Float64Array" << endl;
-			exit(1);
+			//cout << "ERROR(glVertexAttribL3dv): array must be of type Float64Array" << endl;
+			//exit(1);
 		}
 
 
 		glVertexAttribL3dv(index, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribL4d"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttribL4d"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("vertexAttribL4d requires 5 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
-		GLdouble x = args[1]->NumberValue();
-		GLdouble y = args[2]->NumberValue();
-		GLdouble z = args[3]->NumberValue();
-		GLdouble w = args[4]->NumberValue();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble x = args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble y = args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble z = args[3]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLdouble w = args[4]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glVertexAttribL4d(index, x, y, z, w);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribL4dv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttribL4dv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("vertexAttribL4dv requires 2 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLdouble* v = nullptr;
 		if (args[1]->IsFloat64Array()) {
@@ -14705,24 +14717,24 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			v = reinterpret_cast<GLdouble*>(bdata);
 		} else {
-			cout << "ERROR(glVertexAttribL4dv): array must be of type Float64Array" << endl;
-			exit(1);
+			//cout << "ERROR(glVertexAttribL4dv): array must be of type Float64Array" << endl;
+			//exit(1);
 		}
 
 
 		glVertexAttribL4dv(index, v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribLPointer"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttribLPointer"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("vertexAttribLPointer requires 5 arguments");
 			return;
 		}
 
-		GLuint index = args[0]->Uint32Value();
-		GLint size = args[1]->Int32Value();
-		GLenum type = args[2]->Uint32Value();
-		GLsizei stride = args[3]->Int32Value();
+		GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint size = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei stride = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* pointer = nullptr;
 		if (args[4]->IsArrayBuffer()) {
@@ -14735,13 +14747,13 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			pointer = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glVertexAttribLPointer): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glVertexAttribLPointer): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glVertexAttribLPointer(index, size, type, stride, pointer);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -14756,86 +14768,86 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("MAX_VERTEX_ATTRIB_BINDINGS", GL_MAX_VERTEX_ATTRIB_BINDINGS);
 	CREATE_CONSTANT_ACCESSOR("VERTEX_BINDING_BUFFER", GL_VERTEX_BINDING_BUFFER);
 
-	tpl->Set(String::NewFromUtf8(isolate, "bindVertexBuffer"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "bindVertexBuffer"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("bindVertexBuffer requires 4 arguments");
 			return;
 		}
 
-		GLuint bindingindex = args[0]->Uint32Value();
-		GLuint buffer = args[1]->Uint32Value();
-		GLintptr offset = GLintptr(args[2]->Int32Value());
-		GLsizei stride = args[3]->Int32Value();
+		GLuint bindingindex = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint buffer = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLintptr offset = GLintptr(args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLsizei stride = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glBindVertexBuffer(bindingindex, buffer, offset, stride);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribBinding"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttribBinding"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("vertexAttribBinding requires 2 arguments");
 			return;
 		}
 
-		GLuint attribindex = args[0]->Uint32Value();
-		GLuint bindingindex = args[1]->Uint32Value();
+		GLuint attribindex = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint bindingindex = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glVertexAttribBinding(attribindex, bindingindex);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribFormat"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttribFormat"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("vertexAttribFormat requires 5 arguments");
 			return;
 		}
 
-		GLuint attribindex = args[0]->Uint32Value();
-		GLint size = args[1]->Int32Value();
-		GLenum type = args[2]->Uint32Value();
-		GLboolean normalized = GLboolean(args[3]->Uint32Value());
-		GLuint relativeoffset = args[4]->Uint32Value();
+		GLuint attribindex = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint size = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLboolean normalized = GLboolean(args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+		GLuint relativeoffset = args[4]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glVertexAttribFormat(attribindex, size, type, normalized, relativeoffset);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribIFormat"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttribIFormat"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("vertexAttribIFormat requires 4 arguments");
 			return;
 		}
 
-		GLuint attribindex = args[0]->Uint32Value();
-		GLint size = args[1]->Int32Value();
-		GLenum type = args[2]->Uint32Value();
-		GLuint relativeoffset = args[3]->Uint32Value();
+		GLuint attribindex = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint size = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint relativeoffset = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glVertexAttribIFormat(attribindex, size, type, relativeoffset);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribLFormat"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexAttribLFormat"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("vertexAttribLFormat requires 4 arguments");
 			return;
 		}
 
-		GLuint attribindex = args[0]->Uint32Value();
-		GLint size = args[1]->Int32Value();
-		GLenum type = args[2]->Uint32Value();
-		GLuint relativeoffset = args[3]->Uint32Value();
+		GLuint attribindex = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint size = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint relativeoffset = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glVertexAttribLFormat(attribindex, size, type, relativeoffset);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexBindingDivisor"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "vertexBindingDivisor"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("vertexBindingDivisor requires 2 arguments");
 			return;
 		}
 
-		GLuint bindingindex = args[0]->Uint32Value();
-		GLuint divisor = args[1]->Uint32Value();
+		GLuint bindingindex = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint divisor = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glVertexBindingDivisor(bindingindex, divisor);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -14854,694 +14866,694 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("UNSIGNED_INT_2_10_10_10_REV", GL_UNSIGNED_INT_2_10_10_10_REV);
 	CREATE_CONSTANT_ACCESSOR("INT_2_10_10_10_REV", GL_INT_2_10_10_10_REV);
 
-	tpl->Set(String::NewFromUtf8(isolate, "colorP3ui"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("colorP3ui requires 2 arguments");
-			return;
-		}
-
-		GLenum type = args[0]->Uint32Value();
-		GLuint color = args[1]->Uint32Value();
-
-		glColorP3ui(type, color);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "colorP3uiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("colorP3uiv requires 2 arguments");
-			return;
-		}
-
-		GLenum type = args[0]->Uint32Value();
-
-		GLuint* color = nullptr;
-		if (args[1]->IsUint32Array()) {
-			v8::Local<v8::Uint32Array> view = (args[1]).As<v8::Uint32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			color = reinterpret_cast<GLuint*>(bdata);
-		} else {
-			cout << "ERROR(glColorP3uiv): array must be of type Uint32Array" << endl;
-			exit(1);
-		}
-
-
-		glColorP3uiv(type, color);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "colorP4ui"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("colorP4ui requires 2 arguments");
-			return;
-		}
-
-		GLenum type = args[0]->Uint32Value();
-		GLuint color = args[1]->Uint32Value();
-
-		glColorP4ui(type, color);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "colorP4uiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("colorP4uiv requires 2 arguments");
-			return;
-		}
-
-		GLenum type = args[0]->Uint32Value();
-
-		GLuint* color = nullptr;
-		if (args[1]->IsUint32Array()) {
-			v8::Local<v8::Uint32Array> view = (args[1]).As<v8::Uint32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			color = reinterpret_cast<GLuint*>(bdata);
-		} else {
-			cout << "ERROR(glColorP4uiv): array must be of type Uint32Array" << endl;
-			exit(1);
-		}
-
-
-		glColorP4uiv(type, color);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoordP1ui"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("multiTexCoordP1ui requires 3 arguments");
-			return;
-		}
-
-		GLenum texture = args[0]->Uint32Value();
-		GLenum type = args[1]->Uint32Value();
-		GLuint coords = args[2]->Uint32Value();
-
-		glMultiTexCoordP1ui(texture, type, coords);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoordP1uiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("multiTexCoordP1uiv requires 3 arguments");
-			return;
-		}
-
-		GLenum texture = args[0]->Uint32Value();
-		GLenum type = args[1]->Uint32Value();
-
-		GLuint* coords = nullptr;
-		if (args[2]->IsUint32Array()) {
-			v8::Local<v8::Uint32Array> view = (args[2]).As<v8::Uint32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			coords = reinterpret_cast<GLuint*>(bdata);
-		} else {
-			cout << "ERROR(glMultiTexCoordP1uiv): array must be of type Uint32Array" << endl;
-			exit(1);
-		}
-
-
-		glMultiTexCoordP1uiv(texture, type, coords);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoordP2ui"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("multiTexCoordP2ui requires 3 arguments");
-			return;
-		}
-
-		GLenum texture = args[0]->Uint32Value();
-		GLenum type = args[1]->Uint32Value();
-		GLuint coords = args[2]->Uint32Value();
-
-		glMultiTexCoordP2ui(texture, type, coords);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoordP2uiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("multiTexCoordP2uiv requires 3 arguments");
-			return;
-		}
-
-		GLenum texture = args[0]->Uint32Value();
-		GLenum type = args[1]->Uint32Value();
-
-		GLuint* coords = nullptr;
-		if (args[2]->IsUint32Array()) {
-			v8::Local<v8::Uint32Array> view = (args[2]).As<v8::Uint32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			coords = reinterpret_cast<GLuint*>(bdata);
-		} else {
-			cout << "ERROR(glMultiTexCoordP2uiv): array must be of type Uint32Array" << endl;
-			exit(1);
-		}
-
-
-		glMultiTexCoordP2uiv(texture, type, coords);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoordP3ui"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("multiTexCoordP3ui requires 3 arguments");
-			return;
-		}
-
-		GLenum texture = args[0]->Uint32Value();
-		GLenum type = args[1]->Uint32Value();
-		GLuint coords = args[2]->Uint32Value();
-
-		glMultiTexCoordP3ui(texture, type, coords);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoordP3uiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("multiTexCoordP3uiv requires 3 arguments");
-			return;
-		}
-
-		GLenum texture = args[0]->Uint32Value();
-		GLenum type = args[1]->Uint32Value();
-
-		GLuint* coords = nullptr;
-		if (args[2]->IsUint32Array()) {
-			v8::Local<v8::Uint32Array> view = (args[2]).As<v8::Uint32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			coords = reinterpret_cast<GLuint*>(bdata);
-		} else {
-			cout << "ERROR(glMultiTexCoordP3uiv): array must be of type Uint32Array" << endl;
-			exit(1);
-		}
-
-
-		glMultiTexCoordP3uiv(texture, type, coords);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoordP4ui"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("multiTexCoordP4ui requires 3 arguments");
-			return;
-		}
-
-		GLenum texture = args[0]->Uint32Value();
-		GLenum type = args[1]->Uint32Value();
-		GLuint coords = args[2]->Uint32Value();
-
-		glMultiTexCoordP4ui(texture, type, coords);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoordP4uiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("multiTexCoordP4uiv requires 3 arguments");
-			return;
-		}
-
-		GLenum texture = args[0]->Uint32Value();
-		GLenum type = args[1]->Uint32Value();
-
-		GLuint* coords = nullptr;
-		if (args[2]->IsUint32Array()) {
-			v8::Local<v8::Uint32Array> view = (args[2]).As<v8::Uint32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			coords = reinterpret_cast<GLuint*>(bdata);
-		} else {
-			cout << "ERROR(glMultiTexCoordP4uiv): array must be of type Uint32Array" << endl;
-			exit(1);
-		}
-
-
-		glMultiTexCoordP4uiv(texture, type, coords);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "normalP3ui"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("normalP3ui requires 2 arguments");
-			return;
-		}
-
-		GLenum type = args[0]->Uint32Value();
-		GLuint coords = args[1]->Uint32Value();
-
-		glNormalP3ui(type, coords);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "normalP3uiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("normalP3uiv requires 2 arguments");
-			return;
-		}
-
-		GLenum type = args[0]->Uint32Value();
-
-		GLuint* coords = nullptr;
-		if (args[1]->IsUint32Array()) {
-			v8::Local<v8::Uint32Array> view = (args[1]).As<v8::Uint32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			coords = reinterpret_cast<GLuint*>(bdata);
-		} else {
-			cout << "ERROR(glNormalP3uiv): array must be of type Uint32Array" << endl;
-			exit(1);
-		}
-
-
-		glNormalP3uiv(type, coords);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "secondaryColorP3ui"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("secondaryColorP3ui requires 2 arguments");
-			return;
-		}
-
-		GLenum type = args[0]->Uint32Value();
-		GLuint color = args[1]->Uint32Value();
-
-		glSecondaryColorP3ui(type, color);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "secondaryColorP3uiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("secondaryColorP3uiv requires 2 arguments");
-			return;
-		}
-
-		GLenum type = args[0]->Uint32Value();
-
-		GLuint* color = nullptr;
-		if (args[1]->IsUint32Array()) {
-			v8::Local<v8::Uint32Array> view = (args[1]).As<v8::Uint32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			color = reinterpret_cast<GLuint*>(bdata);
-		} else {
-			cout << "ERROR(glSecondaryColorP3uiv): array must be of type Uint32Array" << endl;
-			exit(1);
-		}
-
-
-		glSecondaryColorP3uiv(type, color);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "texCoordP1ui"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("texCoordP1ui requires 2 arguments");
-			return;
-		}
-
-		GLenum type = args[0]->Uint32Value();
-		GLuint coords = args[1]->Uint32Value();
-
-		glTexCoordP1ui(type, coords);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "texCoordP1uiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("texCoordP1uiv requires 2 arguments");
-			return;
-		}
-
-		GLenum type = args[0]->Uint32Value();
-
-		GLuint* coords = nullptr;
-		if (args[1]->IsUint32Array()) {
-			v8::Local<v8::Uint32Array> view = (args[1]).As<v8::Uint32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			coords = reinterpret_cast<GLuint*>(bdata);
-		} else {
-			cout << "ERROR(glTexCoordP1uiv): array must be of type Uint32Array" << endl;
-			exit(1);
-		}
-
-
-		glTexCoordP1uiv(type, coords);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "texCoordP2ui"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("texCoordP2ui requires 2 arguments");
-			return;
-		}
-
-		GLenum type = args[0]->Uint32Value();
-		GLuint coords = args[1]->Uint32Value();
-
-		glTexCoordP2ui(type, coords);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "texCoordP2uiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("texCoordP2uiv requires 2 arguments");
-			return;
-		}
-
-		GLenum type = args[0]->Uint32Value();
-
-		GLuint* coords = nullptr;
-		if (args[1]->IsUint32Array()) {
-			v8::Local<v8::Uint32Array> view = (args[1]).As<v8::Uint32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			coords = reinterpret_cast<GLuint*>(bdata);
-		} else {
-			cout << "ERROR(glTexCoordP2uiv): array must be of type Uint32Array" << endl;
-			exit(1);
-		}
-
-
-		glTexCoordP2uiv(type, coords);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "texCoordP3ui"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("texCoordP3ui requires 2 arguments");
-			return;
-		}
-
-		GLenum type = args[0]->Uint32Value();
-		GLuint coords = args[1]->Uint32Value();
-
-		glTexCoordP3ui(type, coords);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "texCoordP3uiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("texCoordP3uiv requires 2 arguments");
-			return;
-		}
-
-		GLenum type = args[0]->Uint32Value();
-
-		GLuint* coords = nullptr;
-		if (args[1]->IsUint32Array()) {
-			v8::Local<v8::Uint32Array> view = (args[1]).As<v8::Uint32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			coords = reinterpret_cast<GLuint*>(bdata);
-		} else {
-			cout << "ERROR(glTexCoordP3uiv): array must be of type Uint32Array" << endl;
-			exit(1);
-		}
-
-
-		glTexCoordP3uiv(type, coords);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "texCoordP4ui"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("texCoordP4ui requires 2 arguments");
-			return;
-		}
-
-		GLenum type = args[0]->Uint32Value();
-		GLuint coords = args[1]->Uint32Value();
-
-		glTexCoordP4ui(type, coords);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "texCoordP4uiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("texCoordP4uiv requires 2 arguments");
-			return;
-		}
-
-		GLenum type = args[0]->Uint32Value();
-
-		GLuint* coords = nullptr;
-		if (args[1]->IsUint32Array()) {
-			v8::Local<v8::Uint32Array> view = (args[1]).As<v8::Uint32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			coords = reinterpret_cast<GLuint*>(bdata);
-		} else {
-			cout << "ERROR(glTexCoordP4uiv): array must be of type Uint32Array" << endl;
-			exit(1);
-		}
-
-
-		glTexCoordP4uiv(type, coords);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribP1ui"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 4) {
-			V8Helper::_instance->throwException("vertexAttribP1ui requires 4 arguments");
-			return;
-		}
-
-		GLuint index = args[0]->Uint32Value();
-		GLenum type = args[1]->Uint32Value();
-		GLboolean normalized = GLboolean(args[2]->Uint32Value());
-		GLuint value = args[3]->Uint32Value();
-
-		glVertexAttribP1ui(index, type, normalized, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribP1uiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 4) {
-			V8Helper::_instance->throwException("vertexAttribP1uiv requires 4 arguments");
-			return;
-		}
-
-		GLuint index = args[0]->Uint32Value();
-		GLenum type = args[1]->Uint32Value();
-		GLboolean normalized = GLboolean(args[2]->Uint32Value());
-
-		GLuint* value = nullptr;
-		if (args[3]->IsUint32Array()) {
-			v8::Local<v8::Uint32Array> view = (args[3]).As<v8::Uint32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			value = reinterpret_cast<GLuint*>(bdata);
-		} else {
-			cout << "ERROR(glVertexAttribP1uiv): array must be of type Uint32Array" << endl;
-			exit(1);
-		}
-
-
-		glVertexAttribP1uiv(index, type, normalized, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribP2ui"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 4) {
-			V8Helper::_instance->throwException("vertexAttribP2ui requires 4 arguments");
-			return;
-		}
-
-		GLuint index = args[0]->Uint32Value();
-		GLenum type = args[1]->Uint32Value();
-		GLboolean normalized = GLboolean(args[2]->Uint32Value());
-		GLuint value = args[3]->Uint32Value();
-
-		glVertexAttribP2ui(index, type, normalized, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribP2uiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 4) {
-			V8Helper::_instance->throwException("vertexAttribP2uiv requires 4 arguments");
-			return;
-		}
-
-		GLuint index = args[0]->Uint32Value();
-		GLenum type = args[1]->Uint32Value();
-		GLboolean normalized = GLboolean(args[2]->Uint32Value());
-
-		GLuint* value = nullptr;
-		if (args[3]->IsUint32Array()) {
-			v8::Local<v8::Uint32Array> view = (args[3]).As<v8::Uint32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			value = reinterpret_cast<GLuint*>(bdata);
-		} else {
-			cout << "ERROR(glVertexAttribP2uiv): array must be of type Uint32Array" << endl;
-			exit(1);
-		}
-
-
-		glVertexAttribP2uiv(index, type, normalized, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribP3ui"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 4) {
-			V8Helper::_instance->throwException("vertexAttribP3ui requires 4 arguments");
-			return;
-		}
-
-		GLuint index = args[0]->Uint32Value();
-		GLenum type = args[1]->Uint32Value();
-		GLboolean normalized = GLboolean(args[2]->Uint32Value());
-		GLuint value = args[3]->Uint32Value();
-
-		glVertexAttribP3ui(index, type, normalized, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribP3uiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 4) {
-			V8Helper::_instance->throwException("vertexAttribP3uiv requires 4 arguments");
-			return;
-		}
-
-		GLuint index = args[0]->Uint32Value();
-		GLenum type = args[1]->Uint32Value();
-		GLboolean normalized = GLboolean(args[2]->Uint32Value());
-
-		GLuint* value = nullptr;
-		if (args[3]->IsUint32Array()) {
-			v8::Local<v8::Uint32Array> view = (args[3]).As<v8::Uint32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			value = reinterpret_cast<GLuint*>(bdata);
-		} else {
-			cout << "ERROR(glVertexAttribP3uiv): array must be of type Uint32Array" << endl;
-			exit(1);
-		}
-
-
-		glVertexAttribP3uiv(index, type, normalized, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribP4ui"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 4) {
-			V8Helper::_instance->throwException("vertexAttribP4ui requires 4 arguments");
-			return;
-		}
-
-		GLuint index = args[0]->Uint32Value();
-		GLenum type = args[1]->Uint32Value();
-		GLboolean normalized = GLboolean(args[2]->Uint32Value());
-		GLuint value = args[3]->Uint32Value();
-
-		glVertexAttribP4ui(index, type, normalized, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribP4uiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 4) {
-			V8Helper::_instance->throwException("vertexAttribP4uiv requires 4 arguments");
-			return;
-		}
-
-		GLuint index = args[0]->Uint32Value();
-		GLenum type = args[1]->Uint32Value();
-		GLboolean normalized = GLboolean(args[2]->Uint32Value());
-
-		GLuint* value = nullptr;
-		if (args[3]->IsUint32Array()) {
-			v8::Local<v8::Uint32Array> view = (args[3]).As<v8::Uint32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			value = reinterpret_cast<GLuint*>(bdata);
-		} else {
-			cout << "ERROR(glVertexAttribP4uiv): array must be of type Uint32Array" << endl;
-			exit(1);
-		}
-
-
-		glVertexAttribP4uiv(index, type, normalized, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "vertexP2ui"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("vertexP2ui requires 2 arguments");
-			return;
-		}
-
-		GLenum type = args[0]->Uint32Value();
-		GLuint value = args[1]->Uint32Value();
-
-		glVertexP2ui(type, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "vertexP2uiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("vertexP2uiv requires 2 arguments");
-			return;
-		}
-
-		GLenum type = args[0]->Uint32Value();
-
-		GLuint* value = nullptr;
-		if (args[1]->IsUint32Array()) {
-			v8::Local<v8::Uint32Array> view = (args[1]).As<v8::Uint32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			value = reinterpret_cast<GLuint*>(bdata);
-		} else {
-			cout << "ERROR(glVertexP2uiv): array must be of type Uint32Array" << endl;
-			exit(1);
-		}
-
-
-		glVertexP2uiv(type, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "vertexP3ui"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("vertexP3ui requires 2 arguments");
-			return;
-		}
-
-		GLenum type = args[0]->Uint32Value();
-		GLuint value = args[1]->Uint32Value();
-
-		glVertexP3ui(type, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "vertexP3uiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("vertexP3uiv requires 2 arguments");
-			return;
-		}
-
-		GLenum type = args[0]->Uint32Value();
-
-		GLuint* value = nullptr;
-		if (args[1]->IsUint32Array()) {
-			v8::Local<v8::Uint32Array> view = (args[1]).As<v8::Uint32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			value = reinterpret_cast<GLuint*>(bdata);
-		} else {
-			cout << "ERROR(glVertexP3uiv): array must be of type Uint32Array" << endl;
-			exit(1);
-		}
-
-
-		glVertexP3uiv(type, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "vertexP4ui"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("vertexP4ui requires 2 arguments");
-			return;
-		}
-
-		GLenum type = args[0]->Uint32Value();
-		GLuint value = args[1]->Uint32Value();
-
-		glVertexP4ui(type, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "vertexP4uiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("vertexP4uiv requires 2 arguments");
-			return;
-		}
-
-		GLenum type = args[0]->Uint32Value();
-
-		GLuint* value = nullptr;
-		if (args[1]->IsUint32Array()) {
-			v8::Local<v8::Uint32Array> view = (args[1]).As<v8::Uint32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			value = reinterpret_cast<GLuint*>(bdata);
-		} else {
-			cout << "ERROR(glVertexP4uiv): array must be of type Uint32Array" << endl;
-			exit(1);
-		}
-
-
-		glVertexP4uiv(type, value);
-	}));
+	// obj->Set(String::NewFromUtf8(isolate, "colorP3ui"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("colorP3ui requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum type = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint color = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	glColorP3ui(type, color);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "colorP3uiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("colorP3uiv requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum type = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLuint* color = nullptr;
+	// 	if (args[1]->IsUint32Array()) {
+	// 		v8::Local<v8::Uint32Array> view = (args[1]).As<v8::Uint32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		color = reinterpret_cast<GLuint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glColorP3uiv): array must be of type Uint32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glColorP3uiv(type, color);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "colorP4ui"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("colorP4ui requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum type = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint color = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	glColorP4ui(type, color);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "colorP4uiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("colorP4uiv requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum type = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLuint* color = nullptr;
+	// 	if (args[1]->IsUint32Array()) {
+	// 		v8::Local<v8::Uint32Array> view = (args[1]).As<v8::Uint32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		color = reinterpret_cast<GLuint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glColorP4uiv): array must be of type Uint32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glColorP4uiv(type, color);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "multiTexCoordP1ui"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 3) {
+	// 		V8Helper::_instance->throwException("multiTexCoordP1ui requires 3 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum type = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint coords = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	glMultiTexCoordP1ui(texture, type, coords);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "multiTexCoordP1uiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 3) {
+	// 		V8Helper::_instance->throwException("multiTexCoordP1uiv requires 3 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum type = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLuint* coords = nullptr;
+	// 	if (args[2]->IsUint32Array()) {
+	// 		v8::Local<v8::Uint32Array> view = (args[2]).As<v8::Uint32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		coords = reinterpret_cast<GLuint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glMultiTexCoordP1uiv): array must be of type Uint32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glMultiTexCoordP1uiv(texture, type, coords);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "multiTexCoordP2ui"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 3) {
+	// 		V8Helper::_instance->throwException("multiTexCoordP2ui requires 3 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum type = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint coords = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	glMultiTexCoordP2ui(texture, type, coords);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "multiTexCoordP2uiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 3) {
+	// 		V8Helper::_instance->throwException("multiTexCoordP2uiv requires 3 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum type = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLuint* coords = nullptr;
+	// 	if (args[2]->IsUint32Array()) {
+	// 		v8::Local<v8::Uint32Array> view = (args[2]).As<v8::Uint32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		coords = reinterpret_cast<GLuint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glMultiTexCoordP2uiv): array must be of type Uint32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glMultiTexCoordP2uiv(texture, type, coords);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "multiTexCoordP3ui"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 3) {
+	// 		V8Helper::_instance->throwException("multiTexCoordP3ui requires 3 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum type = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint coords = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	glMultiTexCoordP3ui(texture, type, coords);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "multiTexCoordP3uiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 3) {
+	// 		V8Helper::_instance->throwException("multiTexCoordP3uiv requires 3 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum type = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLuint* coords = nullptr;
+	// 	if (args[2]->IsUint32Array()) {
+	// 		v8::Local<v8::Uint32Array> view = (args[2]).As<v8::Uint32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		coords = reinterpret_cast<GLuint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glMultiTexCoordP3uiv): array must be of type Uint32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glMultiTexCoordP3uiv(texture, type, coords);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "multiTexCoordP4ui"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 3) {
+	// 		V8Helper::_instance->throwException("multiTexCoordP4ui requires 3 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum type = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint coords = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	glMultiTexCoordP4ui(texture, type, coords);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "multiTexCoordP4uiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 3) {
+	// 		V8Helper::_instance->throwException("multiTexCoordP4uiv requires 3 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum type = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLuint* coords = nullptr;
+	// 	if (args[2]->IsUint32Array()) {
+	// 		v8::Local<v8::Uint32Array> view = (args[2]).As<v8::Uint32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		coords = reinterpret_cast<GLuint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glMultiTexCoordP4uiv): array must be of type Uint32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glMultiTexCoordP4uiv(texture, type, coords);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "normalP3ui"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("normalP3ui requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum type = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint coords = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	glNormalP3ui(type, coords);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "normalP3uiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("normalP3uiv requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum type = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLuint* coords = nullptr;
+	// 	if (args[1]->IsUint32Array()) {
+	// 		v8::Local<v8::Uint32Array> view = (args[1]).As<v8::Uint32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		coords = reinterpret_cast<GLuint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glNormalP3uiv): array must be of type Uint32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glNormalP3uiv(type, coords);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "secondaryColorP3ui"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("secondaryColorP3ui requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum type = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint color = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	glSecondaryColorP3ui(type, color);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "secondaryColorP3uiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("secondaryColorP3uiv requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum type = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLuint* color = nullptr;
+	// 	if (args[1]->IsUint32Array()) {
+	// 		v8::Local<v8::Uint32Array> view = (args[1]).As<v8::Uint32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		color = reinterpret_cast<GLuint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glSecondaryColorP3uiv): array must be of type Uint32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glSecondaryColorP3uiv(type, color);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "texCoordP1ui"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("texCoordP1ui requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum type = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint coords = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	glTexCoordP1ui(type, coords);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "texCoordP1uiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("texCoordP1uiv requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum type = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLuint* coords = nullptr;
+	// 	if (args[1]->IsUint32Array()) {
+	// 		v8::Local<v8::Uint32Array> view = (args[1]).As<v8::Uint32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		coords = reinterpret_cast<GLuint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glTexCoordP1uiv): array must be of type Uint32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glTexCoordP1uiv(type, coords);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "texCoordP2ui"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("texCoordP2ui requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum type = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint coords = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	glTexCoordP2ui(type, coords);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "texCoordP2uiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("texCoordP2uiv requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum type = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLuint* coords = nullptr;
+	// 	if (args[1]->IsUint32Array()) {
+	// 		v8::Local<v8::Uint32Array> view = (args[1]).As<v8::Uint32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		coords = reinterpret_cast<GLuint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glTexCoordP2uiv): array must be of type Uint32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glTexCoordP2uiv(type, coords);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "texCoordP3ui"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("texCoordP3ui requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum type = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint coords = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	glTexCoordP3ui(type, coords);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "texCoordP3uiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("texCoordP3uiv requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum type = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLuint* coords = nullptr;
+	// 	if (args[1]->IsUint32Array()) {
+	// 		v8::Local<v8::Uint32Array> view = (args[1]).As<v8::Uint32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		coords = reinterpret_cast<GLuint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glTexCoordP3uiv): array must be of type Uint32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glTexCoordP3uiv(type, coords);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "texCoordP4ui"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("texCoordP4ui requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum type = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint coords = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	glTexCoordP4ui(type, coords);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "texCoordP4uiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("texCoordP4uiv requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum type = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLuint* coords = nullptr;
+	// 	if (args[1]->IsUint32Array()) {
+	// 		v8::Local<v8::Uint32Array> view = (args[1]).As<v8::Uint32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		coords = reinterpret_cast<GLuint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glTexCoordP4uiv): array must be of type Uint32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glTexCoordP4uiv(type, coords);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "vertexAttribP1ui"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 4) {
+	// 		V8Helper::_instance->throwException("vertexAttribP1ui requires 4 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum type = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLboolean normalized = GLboolean(args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+	// 	GLuint value = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	glVertexAttribP1ui(index, type, normalized, value);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "vertexAttribP1uiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 4) {
+	// 		V8Helper::_instance->throwException("vertexAttribP1uiv requires 4 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum type = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLboolean normalized = GLboolean(args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+
+	// 	GLuint* value = nullptr;
+	// 	if (args[3]->IsUint32Array()) {
+	// 		v8::Local<v8::Uint32Array> view = (args[3]).As<v8::Uint32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		value = reinterpret_cast<GLuint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glVertexAttribP1uiv): array must be of type Uint32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glVertexAttribP1uiv(index, type, normalized, value);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "vertexAttribP2ui"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 4) {
+	// 		V8Helper::_instance->throwException("vertexAttribP2ui requires 4 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum type = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLboolean normalized = GLboolean(args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+	// 	GLuint value = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	glVertexAttribP2ui(index, type, normalized, value);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "vertexAttribP2uiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 4) {
+	// 		V8Helper::_instance->throwException("vertexAttribP2uiv requires 4 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum type = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLboolean normalized = GLboolean(args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+
+	// 	GLuint* value = nullptr;
+	// 	if (args[3]->IsUint32Array()) {
+	// 		v8::Local<v8::Uint32Array> view = (args[3]).As<v8::Uint32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		value = reinterpret_cast<GLuint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glVertexAttribP2uiv): array must be of type Uint32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glVertexAttribP2uiv(index, type, normalized, value);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "vertexAttribP3ui"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 4) {
+	// 		V8Helper::_instance->throwException("vertexAttribP3ui requires 4 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum type = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLboolean normalized = GLboolean(args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+	// 	GLuint value = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	glVertexAttribP3ui(index, type, normalized, value);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "vertexAttribP3uiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 4) {
+	// 		V8Helper::_instance->throwException("vertexAttribP3uiv requires 4 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum type = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLboolean normalized = GLboolean(args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+
+	// 	GLuint* value = nullptr;
+	// 	if (args[3]->IsUint32Array()) {
+	// 		v8::Local<v8::Uint32Array> view = (args[3]).As<v8::Uint32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		value = reinterpret_cast<GLuint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glVertexAttribP3uiv): array must be of type Uint32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glVertexAttribP3uiv(index, type, normalized, value);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "vertexAttribP4ui"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 4) {
+	// 		V8Helper::_instance->throwException("vertexAttribP4ui requires 4 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum type = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLboolean normalized = GLboolean(args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+	// 	GLuint value = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	glVertexAttribP4ui(index, type, normalized, value);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "vertexAttribP4uiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 4) {
+	// 		V8Helper::_instance->throwException("vertexAttribP4uiv requires 4 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum type = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLboolean normalized = GLboolean(args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+
+	// 	GLuint* value = nullptr;
+	// 	if (args[3]->IsUint32Array()) {
+	// 		v8::Local<v8::Uint32Array> view = (args[3]).As<v8::Uint32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		value = reinterpret_cast<GLuint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glVertexAttribP4uiv): array must be of type Uint32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glVertexAttribP4uiv(index, type, normalized, value);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "vertexP2ui"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("vertexP2ui requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum type = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint value = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	glVertexP2ui(type, value);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "vertexP2uiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("vertexP2uiv requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum type = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLuint* value = nullptr;
+	// 	if (args[1]->IsUint32Array()) {
+	// 		v8::Local<v8::Uint32Array> view = (args[1]).As<v8::Uint32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		value = reinterpret_cast<GLuint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glVertexP2uiv): array must be of type Uint32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glVertexP2uiv(type, value);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "vertexP3ui"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("vertexP3ui requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum type = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint value = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	glVertexP3ui(type, value);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "vertexP3uiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("vertexP3uiv requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum type = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLuint* value = nullptr;
+	// 	if (args[1]->IsUint32Array()) {
+	// 		v8::Local<v8::Uint32Array> view = (args[1]).As<v8::Uint32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		value = reinterpret_cast<GLuint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glVertexP3uiv): array must be of type Uint32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glVertexP3uiv(type, value);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "vertexP4ui"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("vertexP4ui requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum type = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint value = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	glVertexP4ui(type, value);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "vertexP4uiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("vertexP4uiv requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum type = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLuint* value = nullptr;
+	// 	if (args[1]->IsUint32Array()) {
+	// 		v8::Local<v8::Uint32Array> view = (args[1]).As<v8::Uint32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		value = reinterpret_cast<GLuint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glVertexP4uiv): array must be of type Uint32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glVertexP4uiv(type, value);
+	// }).ToLocalChecked());
 
 
 
@@ -15563,86 +15575,86 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 
 
 
-	tpl->Set(String::NewFromUtf8(isolate, "getDoublei_v"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("getDoublei_v requires 3 arguments");
-			return;
-		}
+	// obj->Set(String::NewFromUtf8(isolate, "getDoublei_v"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 3) {
+	// 		V8Helper::_instance->throwException("getDoublei_v requires 3 arguments");
+	// 		return;
+	// 	}
 
-		GLenum target = args[0]->Uint32Value();
-		GLuint index = args[1]->Uint32Value();
+	// 	GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint index = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
-		GLdouble* data = nullptr;
-		if (args[2]->IsFloat64Array()) {
-			v8::Local<v8::Float64Array> view = (args[2]).As<v8::Float64Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			data = reinterpret_cast<GLdouble*>(bdata);
-		} else {
-			cout << "ERROR(glGetDoublei_v): array must be of type Float64Array" << endl;
-			exit(1);
-		}
-
-
-		glGetDoublei_v(target, index, data);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "getFloati_v"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("getFloati_v requires 3 arguments");
-			return;
-		}
-
-		GLenum target = args[0]->Uint32Value();
-		GLuint index = args[1]->Uint32Value();
-
-		GLfloat* data = nullptr;
-		if (args[2]->IsFloat32Array()) {
-			v8::Local<v8::Float32Array> view = (args[2]).As<v8::Float32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			data = reinterpret_cast<GLfloat*>(bdata);
-		} else {
-			cout << "ERROR(glGetFloati_v): array must be of type Float32Array" << endl;
-			exit(1);
-		}
+	// 	GLdouble* data = nullptr;
+	// 	if (args[2]->IsFloat64Array()) {
+	// 		v8::Local<v8::Float64Array> view = (args[2]).As<v8::Float64Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		data = reinterpret_cast<GLdouble*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glGetDoublei_v): array must be of type Float64Array" << endl;
+	// 		//exit(1);
+	// 	}
 
 
-		glGetFloati_v(target, index, data);
-	}));
+	// 	glGetDoublei_v(target, index, data);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "getFloati_v"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 3) {
+	// 		V8Helper::_instance->throwException("getFloati_v requires 3 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint index = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLfloat* data = nullptr;
+	// 	if (args[2]->IsFloat32Array()) {
+	// 		v8::Local<v8::Float32Array> view = (args[2]).As<v8::Float32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		data = reinterpret_cast<GLfloat*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glGetFloati_v): array must be of type Float32Array" << endl;
+	// 		//exit(1);
+	// 	}
 
 
-	tpl->Set(String::NewFromUtf8(isolate, "scissorIndexed"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 5) {
-			V8Helper::_instance->throwException("scissorIndexed requires 5 arguments");
-			return;
-		}
-
-		GLuint index = args[0]->Uint32Value();
-		GLint left = args[1]->Int32Value();
-		GLint bottom = args[2]->Int32Value();
-		GLsizei width = args[3]->Int32Value();
-		GLsizei height = args[4]->Int32Value();
-
-		glScissorIndexed(index, left, bottom, width, height);
-	}));
+	// 	glGetFloati_v(target, index, data);
+	// }).ToLocalChecked());
 
 
+	// obj->Set(String::NewFromUtf8(isolate, "scissorIndexed"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 5) {
+	// 		V8Helper::_instance->throwException("scissorIndexed requires 5 arguments");
+	// 		return;
+	// 	}
 
-	tpl->Set(String::NewFromUtf8(isolate, "viewportIndexedf"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 5) {
-			V8Helper::_instance->throwException("viewportIndexedf requires 5 arguments");
-			return;
-		}
+	// 	GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint left = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint bottom = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLsizei width = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLsizei height = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
-		GLuint index = args[0]->Uint32Value();
-		GLfloat x = GLfloat(args[1]->NumberValue());
-		GLfloat y = GLfloat(args[2]->NumberValue());
-		GLfloat w = GLfloat(args[3]->NumberValue());
-		GLfloat h = GLfloat(args[4]->NumberValue());
+	// 	glScissorIndexed(index, left, bottom, width, height);
+	// }).ToLocalChecked());
 
-		glViewportIndexedf(index, x, y, w, h);
-	}));
+
+
+	// obj->Set(String::NewFromUtf8(isolate, "viewportIndexedf"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 5) {
+	// 		V8Helper::_instance->throwException("viewportIndexedf requires 5 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint index = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLfloat x = GLfloat(args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+	// 	GLfloat y = GLfloat(args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+	// 	GLfloat w = GLfloat(args[3]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+	// 	GLfloat h = GLfloat(args[4]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+
+	// 	glViewportIndexedf(index, x, y, w, h);
+	// }).ToLocalChecked());
 
 
 
@@ -15980,160 +15992,160 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	/* ------------------------------ GL_GREMEDY_string_marker ------------------------------ */
 
 
-	tpl->Set(String::NewFromUtf8(isolate, "stringMarkerGREMEDY"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("stringMarkerGREMEDY requires 2 arguments");
-			return;
-		}
+	// obj->Set(String::NewFromUtf8(isolate, "stringMarkerGREMEDY"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("stringMarkerGREMEDY requires 2 arguments");
+	// 		return;
+	// 	}
 
-		GLsizei len = args[0]->Int32Value();
+	// 	GLsizei len = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
-		void* string = nullptr;
-		if (args[1]->IsArrayBuffer()) {
-			v8::Local<v8::ArrayBuffer> buffer = (args[1]).As<v8::ArrayBuffer>();
-			void *bdata = buffer->GetContents().Data();
-			string = reinterpret_cast<void*>(bdata);
-		} else if (args[1]->IsArrayBufferView()) {
-			v8::Local<v8::ArrayBufferView> view = (args[1]).As<v8::ArrayBufferView>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			string = reinterpret_cast<void*>(bdata);
-		} else {
-			cout << "ERROR(glStringMarkerGREMEDY): array must be of type ArrayBuffer" << endl;
-			exit(1);
-		}
-
-
-		glStringMarkerGREMEDY(len, string);
-	}));
+	// 	void* string = nullptr;
+	// 	if (args[1]->IsArrayBuffer()) {
+	// 		v8::Local<v8::ArrayBuffer> buffer = (args[1]).As<v8::ArrayBuffer>();
+	// 		void *bdata = buffer->GetContents().Data();
+	// 		string = reinterpret_cast<void*>(bdata);
+	// 	} else if (args[1]->IsArrayBufferView()) {
+	// 		v8::Local<v8::ArrayBufferView> view = (args[1]).As<v8::ArrayBufferView>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		string = reinterpret_cast<void*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glStringMarkerGREMEDY): array must be of type ArrayBuffer" << endl;
+	// 		//exit(1);
+	// 	}
 
 
-
-	// empty / skipped / ignored: GL_HP_convolution_border_modes
-	/* ------------------------------ GL_HP_image_transform ------------------------------ */
-
-
-	tpl->Set(String::NewFromUtf8(isolate, "getImageTransformParameterfvHP"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("getImageTransformParameterfvHP requires 3 arguments");
-			return;
-		}
-
-		GLenum target = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
-
-		GLfloat* params = nullptr;
-		if (args[2]->IsFloat32Array()) {
-			v8::Local<v8::Float32Array> view = (args[2]).As<v8::Float32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			params = reinterpret_cast<GLfloat*>(bdata);
-		} else {
-			cout << "ERROR(glGetImageTransformParameterfvHP): array must be of type Float32Array" << endl;
-			exit(1);
-		}
+	// 	glStringMarkerGREMEDY(len, string);
+	// }).ToLocalChecked());
 
 
-		glGetImageTransformParameterfvHP(target, pname, params);
-	}));
 
-	tpl->Set(String::NewFromUtf8(isolate, "getImageTransformParameterivHP"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("getImageTransformParameterivHP requires 3 arguments");
-			return;
-		}
-
-		GLenum target = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
-
-		GLint* params = nullptr;
-		if (args[2]->IsInt32Array()) {
-			v8::Local<v8::Int32Array> view = (args[2]).As<v8::Int32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			params = reinterpret_cast<GLint*>(bdata);
-		} else {
-			cout << "ERROR(glGetImageTransformParameterivHP): array must be of type Int32Array" << endl;
-			exit(1);
-		}
+	// // empty / skipped / ignored: GL_HP_convolution_border_modes
+	// /* ------------------------------ GL_HP_image_transform ------------------------------ */
 
 
-		glGetImageTransformParameterivHP(target, pname, params);
-	}));
+	// obj->Set(String::NewFromUtf8(isolate, "getImageTransformParameterfvHP"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 3) {
+	// 		V8Helper::_instance->throwException("getImageTransformParameterfvHP requires 3 arguments");
+	// 		return;
+	// 	}
 
-	tpl->Set(String::NewFromUtf8(isolate, "imageTransformParameterfHP"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("imageTransformParameterfHP requires 3 arguments");
-			return;
-		}
+	// 	GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
-		GLfloat param = GLfloat(args[2]->NumberValue());
-
-		glImageTransformParameterfHP(target, pname, param);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "imageTransformParameterfvHP"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("imageTransformParameterfvHP requires 3 arguments");
-			return;
-		}
-
-		GLenum target = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
-
-		GLfloat* params = nullptr;
-		if (args[2]->IsFloat32Array()) {
-			v8::Local<v8::Float32Array> view = (args[2]).As<v8::Float32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			params = reinterpret_cast<GLfloat*>(bdata);
-		} else {
-			cout << "ERROR(glImageTransformParameterfvHP): array must be of type Float32Array" << endl;
-			exit(1);
-		}
+	// 	GLfloat* params = nullptr;
+	// 	if (args[2]->IsFloat32Array()) {
+	// 		v8::Local<v8::Float32Array> view = (args[2]).As<v8::Float32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		params = reinterpret_cast<GLfloat*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glGetImageTransformParameterfvHP): array must be of type Float32Array" << endl;
+	// 		//exit(1);
+	// 	}
 
 
-		glImageTransformParameterfvHP(target, pname, params);
-	}));
+	// 	glGetImageTransformParameterfvHP(target, pname, params);
+	// }).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "imageTransformParameteriHP"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("imageTransformParameteriHP requires 3 arguments");
-			return;
-		}
+	// obj->Set(String::NewFromUtf8(isolate, "getImageTransformParameterivHP"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 3) {
+	// 		V8Helper::_instance->throwException("getImageTransformParameterivHP requires 3 arguments");
+	// 		return;
+	// 	}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
-		GLint param = args[2]->Int32Value();
+	// 	GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
-		glImageTransformParameteriHP(target, pname, param);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "imageTransformParameterivHP"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("imageTransformParameterivHP requires 3 arguments");
-			return;
-		}
-
-		GLenum target = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
-
-		GLint* params = nullptr;
-		if (args[2]->IsInt32Array()) {
-			v8::Local<v8::Int32Array> view = (args[2]).As<v8::Int32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			params = reinterpret_cast<GLint*>(bdata);
-		} else {
-			cout << "ERROR(glImageTransformParameterivHP): array must be of type Int32Array" << endl;
-			exit(1);
-		}
+	// 	GLint* params = nullptr;
+	// 	if (args[2]->IsInt32Array()) {
+	// 		v8::Local<v8::Int32Array> view = (args[2]).As<v8::Int32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		params = reinterpret_cast<GLint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glGetImageTransformParameterivHP): array must be of type Int32Array" << endl;
+	// 		//exit(1);
+	// 	}
 
 
-		glImageTransformParameterivHP(target, pname, params);
-	}));
+	// 	glGetImageTransformParameterivHP(target, pname, params);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "imageTransformParameterfHP"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 3) {
+	// 		V8Helper::_instance->throwException("imageTransformParameterfHP requires 3 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLfloat param = GLfloat(args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+
+	// 	glImageTransformParameterfHP(target, pname, param);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "imageTransformParameterfvHP"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 3) {
+	// 		V8Helper::_instance->throwException("imageTransformParameterfvHP requires 3 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLfloat* params = nullptr;
+	// 	if (args[2]->IsFloat32Array()) {
+	// 		v8::Local<v8::Float32Array> view = (args[2]).As<v8::Float32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		params = reinterpret_cast<GLfloat*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glImageTransformParameterfvHP): array must be of type Float32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glImageTransformParameterfvHP(target, pname, params);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "imageTransformParameteriHP"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 3) {
+	// 		V8Helper::_instance->throwException("imageTransformParameteriHP requires 3 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLint param = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	glImageTransformParameteriHP(target, pname, param);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "imageTransformParameterivHP"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 3) {
+	// 		V8Helper::_instance->throwException("imageTransformParameterivHP requires 3 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLint* params = nullptr;
+	// 	if (args[2]->IsInt32Array()) {
+	// 		v8::Local<v8::Int32Array> view = (args[2]).As<v8::Int32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		params = reinterpret_cast<GLint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glImageTransformParameterivHP): array must be of type Int32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glImageTransformParameterivHP(target, pname, params);
+	// }).ToLocalChecked());
 
 
 
@@ -16201,16 +16213,16 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("DEBUG_OUTPUT", GL_DEBUG_OUTPUT);
 
 
-	tpl->Set(String::NewFromUtf8(isolate, "debugMessageControl"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "debugMessageControl"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 6) {
 			V8Helper::_instance->throwException("debugMessageControl requires 6 arguments");
 			return;
 		}
 
-		GLenum source = args[0]->Uint32Value();
-		GLenum type = args[1]->Uint32Value();
-		GLenum severity = args[2]->Uint32Value();
-		GLsizei count = args[3]->Int32Value();
+		GLenum source = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum severity = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* ids = nullptr;
 		if (args[4]->IsUint32Array()) {
@@ -16219,26 +16231,26 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			ids = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glDebugMessageControl): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glDebugMessageControl): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
-		GLboolean enabled = GLboolean(args[5]->Uint32Value());
+		GLboolean enabled = GLboolean(args[5]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glDebugMessageControl(source, type, severity, count, ids, enabled);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "debugMessageInsert"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "debugMessageInsert"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 6) {
 			V8Helper::_instance->throwException("debugMessageInsert requires 6 arguments");
 			return;
 		}
 
-		GLenum source = args[0]->Uint32Value();
-		GLenum type = args[1]->Uint32Value();
-		GLuint id = args[2]->Uint32Value();
-		GLenum severity = args[3]->Uint32Value();
-		GLsizei length = args[4]->Int32Value();
+		GLenum source = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint id = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum severity = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei length = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLchar* buf = nullptr;
 		if (args[5]->IsInt8Array()) {
@@ -16247,23 +16259,23 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			buf = reinterpret_cast<GLchar*>(bdata);
 		} else {
-			cout << "ERROR(glDebugMessageInsert): array must be of type Int8Array" << endl;
-			exit(1);
+			//cout << "ERROR(glDebugMessageInsert): array must be of type Int8Array" << endl;
+			//exit(1);
 		}
 
 
 		glDebugMessageInsert(source, type, id, severity, length, buf);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getObjectLabel"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getObjectLabel"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("getObjectLabel requires 5 arguments");
 			return;
 		}
 
-		GLenum identifier = args[0]->Uint32Value();
-		GLuint name = args[1]->Uint32Value();
-		GLsizei bufSize = args[2]->Int32Value();
+		GLenum identifier = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint name = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei bufSize = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLsizei* length = nullptr;
 		if (args[3]->IsInt32Array()) {
@@ -16272,8 +16284,8 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			length = reinterpret_cast<GLsizei*>(bdata);
 		} else {
-			cout << "ERROR(glGetObjectLabel): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetObjectLabel): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
@@ -16284,15 +16296,15 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			label = reinterpret_cast<GLchar*>(bdata);
 		} else {
-			cout << "ERROR(glGetObjectLabel): array must be of type Int8Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetObjectLabel): array must be of type Int8Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetObjectLabel(identifier, name, bufSize, length, label);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getObjectPtrLabel"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getObjectPtrLabel"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("getObjectPtrLabel requires 4 arguments");
 			return;
@@ -16310,11 +16322,11 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			ptr = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glGetObjectPtrLabel): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glGetObjectPtrLabel): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
-		GLsizei bufSize = args[1]->Int32Value();
+		GLsizei bufSize = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLsizei* length = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -16323,8 +16335,8 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			length = reinterpret_cast<GLsizei*>(bdata);
 		} else {
-			cout << "ERROR(glGetObjectPtrLabel): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetObjectPtrLabel): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
@@ -16335,23 +16347,23 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			label = reinterpret_cast<GLchar*>(bdata);
 		} else {
-			cout << "ERROR(glGetObjectPtrLabel): array must be of type Int8Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetObjectPtrLabel): array must be of type Int8Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetObjectPtrLabel(ptr, bufSize, length, label);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "objectLabel"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "objectLabel"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("objectLabel requires 4 arguments");
 			return;
 		}
 
-		GLenum identifier = args[0]->Uint32Value();
-		GLuint name = args[1]->Uint32Value();
-		GLsizei length = args[2]->Int32Value();
+		GLenum identifier = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint name = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei length = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLchar* label = nullptr;
 		if (args[3]->IsInt8Array()) {
@@ -16360,15 +16372,15 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			label = reinterpret_cast<GLchar*>(bdata);
 		} else {
-			cout << "ERROR(glObjectLabel): array must be of type Int8Array" << endl;
-			exit(1);
+			//cout << "ERROR(glObjectLabel): array must be of type Int8Array" << endl;
+			//exit(1);
 		}
 
 
 		glObjectLabel(identifier, name, length, label);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "objectPtrLabel"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "objectPtrLabel"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("objectPtrLabel requires 3 arguments");
 			return;
@@ -16386,11 +16398,11 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			ptr = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glObjectPtrLabel): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glObjectPtrLabel): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
-		GLsizei length = args[1]->Int32Value();
+		GLsizei length = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLchar* label = nullptr;
 		if (args[2]->IsInt8Array()) {
@@ -16399,13 +16411,13 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			label = reinterpret_cast<GLchar*>(bdata);
 		} else {
-			cout << "ERROR(glObjectPtrLabel): array must be of type Int8Array" << endl;
-			exit(1);
+			//cout << "ERROR(glObjectPtrLabel): array must be of type Int8Array" << endl;
+			//exit(1);
 		}
 
 
 		glObjectPtrLabel(ptr, length, label);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -16424,15 +16436,15 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("NO_RESET_NOTIFICATION", GL_NO_RESET_NOTIFICATION);
 	CREATE_CONSTANT_ACCESSOR("CONTEXT_ROBUST_ACCESS", GL_CONTEXT_ROBUST_ACCESS);
 
-	tpl->Set(String::NewFromUtf8(isolate, "getnUniformfv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getnUniformfv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("getnUniformfv requires 4 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLsizei bufSize = args[2]->Int32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei bufSize = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLfloat* params = nullptr;
 		if (args[3]->IsFloat32Array()) {
@@ -16441,23 +16453,23 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLfloat*>(bdata);
 		} else {
-			cout << "ERROR(glGetnUniformfv): array must be of type Float32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetnUniformfv): array must be of type Float32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetnUniformfv(program, location, bufSize, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getnUniformiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getnUniformiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("getnUniformiv requires 4 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLsizei bufSize = args[2]->Int32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei bufSize = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* params = nullptr;
 		if (args[3]->IsInt32Array()) {
@@ -16466,23 +16478,23 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetnUniformiv): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetnUniformiv): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetnUniformiv(program, location, bufSize, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getnUniformuiv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getnUniformuiv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("getnUniformuiv requires 4 arguments");
 			return;
 		}
 
-		GLuint program = args[0]->Uint32Value();
-		GLint location = args[1]->Int32Value();
-		GLsizei bufSize = args[2]->Int32Value();
+		GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint location = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei bufSize = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* params = nullptr;
 		if (args[3]->IsUint32Array()) {
@@ -16491,27 +16503,27 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glGetnUniformuiv): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetnUniformuiv): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetnUniformuiv(program, location, bufSize, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "readnPixels"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "readnPixels"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 8) {
 			V8Helper::_instance->throwException("readnPixels requires 8 arguments");
 			return;
 		}
 
-		GLint x = args[0]->Int32Value();
-		GLint y = args[1]->Int32Value();
-		GLsizei width = args[2]->Int32Value();
-		GLsizei height = args[3]->Int32Value();
-		GLenum format = args[4]->Uint32Value();
-		GLenum type = args[5]->Uint32Value();
-		GLsizei bufSize = args[6]->Int32Value();
+		GLint x = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint y = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei height = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum format = args[4]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[5]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei bufSize = args[6]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* data = nullptr;
 		if (args[7]->IsArrayBuffer()) {
@@ -16524,13 +16536,13 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			data = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glReadnPixels): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glReadnPixels): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glReadnPixels(x, y, width, height, format, type, bufSize, data);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -16545,48 +16557,48 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("KTX_Z_REGION", GL_KTX_Z_REGION);
 	CREATE_CONSTANT_ACCESSOR("KTX_STENCIL_REGION", GL_KTX_STENCIL_REGION);
 
-	tpl->Set(String::NewFromUtf8(isolate, "deleteBufferRegion"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "deleteBufferRegion"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("deleteBufferRegion requires 1 arguments");
 			return;
 		}
 
-		GLenum region = args[0]->Uint32Value();
+		GLenum region = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glDeleteBufferRegion(region);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "readBufferRegion"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "readBufferRegion"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("readBufferRegion requires 5 arguments");
 			return;
 		}
 
-		GLuint region = args[0]->Uint32Value();
-		GLint x = args[1]->Int32Value();
-		GLint y = args[2]->Int32Value();
-		GLsizei width = args[3]->Int32Value();
-		GLsizei height = args[4]->Int32Value();
+		GLuint region = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint x = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint y = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei height = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glReadBufferRegion(region, x, y, width, height);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "drawBufferRegion"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "drawBufferRegion"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 7) {
 			V8Helper::_instance->throwException("drawBufferRegion requires 7 arguments");
 			return;
 		}
 
-		GLuint region = args[0]->Uint32Value();
-		GLint x = args[1]->Int32Value();
-		GLint y = args[2]->Int32Value();
-		GLsizei width = args[3]->Int32Value();
-		GLsizei height = args[4]->Int32Value();
-		GLint xDest = args[5]->Int32Value();
-		GLint yDest = args[6]->Int32Value();
+		GLuint region = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint x = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint y = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei height = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint xDest = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint yDest = args[6]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glDrawBufferRegion(region, x, y, width, height, xDest, yDest);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -16768,17 +16780,17 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("ALPHA_TEST_FUNC_QCOM", GL_ALPHA_TEST_FUNC_QCOM);
 	CREATE_CONSTANT_ACCESSOR("ALPHA_TEST_REF_QCOM", GL_ALPHA_TEST_REF_QCOM);
 
-	tpl->Set(String::NewFromUtf8(isolate, "alphaFuncQCOM"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "alphaFuncQCOM"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("alphaFuncQCOM requires 2 arguments");
 			return;
 		}
 
-		GLenum func = args[0]->Uint32Value();
-		GLclampf ref = GLclampf(args[1]->NumberValue());
+		GLenum func = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLclampf ref = GLclampf(args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
 		glAlphaFuncQCOM(func, ref);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -16795,36 +16807,36 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	/* ------------------------------ GL_QCOM_driver_control ------------------------------ */
 
 
-	tpl->Set(String::NewFromUtf8(isolate, "disableDriverControlQCOM"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "disableDriverControlQCOM"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("disableDriverControlQCOM requires 1 arguments");
 			return;
 		}
 
-		GLuint driverControl = args[0]->Uint32Value();
+		GLuint driverControl = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glDisableDriverControlQCOM(driverControl);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "enableDriverControlQCOM"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "enableDriverControlQCOM"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("enableDriverControlQCOM requires 1 arguments");
 			return;
 		}
 
-		GLuint driverControl = args[0]->Uint32Value();
+		GLuint driverControl = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glEnableDriverControlQCOM(driverControl);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getDriverControlStringQCOM"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getDriverControlStringQCOM"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("getDriverControlStringQCOM requires 4 arguments");
 			return;
 		}
 
-		GLuint driverControl = args[0]->Uint32Value();
-		GLsizei bufSize = args[1]->Int32Value();
+		GLuint driverControl = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei bufSize = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLsizei* length = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -16833,8 +16845,8 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			length = reinterpret_cast<GLsizei*>(bdata);
 		} else {
-			cout << "ERROR(glGetDriverControlStringQCOM): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetDriverControlStringQCOM): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
@@ -16845,15 +16857,15 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			driverControlString = reinterpret_cast<GLchar*>(bdata);
 		} else {
-			cout << "ERROR(glGetDriverControlStringQCOM): array must be of type Int8Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetDriverControlStringQCOM): array must be of type Int8Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetDriverControlStringQCOM(driverControl, bufSize, length, driverControlString);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getDriverControlsQCOM"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getDriverControlsQCOM"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("getDriverControlsQCOM requires 3 arguments");
 			return;
@@ -16867,11 +16879,11 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			num = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glGetDriverControlsQCOM): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetDriverControlsQCOM): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
-		GLsizei size = args[1]->Int32Value();
+		GLsizei size = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint* driverControls = nullptr;
 		if (args[2]->IsUint32Array()) {
@@ -16880,13 +16892,13 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			driverControls = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glGetDriverControlsQCOM): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glGetDriverControlsQCOM): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
 
 		glGetDriverControlsQCOM(num, size, driverControls);
-	}));
+	}).ToLocalChecked());
 
 
 
@@ -16905,7 +16917,7 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("STATE_RESTORE", GL_STATE_RESTORE);
 
 
-	tpl->Set(String::NewFromUtf8(isolate, "extGetBuffersQCOM"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "extGetBuffersQCOM"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("extGetBuffersQCOM requires 3 arguments");
 			return;
@@ -16919,11 +16931,11 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			buffers = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glExtGetBuffersQCOM): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glExtGetBuffersQCOM): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
-		GLint maxBuffers = args[1]->Int32Value();
+		GLint maxBuffers = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* numBuffers = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -16932,15 +16944,15 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			numBuffers = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glExtGetBuffersQCOM): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glExtGetBuffersQCOM): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glExtGetBuffersQCOM(buffers, maxBuffers, numBuffers);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "extGetFramebuffersQCOM"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "extGetFramebuffersQCOM"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("extGetFramebuffersQCOM requires 3 arguments");
 			return;
@@ -16954,11 +16966,11 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			framebuffers = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glExtGetFramebuffersQCOM): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glExtGetFramebuffersQCOM): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
-		GLint maxFramebuffers = args[1]->Int32Value();
+		GLint maxFramebuffers = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* numFramebuffers = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -16967,15 +16979,15 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			numFramebuffers = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glExtGetFramebuffersQCOM): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glExtGetFramebuffersQCOM): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glExtGetFramebuffersQCOM(framebuffers, maxFramebuffers, numFramebuffers);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "extGetRenderbuffersQCOM"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "extGetRenderbuffersQCOM"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("extGetRenderbuffersQCOM requires 3 arguments");
 			return;
@@ -16989,11 +17001,11 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			renderbuffers = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glExtGetRenderbuffersQCOM): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glExtGetRenderbuffersQCOM): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
-		GLint maxRenderbuffers = args[1]->Int32Value();
+		GLint maxRenderbuffers = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* numRenderbuffers = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -17002,24 +17014,24 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			numRenderbuffers = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glExtGetRenderbuffersQCOM): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glExtGetRenderbuffersQCOM): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glExtGetRenderbuffersQCOM(renderbuffers, maxRenderbuffers, numRenderbuffers);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "extGetTexLevelParameterivQCOM"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "extGetTexLevelParameterivQCOM"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("extGetTexLevelParameterivQCOM requires 5 arguments");
 			return;
 		}
 
-		GLuint texture = args[0]->Uint32Value();
-		GLenum face = args[1]->Uint32Value();
-		GLint level = args[2]->Int32Value();
-		GLenum pname = args[3]->Uint32Value();
+		GLuint texture = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum face = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint level = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* params = nullptr;
 		if (args[4]->IsInt32Array()) {
@@ -17028,30 +17040,30 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			params = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glExtGetTexLevelParameterivQCOM): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glExtGetTexLevelParameterivQCOM): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glExtGetTexLevelParameterivQCOM(texture, face, level, pname, params);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "extGetTexSubImageQCOM"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "extGetTexSubImageQCOM"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 11) {
 			V8Helper::_instance->throwException("extGetTexSubImageQCOM requires 11 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLint level = args[1]->Int32Value();
-		GLint xoffset = args[2]->Int32Value();
-		GLint yoffset = args[3]->Int32Value();
-		GLint zoffset = args[4]->Int32Value();
-		GLsizei width = args[5]->Int32Value();
-		GLsizei height = args[6]->Int32Value();
-		GLsizei depth = args[7]->Int32Value();
-		GLenum format = args[8]->Uint32Value();
-		GLenum type = args[9]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint level = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint xoffset = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint yoffset = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint zoffset = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei height = args[6]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei depth = args[7]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum format = args[8]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[9]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* texels = nullptr;
 		if (args[10]->IsArrayBuffer()) {
@@ -17064,15 +17076,15 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			texels = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glExtGetTexSubImageQCOM): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glExtGetTexSubImageQCOM): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
 		glExtGetTexSubImageQCOM(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, texels);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "extGetTexturesQCOM"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "extGetTexturesQCOM"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("extGetTexturesQCOM requires 3 arguments");
 			return;
@@ -17086,11 +17098,11 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			textures = reinterpret_cast<GLuint*>(bdata);
 		} else {
-			cout << "ERROR(glExtGetTexturesQCOM): array must be of type Uint32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glExtGetTexturesQCOM): array must be of type Uint32Array" << endl;
+			//exit(1);
 		}
 
-		GLint maxTextures = args[1]->Int32Value();
+		GLint maxTextures = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint* numTextures = nullptr;
 		if (args[2]->IsInt32Array()) {
@@ -17099,989 +17111,989 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			numTextures = reinterpret_cast<GLint*>(bdata);
 		} else {
-			cout << "ERROR(glExtGetTexturesQCOM): array must be of type Int32Array" << endl;
-			exit(1);
+			//cout << "ERROR(glExtGetTexturesQCOM): array must be of type Int32Array" << endl;
+			//exit(1);
 		}
 
 
 		glExtGetTexturesQCOM(textures, maxTextures, numTextures);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "extTexObjectStateOverrideiQCOM"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "extTexObjectStateOverrideiQCOM"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("extTexObjectStateOverrideiQCOM requires 3 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
-		GLint param = args[2]->Int32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint param = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glExtTexObjectStateOverrideiQCOM(target, pname, param);
-	}));
+	}).ToLocalChecked());
 
 
 
 	/* ------------------------------ GL_QCOM_extended_get2 ------------------------------ */
 
 
-	tpl->Set(String::NewFromUtf8(isolate, "extGetProgramBinarySourceQCOM"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 4) {
-			V8Helper::_instance->throwException("extGetProgramBinarySourceQCOM requires 4 arguments");
-			return;
-		}
-
-		GLuint program = args[0]->Uint32Value();
-		GLenum shadertype = args[1]->Uint32Value();
-
-		GLchar* source = nullptr;
-		if (args[2]->IsInt8Array()) {
-			v8::Local<v8::Int8Array> view = (args[2]).As<v8::Int8Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			source = reinterpret_cast<GLchar*>(bdata);
-		} else {
-			cout << "ERROR(glExtGetProgramBinarySourceQCOM): array must be of type Int8Array" << endl;
-			exit(1);
-		}
-
-
-		GLint* length = nullptr;
-		if (args[3]->IsInt32Array()) {
-			v8::Local<v8::Int32Array> view = (args[3]).As<v8::Int32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			length = reinterpret_cast<GLint*>(bdata);
-		} else {
-			cout << "ERROR(glExtGetProgramBinarySourceQCOM): array must be of type Int32Array" << endl;
-			exit(1);
-		}
-
-
-		glExtGetProgramBinarySourceQCOM(program, shadertype, source, length);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "extGetProgramsQCOM"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("extGetProgramsQCOM requires 3 arguments");
-			return;
-		}
-
-
-		GLuint* programs = nullptr;
-		if (args[0]->IsUint32Array()) {
-			v8::Local<v8::Uint32Array> view = (args[0]).As<v8::Uint32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			programs = reinterpret_cast<GLuint*>(bdata);
-		} else {
-			cout << "ERROR(glExtGetProgramsQCOM): array must be of type Uint32Array" << endl;
-			exit(1);
-		}
-
-		GLint maxPrograms = args[1]->Int32Value();
-
-		GLint* numPrograms = nullptr;
-		if (args[2]->IsInt32Array()) {
-			v8::Local<v8::Int32Array> view = (args[2]).As<v8::Int32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			numPrograms = reinterpret_cast<GLint*>(bdata);
-		} else {
-			cout << "ERROR(glExtGetProgramsQCOM): array must be of type Int32Array" << endl;
-			exit(1);
-		}
-
-
-		glExtGetProgramsQCOM(programs, maxPrograms, numPrograms);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "extGetShadersQCOM"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("extGetShadersQCOM requires 3 arguments");
-			return;
-		}
+	// obj->Set(String::NewFromUtf8(isolate, "extGetProgramBinarySourceQCOM"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 4) {
+	// 		V8Helper::_instance->throwException("extGetProgramBinarySourceQCOM requires 4 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLuint program = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum shadertype = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLchar* source = nullptr;
+	// 	if (args[2]->IsInt8Array()) {
+	// 		v8::Local<v8::Int8Array> view = (args[2]).As<v8::Int8Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		source = reinterpret_cast<GLchar*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glExtGetProgramBinarySourceQCOM): array must be of type Int8Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	GLint* length = nullptr;
+	// 	if (args[3]->IsInt32Array()) {
+	// 		v8::Local<v8::Int32Array> view = (args[3]).As<v8::Int32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		length = reinterpret_cast<GLint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glExtGetProgramBinarySourceQCOM): array must be of type Int32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glExtGetProgramBinarySourceQCOM(program, shadertype, source, length);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "extGetProgramsQCOM"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 3) {
+	// 		V8Helper::_instance->throwException("extGetProgramsQCOM requires 3 arguments");
+	// 		return;
+	// 	}
+
+
+	// 	GLuint* programs = nullptr;
+	// 	if (args[0]->IsUint32Array()) {
+	// 		v8::Local<v8::Uint32Array> view = (args[0]).As<v8::Uint32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		programs = reinterpret_cast<GLuint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glExtGetProgramsQCOM): array must be of type Uint32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+	// 	GLint maxPrograms = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLint* numPrograms = nullptr;
+	// 	if (args[2]->IsInt32Array()) {
+	// 		v8::Local<v8::Int32Array> view = (args[2]).As<v8::Int32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		numPrograms = reinterpret_cast<GLint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glExtGetProgramsQCOM): array must be of type Int32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glExtGetProgramsQCOM(programs, maxPrograms, numPrograms);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "extGetShadersQCOM"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 3) {
+	// 		V8Helper::_instance->throwException("extGetShadersQCOM requires 3 arguments");
+	// 		return;
+	// 	}
 
 
-		GLuint* shaders = nullptr;
-		if (args[0]->IsUint32Array()) {
-			v8::Local<v8::Uint32Array> view = (args[0]).As<v8::Uint32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			shaders = reinterpret_cast<GLuint*>(bdata);
-		} else {
-			cout << "ERROR(glExtGetShadersQCOM): array must be of type Uint32Array" << endl;
-			exit(1);
-		}
-
-		GLint maxShaders = args[1]->Int32Value();
-
-		GLint* numShaders = nullptr;
-		if (args[2]->IsInt32Array()) {
-			v8::Local<v8::Int32Array> view = (args[2]).As<v8::Int32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			numShaders = reinterpret_cast<GLint*>(bdata);
-		} else {
-			cout << "ERROR(glExtGetShadersQCOM): array must be of type Int32Array" << endl;
-			exit(1);
-		}
+	// 	GLuint* shaders = nullptr;
+	// 	if (args[0]->IsUint32Array()) {
+	// 		v8::Local<v8::Uint32Array> view = (args[0]).As<v8::Uint32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		shaders = reinterpret_cast<GLuint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glExtGetShadersQCOM): array must be of type Uint32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+	// 	GLint maxShaders = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLint* numShaders = nullptr;
+	// 	if (args[2]->IsInt32Array()) {
+	// 		v8::Local<v8::Int32Array> view = (args[2]).As<v8::Int32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		numShaders = reinterpret_cast<GLint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glExtGetShadersQCOM): array must be of type Int32Array" << endl;
+	// 		//exit(1);
+	// 	}
 
 
-		glExtGetShadersQCOM(shaders, maxShaders, numShaders);
-	}));
+	// 	glExtGetShadersQCOM(shaders, maxShaders, numShaders);
+	// }).ToLocalChecked());
 
 
 
-	/* ------------------------------ GL_QCOM_framebuffer_foveated ------------------------------ */
+	// /* ------------------------------ GL_QCOM_framebuffer_foveated ------------------------------ */
 
-	CREATE_CONSTANT_ACCESSOR("FOVEATION_ENABLE_BIT_QCOM", GL_FOVEATION_ENABLE_BIT_QCOM);
-	CREATE_CONSTANT_ACCESSOR("FOVEATION_SCALED_BIN_METHOD_BIT_QCOM", GL_FOVEATION_SCALED_BIN_METHOD_BIT_QCOM);
+	// CREATE_CONSTANT_ACCESSOR("FOVEATION_ENABLE_BIT_QCOM", GL_FOVEATION_ENABLE_BIT_QCOM);
+	// CREATE_CONSTANT_ACCESSOR("FOVEATION_SCALED_BIN_METHOD_BIT_QCOM", GL_FOVEATION_SCALED_BIN_METHOD_BIT_QCOM);
 
-	tpl->Set(String::NewFromUtf8(isolate, "framebufferFoveationConfigQCOM"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 5) {
-			V8Helper::_instance->throwException("framebufferFoveationConfigQCOM requires 5 arguments");
-			return;
-		}
+	// obj->Set(String::NewFromUtf8(isolate, "framebufferFoveationConfigQCOM"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 5) {
+	// 		V8Helper::_instance->throwException("framebufferFoveationConfigQCOM requires 5 arguments");
+	// 		return;
+	// 	}
 
-		GLuint fbo = args[0]->Uint32Value();
-		GLuint numLayers = args[1]->Uint32Value();
-		GLuint focalPointsPerLayer = args[2]->Uint32Value();
-		GLuint requestedFeatures = args[3]->Uint32Value();
+	// 	GLuint fbo = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint numLayers = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint focalPointsPerLayer = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint requestedFeatures = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
-		GLuint* providedFeatures = nullptr;
-		if (args[4]->IsUint32Array()) {
-			v8::Local<v8::Uint32Array> view = (args[4]).As<v8::Uint32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			providedFeatures = reinterpret_cast<GLuint*>(bdata);
-		} else {
-			cout << "ERROR(glFramebufferFoveationConfigQCOM): array must be of type Uint32Array" << endl;
-			exit(1);
-		}
+	// 	GLuint* providedFeatures = nullptr;
+	// 	if (args[4]->IsUint32Array()) {
+	// 		v8::Local<v8::Uint32Array> view = (args[4]).As<v8::Uint32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		providedFeatures = reinterpret_cast<GLuint*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glFramebufferFoveationConfigQCOM): array must be of type Uint32Array" << endl;
+	// 		//exit(1);
+	// 	}
 
 
-		glFramebufferFoveationConfigQCOM(fbo, numLayers, focalPointsPerLayer, requestedFeatures, providedFeatures);
-	}));
+	// 	glFramebufferFoveationConfigQCOM(fbo, numLayers, focalPointsPerLayer, requestedFeatures, providedFeatures);
+	// }).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "framebufferFoveationParametersQCOM"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 8) {
-			V8Helper::_instance->throwException("framebufferFoveationParametersQCOM requires 8 arguments");
-			return;
-		}
+	// obj->Set(String::NewFromUtf8(isolate, "framebufferFoveationParametersQCOM"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 8) {
+	// 		V8Helper::_instance->throwException("framebufferFoveationParametersQCOM requires 8 arguments");
+	// 		return;
+	// 	}
 
-		GLuint fbo = args[0]->Uint32Value();
-		GLuint layer = args[1]->Uint32Value();
-		GLuint focalPoint = args[2]->Uint32Value();
-		GLfloat focalX = GLfloat(args[3]->NumberValue());
-		GLfloat focalY = GLfloat(args[4]->NumberValue());
-		GLfloat gainX = GLfloat(args[5]->NumberValue());
-		GLfloat gainY = GLfloat(args[6]->NumberValue());
-		GLfloat foveaArea = GLfloat(args[7]->NumberValue());
+	// 	GLuint fbo = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint layer = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint focalPoint = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLfloat focalX = GLfloat(args[3]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+	// 	GLfloat focalY = GLfloat(args[4]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+	// 	GLfloat gainX = GLfloat(args[5]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+	// 	GLfloat gainY = GLfloat(args[6]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+	// 	GLfloat foveaArea = GLfloat(args[7]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
-		glFramebufferFoveationParametersQCOM(fbo, layer, focalPoint, focalX, focalY, gainX, gainY, foveaArea);
-	}));
+	// 	glFramebufferFoveationParametersQCOM(fbo, layer, focalPoint, focalX, focalY, gainX, gainY, foveaArea);
+	// }).ToLocalChecked());
 
 
 
-	/* ------------------------------ GL_QCOM_perfmon_global_mode ------------------------------ */
+	// /* ------------------------------ GL_QCOM_perfmon_global_mode ------------------------------ */
 
-	CREATE_CONSTANT_ACCESSOR("PERFMON_GLOBAL_MODE_QCOM", GL_PERFMON_GLOBAL_MODE_QCOM);
+	// CREATE_CONSTANT_ACCESSOR("PERFMON_GLOBAL_MODE_QCOM", GL_PERFMON_GLOBAL_MODE_QCOM);
 
 
 
-	/* ------------------------------ GL_QCOM_shader_framebuffer_fetch_noncoherent ------------------------------ */
+	// /* ------------------------------ GL_QCOM_shader_framebuffer_fetch_noncoherent ------------------------------ */
 
-	CREATE_CONSTANT_ACCESSOR("FRAMEBUFFER_FETCH_NONCOHERENT_QCOM", GL_FRAMEBUFFER_FETCH_NONCOHERENT_QCOM);
+	// CREATE_CONSTANT_ACCESSOR("FRAMEBUFFER_FETCH_NONCOHERENT_QCOM", GL_FRAMEBUFFER_FETCH_NONCOHERENT_QCOM);
 
 
 
 
-	/* ------------------------------ GL_QCOM_tiled_rendering ------------------------------ */
+	// /* ------------------------------ GL_QCOM_tiled_rendering ------------------------------ */
 
-	CREATE_CONSTANT_ACCESSOR("COLOR_BUFFER_BIT0_QCOM", GL_COLOR_BUFFER_BIT0_QCOM);
-	CREATE_CONSTANT_ACCESSOR("COLOR_BUFFER_BIT1_QCOM", GL_COLOR_BUFFER_BIT1_QCOM);
-	CREATE_CONSTANT_ACCESSOR("COLOR_BUFFER_BIT2_QCOM", GL_COLOR_BUFFER_BIT2_QCOM);
-	CREATE_CONSTANT_ACCESSOR("COLOR_BUFFER_BIT3_QCOM", GL_COLOR_BUFFER_BIT3_QCOM);
-	CREATE_CONSTANT_ACCESSOR("COLOR_BUFFER_BIT4_QCOM", GL_COLOR_BUFFER_BIT4_QCOM);
-	CREATE_CONSTANT_ACCESSOR("COLOR_BUFFER_BIT5_QCOM", GL_COLOR_BUFFER_BIT5_QCOM);
-	CREATE_CONSTANT_ACCESSOR("COLOR_BUFFER_BIT6_QCOM", GL_COLOR_BUFFER_BIT6_QCOM);
-	CREATE_CONSTANT_ACCESSOR("COLOR_BUFFER_BIT7_QCOM", GL_COLOR_BUFFER_BIT7_QCOM);
-	CREATE_CONSTANT_ACCESSOR("DEPTH_BUFFER_BIT0_QCOM", GL_DEPTH_BUFFER_BIT0_QCOM);
-	CREATE_CONSTANT_ACCESSOR("DEPTH_BUFFER_BIT1_QCOM", GL_DEPTH_BUFFER_BIT1_QCOM);
-	CREATE_CONSTANT_ACCESSOR("DEPTH_BUFFER_BIT2_QCOM", GL_DEPTH_BUFFER_BIT2_QCOM);
-	CREATE_CONSTANT_ACCESSOR("DEPTH_BUFFER_BIT3_QCOM", GL_DEPTH_BUFFER_BIT3_QCOM);
-	CREATE_CONSTANT_ACCESSOR("DEPTH_BUFFER_BIT4_QCOM", GL_DEPTH_BUFFER_BIT4_QCOM);
-	CREATE_CONSTANT_ACCESSOR("DEPTH_BUFFER_BIT5_QCOM", GL_DEPTH_BUFFER_BIT5_QCOM);
-	CREATE_CONSTANT_ACCESSOR("DEPTH_BUFFER_BIT6_QCOM", GL_DEPTH_BUFFER_BIT6_QCOM);
-	CREATE_CONSTANT_ACCESSOR("DEPTH_BUFFER_BIT7_QCOM", GL_DEPTH_BUFFER_BIT7_QCOM);
-	CREATE_CONSTANT_ACCESSOR("STENCIL_BUFFER_BIT0_QCOM", GL_STENCIL_BUFFER_BIT0_QCOM);
-	CREATE_CONSTANT_ACCESSOR("STENCIL_BUFFER_BIT1_QCOM", GL_STENCIL_BUFFER_BIT1_QCOM);
-	CREATE_CONSTANT_ACCESSOR("STENCIL_BUFFER_BIT2_QCOM", GL_STENCIL_BUFFER_BIT2_QCOM);
-	CREATE_CONSTANT_ACCESSOR("STENCIL_BUFFER_BIT3_QCOM", GL_STENCIL_BUFFER_BIT3_QCOM);
-	CREATE_CONSTANT_ACCESSOR("STENCIL_BUFFER_BIT4_QCOM", GL_STENCIL_BUFFER_BIT4_QCOM);
-	CREATE_CONSTANT_ACCESSOR("STENCIL_BUFFER_BIT5_QCOM", GL_STENCIL_BUFFER_BIT5_QCOM);
-	CREATE_CONSTANT_ACCESSOR("STENCIL_BUFFER_BIT6_QCOM", GL_STENCIL_BUFFER_BIT6_QCOM);
-	CREATE_CONSTANT_ACCESSOR("STENCIL_BUFFER_BIT7_QCOM", GL_STENCIL_BUFFER_BIT7_QCOM);
-	CREATE_CONSTANT_ACCESSOR("MULTISAMPLE_BUFFER_BIT0_QCOM", GL_MULTISAMPLE_BUFFER_BIT0_QCOM);
-	CREATE_CONSTANT_ACCESSOR("MULTISAMPLE_BUFFER_BIT1_QCOM", GL_MULTISAMPLE_BUFFER_BIT1_QCOM);
-	CREATE_CONSTANT_ACCESSOR("MULTISAMPLE_BUFFER_BIT2_QCOM", GL_MULTISAMPLE_BUFFER_BIT2_QCOM);
-	CREATE_CONSTANT_ACCESSOR("MULTISAMPLE_BUFFER_BIT3_QCOM", GL_MULTISAMPLE_BUFFER_BIT3_QCOM);
-	CREATE_CONSTANT_ACCESSOR("MULTISAMPLE_BUFFER_BIT4_QCOM", GL_MULTISAMPLE_BUFFER_BIT4_QCOM);
-	CREATE_CONSTANT_ACCESSOR("MULTISAMPLE_BUFFER_BIT5_QCOM", GL_MULTISAMPLE_BUFFER_BIT5_QCOM);
-	CREATE_CONSTANT_ACCESSOR("MULTISAMPLE_BUFFER_BIT6_QCOM", GL_MULTISAMPLE_BUFFER_BIT6_QCOM);
-	CREATE_CONSTANT_ACCESSOR("MULTISAMPLE_BUFFER_BIT7_QCOM", GL_MULTISAMPLE_BUFFER_BIT7_QCOM);
+	// CREATE_CONSTANT_ACCESSOR("COLOR_BUFFER_BIT0_QCOM", GL_COLOR_BUFFER_BIT0_QCOM);
+	// CREATE_CONSTANT_ACCESSOR("COLOR_BUFFER_BIT1_QCOM", GL_COLOR_BUFFER_BIT1_QCOM);
+	// CREATE_CONSTANT_ACCESSOR("COLOR_BUFFER_BIT2_QCOM", GL_COLOR_BUFFER_BIT2_QCOM);
+	// CREATE_CONSTANT_ACCESSOR("COLOR_BUFFER_BIT3_QCOM", GL_COLOR_BUFFER_BIT3_QCOM);
+	// CREATE_CONSTANT_ACCESSOR("COLOR_BUFFER_BIT4_QCOM", GL_COLOR_BUFFER_BIT4_QCOM);
+	// CREATE_CONSTANT_ACCESSOR("COLOR_BUFFER_BIT5_QCOM", GL_COLOR_BUFFER_BIT5_QCOM);
+	// CREATE_CONSTANT_ACCESSOR("COLOR_BUFFER_BIT6_QCOM", GL_COLOR_BUFFER_BIT6_QCOM);
+	// CREATE_CONSTANT_ACCESSOR("COLOR_BUFFER_BIT7_QCOM", GL_COLOR_BUFFER_BIT7_QCOM);
+	// CREATE_CONSTANT_ACCESSOR("DEPTH_BUFFER_BIT0_QCOM", GL_DEPTH_BUFFER_BIT0_QCOM);
+	// CREATE_CONSTANT_ACCESSOR("DEPTH_BUFFER_BIT1_QCOM", GL_DEPTH_BUFFER_BIT1_QCOM);
+	// CREATE_CONSTANT_ACCESSOR("DEPTH_BUFFER_BIT2_QCOM", GL_DEPTH_BUFFER_BIT2_QCOM);
+	// CREATE_CONSTANT_ACCESSOR("DEPTH_BUFFER_BIT3_QCOM", GL_DEPTH_BUFFER_BIT3_QCOM);
+	// CREATE_CONSTANT_ACCESSOR("DEPTH_BUFFER_BIT4_QCOM", GL_DEPTH_BUFFER_BIT4_QCOM);
+	// CREATE_CONSTANT_ACCESSOR("DEPTH_BUFFER_BIT5_QCOM", GL_DEPTH_BUFFER_BIT5_QCOM);
+	// CREATE_CONSTANT_ACCESSOR("DEPTH_BUFFER_BIT6_QCOM", GL_DEPTH_BUFFER_BIT6_QCOM);
+	// CREATE_CONSTANT_ACCESSOR("DEPTH_BUFFER_BIT7_QCOM", GL_DEPTH_BUFFER_BIT7_QCOM);
+	// CREATE_CONSTANT_ACCESSOR("STENCIL_BUFFER_BIT0_QCOM", GL_STENCIL_BUFFER_BIT0_QCOM);
+	// CREATE_CONSTANT_ACCESSOR("STENCIL_BUFFER_BIT1_QCOM", GL_STENCIL_BUFFER_BIT1_QCOM);
+	// CREATE_CONSTANT_ACCESSOR("STENCIL_BUFFER_BIT2_QCOM", GL_STENCIL_BUFFER_BIT2_QCOM);
+	// CREATE_CONSTANT_ACCESSOR("STENCIL_BUFFER_BIT3_QCOM", GL_STENCIL_BUFFER_BIT3_QCOM);
+	// CREATE_CONSTANT_ACCESSOR("STENCIL_BUFFER_BIT4_QCOM", GL_STENCIL_BUFFER_BIT4_QCOM);
+	// CREATE_CONSTANT_ACCESSOR("STENCIL_BUFFER_BIT5_QCOM", GL_STENCIL_BUFFER_BIT5_QCOM);
+	// CREATE_CONSTANT_ACCESSOR("STENCIL_BUFFER_BIT6_QCOM", GL_STENCIL_BUFFER_BIT6_QCOM);
+	// CREATE_CONSTANT_ACCESSOR("STENCIL_BUFFER_BIT7_QCOM", GL_STENCIL_BUFFER_BIT7_QCOM);
+	// CREATE_CONSTANT_ACCESSOR("MULTISAMPLE_BUFFER_BIT0_QCOM", GL_MULTISAMPLE_BUFFER_BIT0_QCOM);
+	// CREATE_CONSTANT_ACCESSOR("MULTISAMPLE_BUFFER_BIT1_QCOM", GL_MULTISAMPLE_BUFFER_BIT1_QCOM);
+	// CREATE_CONSTANT_ACCESSOR("MULTISAMPLE_BUFFER_BIT2_QCOM", GL_MULTISAMPLE_BUFFER_BIT2_QCOM);
+	// CREATE_CONSTANT_ACCESSOR("MULTISAMPLE_BUFFER_BIT3_QCOM", GL_MULTISAMPLE_BUFFER_BIT3_QCOM);
+	// CREATE_CONSTANT_ACCESSOR("MULTISAMPLE_BUFFER_BIT4_QCOM", GL_MULTISAMPLE_BUFFER_BIT4_QCOM);
+	// CREATE_CONSTANT_ACCESSOR("MULTISAMPLE_BUFFER_BIT5_QCOM", GL_MULTISAMPLE_BUFFER_BIT5_QCOM);
+	// CREATE_CONSTANT_ACCESSOR("MULTISAMPLE_BUFFER_BIT6_QCOM", GL_MULTISAMPLE_BUFFER_BIT6_QCOM);
+	// CREATE_CONSTANT_ACCESSOR("MULTISAMPLE_BUFFER_BIT7_QCOM", GL_MULTISAMPLE_BUFFER_BIT7_QCOM);
 
-	tpl->Set(String::NewFromUtf8(isolate, "endTilingQCOM"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 1) {
-			V8Helper::_instance->throwException("endTilingQCOM requires 1 arguments");
-			return;
-		}
+	// obj->Set(String::NewFromUtf8(isolate, "endTilingQCOM"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 1) {
+	// 		V8Helper::_instance->throwException("endTilingQCOM requires 1 arguments");
+	// 		return;
+	// 	}
 
-		GLbitfield preserveMask = args[0]->Uint32Value();
+	// 	GLbitfield preserveMask = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
-		glEndTilingQCOM(preserveMask);
-	}));
+	// 	glEndTilingQCOM(preserveMask);
+	// }).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "startTilingQCOM"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 5) {
-			V8Helper::_instance->throwException("startTilingQCOM requires 5 arguments");
-			return;
-		}
+	// obj->Set(String::NewFromUtf8(isolate, "startTilingQCOM"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 5) {
+	// 		V8Helper::_instance->throwException("startTilingQCOM requires 5 arguments");
+	// 		return;
+	// 	}
 
-		GLuint x = args[0]->Uint32Value();
-		GLuint y = args[1]->Uint32Value();
-		GLuint width = args[2]->Uint32Value();
-		GLuint height = args[3]->Uint32Value();
-		GLbitfield preserveMask = args[4]->Uint32Value();
+	// 	GLuint x = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint y = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint width = args[2]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLuint height = args[3]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLbitfield preserveMask = args[4]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
-		glStartTilingQCOM(x, y, width, height, preserveMask);
-	}));
+	// 	glStartTilingQCOM(x, y, width, height, preserveMask);
+	// }).ToLocalChecked());
 
 
 
-	/* ------------------------------ GL_QCOM_writeonly_rendering ------------------------------ */
+	// /* ------------------------------ GL_QCOM_writeonly_rendering ------------------------------ */
 
-	CREATE_CONSTANT_ACCESSOR("WRITEONLY_RENDERING_QCOM", GL_WRITEONLY_RENDERING_QCOM);
+	// CREATE_CONSTANT_ACCESSOR("WRITEONLY_RENDERING_QCOM", GL_WRITEONLY_RENDERING_QCOM);
 
 
 
-	/* ------------------------------ GL_REGAL_enable ------------------------------ */
+	// /* ------------------------------ GL_REGAL_enable ------------------------------ */
 
-	CREATE_CONSTANT_ACCESSOR("ERROR_REGAL", GL_ERROR_REGAL);
-	CREATE_CONSTANT_ACCESSOR("DEBUG_REGAL", GL_DEBUG_REGAL);
-	CREATE_CONSTANT_ACCESSOR("LOG_REGAL", GL_LOG_REGAL);
-	CREATE_CONSTANT_ACCESSOR("EMULATION_REGAL", GL_EMULATION_REGAL);
-	CREATE_CONSTANT_ACCESSOR("DRIVER_REGAL", GL_DRIVER_REGAL);
-	CREATE_CONSTANT_ACCESSOR("MISSING_REGAL", GL_MISSING_REGAL);
-	CREATE_CONSTANT_ACCESSOR("TRACE_REGAL", GL_TRACE_REGAL);
-	CREATE_CONSTANT_ACCESSOR("CACHE_REGAL", GL_CACHE_REGAL);
-	CREATE_CONSTANT_ACCESSOR("CODE_REGAL", GL_CODE_REGAL);
-	CREATE_CONSTANT_ACCESSOR("STATISTICS_REGAL", GL_STATISTICS_REGAL);
+	// CREATE_CONSTANT_ACCESSOR("ERROR_REGAL", GL_ERROR_REGAL);
+	// CREATE_CONSTANT_ACCESSOR("DEBUG_REGAL", GL_DEBUG_REGAL);
+	// CREATE_CONSTANT_ACCESSOR("LOG_REGAL", GL_LOG_REGAL);
+	// CREATE_CONSTANT_ACCESSOR("EMULATION_REGAL", GL_EMULATION_REGAL);
+	// CREATE_CONSTANT_ACCESSOR("DRIVER_REGAL", GL_DRIVER_REGAL);
+	// CREATE_CONSTANT_ACCESSOR("MISSING_REGAL", GL_MISSING_REGAL);
+	// CREATE_CONSTANT_ACCESSOR("TRACE_REGAL", GL_TRACE_REGAL);
+	// CREATE_CONSTANT_ACCESSOR("CACHE_REGAL", GL_CACHE_REGAL);
+	// CREATE_CONSTANT_ACCESSOR("CODE_REGAL", GL_CODE_REGAL);
+	// CREATE_CONSTANT_ACCESSOR("STATISTICS_REGAL", GL_STATISTICS_REGAL);
 
 
 
-	// empty / skipped / ignored: GL_REGAL_error_string
-	/* ------------------------------ GL_REGAL_ES1_0_compatibility ------------------------------ */
+	// // empty / skipped / ignored: GL_REGAL_error_string
+	// /* ------------------------------ GL_REGAL_ES1_0_compatibility ------------------------------ */
 
 
 
 
 
-	tpl->Set(String::NewFromUtf8(isolate, "color4x"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 4) {
-			V8Helper::_instance->throwException("color4x requires 4 arguments");
-			return;
-		}
+	// obj->Set(String::NewFromUtf8(isolate, "color4x"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 4) {
+	// 		V8Helper::_instance->throwException("color4x requires 4 arguments");
+	// 		return;
+	// 	}
 
-		GLfixed red = args[0]->Int32Value();
-		GLfixed green = args[1]->Int32Value();
-		GLfixed blue = args[2]->Int32Value();
-		GLfixed alpha = args[3]->Int32Value();
+	// 	GLfixed red = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLfixed green = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLfixed blue = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLfixed alpha = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
-		glColor4x(red, green, blue, alpha);
-	}));
+	// 	glColor4x(red, green, blue, alpha);
+	// }).ToLocalChecked());
 
 
-	tpl->Set(String::NewFromUtf8(isolate, "fogx"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("fogx requires 2 arguments");
-			return;
-		}
+	// obj->Set(String::NewFromUtf8(isolate, "fogx"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("fogx requires 2 arguments");
+	// 		return;
+	// 	}
 
-		GLenum pname = args[0]->Uint32Value();
-		GLfixed param = args[1]->Int32Value();
+	// 	GLenum pname = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLfixed param = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
-		glFogx(pname, param);
-	}));
+	// 	glFogx(pname, param);
+	// }).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "fogxv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("fogxv requires 2 arguments");
-			return;
-		}
+	// obj->Set(String::NewFromUtf8(isolate, "fogxv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("fogxv requires 2 arguments");
+	// 		return;
+	// 	}
 
-		GLenum pname = args[0]->Uint32Value();
+	// 	GLenum pname = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
-		GLfixed* params = nullptr;
-		if (args[1]->IsInt32Array()) {
-			v8::Local<v8::Int32Array> view = (args[1]).As<v8::Int32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			params = reinterpret_cast<GLfixed*>(bdata);
-		} else {
-			cout << "ERROR(glFogxv): array must be of type Int32Array" << endl;
-			exit(1);
-		}
+	// 	GLfixed* params = nullptr;
+	// 	if (args[1]->IsInt32Array()) {
+	// 		v8::Local<v8::Int32Array> view = (args[1]).As<v8::Int32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		params = reinterpret_cast<GLfixed*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glFogxv): array must be of type Int32Array" << endl;
+	// 		//exit(1);
+	// 	}
 
 
-		glFogxv(pname, params);
-	}));
+	// 	glFogxv(pname, params);
+	// }).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "frustumf"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 6) {
-			V8Helper::_instance->throwException("frustumf requires 6 arguments");
-			return;
-		}
+	// obj->Set(String::NewFromUtf8(isolate, "frustumf"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 6) {
+	// 		V8Helper::_instance->throwException("frustumf requires 6 arguments");
+	// 		return;
+	// 	}
 
-		GLfloat left = GLfloat(args[0]->NumberValue());
-		GLfloat right = GLfloat(args[1]->NumberValue());
-		GLfloat bottom = GLfloat(args[2]->NumberValue());
-		GLfloat top = GLfloat(args[3]->NumberValue());
-		GLfloat zNear = GLfloat(args[4]->NumberValue());
-		GLfloat zFar = GLfloat(args[5]->NumberValue());
+	// 	GLfloat left = GLfloat(args[0]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+	// 	GLfloat right = GLfloat(args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+	// 	GLfloat bottom = GLfloat(args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+	// 	GLfloat top = GLfloat(args[3]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+	// 	GLfloat zNear = GLfloat(args[4]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+	// 	GLfloat zFar = GLfloat(args[5]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
 
-		glFrustumf(left, right, bottom, top, zNear, zFar);
-	}));
+	// 	glFrustumf(left, right, bottom, top, zNear, zFar);
+	// }).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "frustumx"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 6) {
-			V8Helper::_instance->throwException("frustumx requires 6 arguments");
-			return;
-		}
+	// obj->Set(String::NewFromUtf8(isolate, "frustumx"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 6) {
+	// 		V8Helper::_instance->throwException("frustumx requires 6 arguments");
+	// 		return;
+	// 	}
 
-		GLfixed left = args[0]->Int32Value();
-		GLfixed right = args[1]->Int32Value();
-		GLfixed bottom = args[2]->Int32Value();
-		GLfixed top = args[3]->Int32Value();
-		GLfixed zNear = args[4]->Int32Value();
-		GLfixed zFar = args[5]->Int32Value();
+	// 	GLfixed left = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLfixed right = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLfixed bottom = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLfixed top = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLfixed zNear = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLfixed zFar = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
-		glFrustumx(left, right, bottom, top, zNear, zFar);
-	}));
+	// 	glFrustumx(left, right, bottom, top, zNear, zFar);
+	// }).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "lightModelx"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("lightModelx requires 2 arguments");
-			return;
-		}
+	// obj->Set(String::NewFromUtf8(isolate, "lightModelx"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("lightModelx requires 2 arguments");
+	// 		return;
+	// 	}
 
-		GLenum pname = args[0]->Uint32Value();
-		GLfixed param = args[1]->Int32Value();
+	// 	GLenum pname = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLfixed param = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
-		glLightModelx(pname, param);
-	}));
+	// 	glLightModelx(pname, param);
+	// }).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "lightModelxv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("lightModelxv requires 2 arguments");
-			return;
-		}
+	// obj->Set(String::NewFromUtf8(isolate, "lightModelxv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("lightModelxv requires 2 arguments");
+	// 		return;
+	// 	}
 
-		GLenum pname = args[0]->Uint32Value();
+	// 	GLenum pname = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
-		GLfixed* params = nullptr;
-		if (args[1]->IsInt32Array()) {
-			v8::Local<v8::Int32Array> view = (args[1]).As<v8::Int32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			params = reinterpret_cast<GLfixed*>(bdata);
-		} else {
-			cout << "ERROR(glLightModelxv): array must be of type Int32Array" << endl;
-			exit(1);
-		}
+	// 	GLfixed* params = nullptr;
+	// 	if (args[1]->IsInt32Array()) {
+	// 		v8::Local<v8::Int32Array> view = (args[1]).As<v8::Int32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		params = reinterpret_cast<GLfixed*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glLightModelxv): array must be of type Int32Array" << endl;
+	// 		//exit(1);
+	// 	}
 
 
-		glLightModelxv(pname, params);
-	}));
+	// 	glLightModelxv(pname, params);
+	// }).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "lightx"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("lightx requires 3 arguments");
-			return;
-		}
+	// obj->Set(String::NewFromUtf8(isolate, "lightx"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 3) {
+	// 		V8Helper::_instance->throwException("lightx requires 3 arguments");
+	// 		return;
+	// 	}
 
-		GLenum light = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
-		GLfixed param = args[2]->Int32Value();
+	// 	GLenum light = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLfixed param = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
-		glLightx(light, pname, param);
-	}));
+	// 	glLightx(light, pname, param);
+	// }).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "lightxv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("lightxv requires 3 arguments");
-			return;
-		}
+	// obj->Set(String::NewFromUtf8(isolate, "lightxv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 3) {
+	// 		V8Helper::_instance->throwException("lightxv requires 3 arguments");
+	// 		return;
+	// 	}
 
-		GLenum light = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
+	// 	GLenum light = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
-		GLfixed* params = nullptr;
-		if (args[2]->IsInt32Array()) {
-			v8::Local<v8::Int32Array> view = (args[2]).As<v8::Int32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			params = reinterpret_cast<GLfixed*>(bdata);
-		} else {
-			cout << "ERROR(glLightxv): array must be of type Int32Array" << endl;
-			exit(1);
-		}
+	// 	GLfixed* params = nullptr;
+	// 	if (args[2]->IsInt32Array()) {
+	// 		v8::Local<v8::Int32Array> view = (args[2]).As<v8::Int32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		params = reinterpret_cast<GLfixed*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glLightxv): array must be of type Int32Array" << endl;
+	// 		//exit(1);
+	// 	}
 
 
-		glLightxv(light, pname, params);
-	}));
+	// 	glLightxv(light, pname, params);
+	// }).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "lineWidthx"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 1) {
-			V8Helper::_instance->throwException("lineWidthx requires 1 arguments");
-			return;
-		}
+	// obj->Set(String::NewFromUtf8(isolate, "lineWidthx"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 1) {
+	// 		V8Helper::_instance->throwException("lineWidthx requires 1 arguments");
+	// 		return;
+	// 	}
 
-		GLfixed width = args[0]->Int32Value();
+	// 	GLfixed width = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
-		glLineWidthx(width);
-	}));
+	// 	glLineWidthx(width);
+	// }).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "loadMatrixx"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 1) {
-			V8Helper::_instance->throwException("loadMatrixx requires 1 arguments");
-			return;
-		}
-
+	// obj->Set(String::NewFromUtf8(isolate, "loadMatrixx"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 1) {
+	// 		V8Helper::_instance->throwException("loadMatrixx requires 1 arguments");
+	// 		return;
+	// 	}
+
 
-		GLfixed* m = nullptr;
-		if (args[0]->IsInt32Array()) {
-			v8::Local<v8::Int32Array> view = (args[0]).As<v8::Int32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			m = reinterpret_cast<GLfixed*>(bdata);
-		} else {
-			cout << "ERROR(glLoadMatrixx): array must be of type Int32Array" << endl;
-			exit(1);
-		}
-
-
-		glLoadMatrixx(m);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "materialx"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("materialx requires 3 arguments");
-			return;
-		}
-
-		GLenum face = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
-		GLfixed param = args[2]->Int32Value();
-
-		glMaterialx(face, pname, param);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "materialxv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("materialxv requires 3 arguments");
-			return;
-		}
-
-		GLenum face = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
-
-		GLfixed* params = nullptr;
-		if (args[2]->IsInt32Array()) {
-			v8::Local<v8::Int32Array> view = (args[2]).As<v8::Int32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			params = reinterpret_cast<GLfixed*>(bdata);
-		} else {
-			cout << "ERROR(glMaterialxv): array must be of type Int32Array" << endl;
-			exit(1);
-		}
-
-
-		glMaterialxv(face, pname, params);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "multMatrixx"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 1) {
-			V8Helper::_instance->throwException("multMatrixx requires 1 arguments");
-			return;
-		}
-
-
-		GLfixed* m = nullptr;
-		if (args[0]->IsInt32Array()) {
-			v8::Local<v8::Int32Array> view = (args[0]).As<v8::Int32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			m = reinterpret_cast<GLfixed*>(bdata);
-		} else {
-			cout << "ERROR(glMultMatrixx): array must be of type Int32Array" << endl;
-			exit(1);
-		}
-
-
-		glMultMatrixx(m);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoord4x"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 5) {
-			V8Helper::_instance->throwException("multiTexCoord4x requires 5 arguments");
-			return;
-		}
-
-		GLenum target = args[0]->Uint32Value();
-		GLfixed s = args[1]->Int32Value();
-		GLfixed t = args[2]->Int32Value();
-		GLfixed r = args[3]->Int32Value();
-		GLfixed q = args[4]->Int32Value();
-
-		glMultiTexCoord4x(target, s, t, r, q);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "normal3x"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("normal3x requires 3 arguments");
-			return;
-		}
-
-		GLfixed nx = args[0]->Int32Value();
-		GLfixed ny = args[1]->Int32Value();
-		GLfixed nz = args[2]->Int32Value();
-
-		glNormal3x(nx, ny, nz);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "orthof"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 6) {
-			V8Helper::_instance->throwException("orthof requires 6 arguments");
-			return;
-		}
-
-		GLfloat left = GLfloat(args[0]->NumberValue());
-		GLfloat right = GLfloat(args[1]->NumberValue());
-		GLfloat bottom = GLfloat(args[2]->NumberValue());
-		GLfloat top = GLfloat(args[3]->NumberValue());
-		GLfloat zNear = GLfloat(args[4]->NumberValue());
-		GLfloat zFar = GLfloat(args[5]->NumberValue());
-
-		glOrthof(left, right, bottom, top, zNear, zFar);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "orthox"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 6) {
-			V8Helper::_instance->throwException("orthox requires 6 arguments");
-			return;
-		}
-
-		GLfixed left = args[0]->Int32Value();
-		GLfixed right = args[1]->Int32Value();
-		GLfixed bottom = args[2]->Int32Value();
-		GLfixed top = args[3]->Int32Value();
-		GLfixed zNear = args[4]->Int32Value();
-		GLfixed zFar = args[5]->Int32Value();
-
-		glOrthox(left, right, bottom, top, zNear, zFar);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "pointSizex"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 1) {
-			V8Helper::_instance->throwException("pointSizex requires 1 arguments");
-			return;
-		}
-
-		GLfixed size = args[0]->Int32Value();
-
-		glPointSizex(size);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "polygonOffsetx"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("polygonOffsetx requires 2 arguments");
-			return;
-		}
-
-		GLfixed factor = args[0]->Int32Value();
-		GLfixed units = args[1]->Int32Value();
+	// 	GLfixed* m = nullptr;
+	// 	if (args[0]->IsInt32Array()) {
+	// 		v8::Local<v8::Int32Array> view = (args[0]).As<v8::Int32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		m = reinterpret_cast<GLfixed*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glLoadMatrixx): array must be of type Int32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glLoadMatrixx(m);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "materialx"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 3) {
+	// 		V8Helper::_instance->throwException("materialx requires 3 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum face = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLfixed param = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	glMaterialx(face, pname, param);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "materialxv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 3) {
+	// 		V8Helper::_instance->throwException("materialxv requires 3 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum face = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLfixed* params = nullptr;
+	// 	if (args[2]->IsInt32Array()) {
+	// 		v8::Local<v8::Int32Array> view = (args[2]).As<v8::Int32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		params = reinterpret_cast<GLfixed*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glMaterialxv): array must be of type Int32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glMaterialxv(face, pname, params);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "multMatrixx"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 1) {
+	// 		V8Helper::_instance->throwException("multMatrixx requires 1 arguments");
+	// 		return;
+	// 	}
+
+
+	// 	GLfixed* m = nullptr;
+	// 	if (args[0]->IsInt32Array()) {
+	// 		v8::Local<v8::Int32Array> view = (args[0]).As<v8::Int32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		m = reinterpret_cast<GLfixed*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glMultMatrixx): array must be of type Int32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glMultMatrixx(m);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "multiTexCoord4x"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 5) {
+	// 		V8Helper::_instance->throwException("multiTexCoord4x requires 5 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLfixed s = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLfixed t = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLfixed r = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLfixed q = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	glMultiTexCoord4x(target, s, t, r, q);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "normal3x"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 3) {
+	// 		V8Helper::_instance->throwException("normal3x requires 3 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLfixed nx = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLfixed ny = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLfixed nz = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	glNormal3x(nx, ny, nz);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "orthof"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 6) {
+	// 		V8Helper::_instance->throwException("orthof requires 6 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLfloat left = GLfloat(args[0]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+	// 	GLfloat right = GLfloat(args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+	// 	GLfloat bottom = GLfloat(args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+	// 	GLfloat top = GLfloat(args[3]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+	// 	GLfloat zNear = GLfloat(args[4]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+	// 	GLfloat zFar = GLfloat(args[5]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1));
+
+	// 	glOrthof(left, right, bottom, top, zNear, zFar);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "orthox"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 6) {
+	// 		V8Helper::_instance->throwException("orthox requires 6 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLfixed left = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLfixed right = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLfixed bottom = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLfixed top = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLfixed zNear = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLfixed zFar = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	glOrthox(left, right, bottom, top, zNear, zFar);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "pointSizex"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 1) {
+	// 		V8Helper::_instance->throwException("pointSizex requires 1 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLfixed size = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	glPointSizex(size);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "polygonOffsetx"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("polygonOffsetx requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLfixed factor = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLfixed units = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
-		glPolygonOffsetx(factor, units);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "rotatex"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 4) {
-			V8Helper::_instance->throwException("rotatex requires 4 arguments");
-			return;
-		}
-
-		GLfixed angle = args[0]->Int32Value();
-		GLfixed x = args[1]->Int32Value();
-		GLfixed y = args[2]->Int32Value();
-		GLfixed z = args[3]->Int32Value();
-
-		glRotatex(angle, x, y, z);
-	}));
-
-
-	tpl->Set(String::NewFromUtf8(isolate, "scalex"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("scalex requires 3 arguments");
-			return;
-		}
-
-		GLfixed x = args[0]->Int32Value();
-		GLfixed y = args[1]->Int32Value();
-		GLfixed z = args[2]->Int32Value();
-
-		glScalex(x, y, z);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "texEnvx"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("texEnvx requires 3 arguments");
-			return;
-		}
-
-		GLenum target = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
-		GLfixed param = args[2]->Int32Value();
-
-		glTexEnvx(target, pname, param);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "texEnvxv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("texEnvxv requires 3 arguments");
-			return;
-		}
-
-		GLenum target = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
-
-		GLfixed* params = nullptr;
-		if (args[2]->IsInt32Array()) {
-			v8::Local<v8::Int32Array> view = (args[2]).As<v8::Int32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			params = reinterpret_cast<GLfixed*>(bdata);
-		} else {
-			cout << "ERROR(glTexEnvxv): array must be of type Int32Array" << endl;
-			exit(1);
-		}
-
-
-		glTexEnvxv(target, pname, params);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "texParameterx"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("texParameterx requires 3 arguments");
-			return;
-		}
-
-		GLenum target = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
-		GLfixed param = args[2]->Int32Value();
-
-		glTexParameterx(target, pname, param);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "translatex"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("translatex requires 3 arguments");
-			return;
-		}
-
-		GLfixed x = args[0]->Int32Value();
-		GLfixed y = args[1]->Int32Value();
-		GLfixed z = args[2]->Int32Value();
-
-		glTranslatex(x, y, z);
-	}));
-
-
-
-	/* ------------------------------ GL_REGAL_ES1_1_compatibility ------------------------------ */
-
-
-	tpl->Set(String::NewFromUtf8(isolate, "clipPlanef"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("clipPlanef requires 2 arguments");
-			return;
-		}
-
-		GLenum plane = args[0]->Uint32Value();
-
-		GLfloat* equation = nullptr;
-		if (args[1]->IsFloat32Array()) {
-			v8::Local<v8::Float32Array> view = (args[1]).As<v8::Float32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			equation = reinterpret_cast<GLfloat*>(bdata);
-		} else {
-			cout << "ERROR(glClipPlanef): array must be of type Float32Array" << endl;
-			exit(1);
-		}
-
-
-		glClipPlanef(plane, equation);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "clipPlanex"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("clipPlanex requires 2 arguments");
-			return;
-		}
-
-		GLenum plane = args[0]->Uint32Value();
-
-		GLfixed* equation = nullptr;
-		if (args[1]->IsInt32Array()) {
-			v8::Local<v8::Int32Array> view = (args[1]).As<v8::Int32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			equation = reinterpret_cast<GLfixed*>(bdata);
-		} else {
-			cout << "ERROR(glClipPlanex): array must be of type Int32Array" << endl;
-			exit(1);
-		}
-
-
-		glClipPlanex(plane, equation);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "getClipPlanef"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("getClipPlanef requires 2 arguments");
-			return;
-		}
-
-		GLenum pname = args[0]->Uint32Value();
-
-		GLfloat* eqn = nullptr;
-		if (args[1]->IsFloat32Array()) {
-			v8::Local<v8::Float32Array> view = (args[1]).As<v8::Float32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			eqn = reinterpret_cast<GLfloat*>(bdata);
-		} else {
-			cout << "ERROR(glGetClipPlanef): array must be of type Float32Array" << endl;
-			exit(1);
-		}
-
-
-		glGetClipPlanef(pname, eqn);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "getClipPlanex"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("getClipPlanex requires 2 arguments");
-			return;
-		}
-
-		GLenum pname = args[0]->Uint32Value();
-
-		GLfixed* eqn = nullptr;
-		if (args[1]->IsInt32Array()) {
-			v8::Local<v8::Int32Array> view = (args[1]).As<v8::Int32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			eqn = reinterpret_cast<GLfixed*>(bdata);
-		} else {
-			cout << "ERROR(glGetClipPlanex): array must be of type Int32Array" << endl;
-			exit(1);
-		}
-
-
-		glGetClipPlanex(pname, eqn);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "getFixedv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("getFixedv requires 2 arguments");
-			return;
-		}
-
-		GLenum pname = args[0]->Uint32Value();
-
-		GLfixed* params = nullptr;
-		if (args[1]->IsInt32Array()) {
-			v8::Local<v8::Int32Array> view = (args[1]).As<v8::Int32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			params = reinterpret_cast<GLfixed*>(bdata);
-		} else {
-			cout << "ERROR(glGetFixedv): array must be of type Int32Array" << endl;
-			exit(1);
-		}
-
-
-		glGetFixedv(pname, params);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "getLightxv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("getLightxv requires 3 arguments");
-			return;
-		}
-
-		GLenum light = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
-
-		GLfixed* params = nullptr;
-		if (args[2]->IsInt32Array()) {
-			v8::Local<v8::Int32Array> view = (args[2]).As<v8::Int32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			params = reinterpret_cast<GLfixed*>(bdata);
-		} else {
-			cout << "ERROR(glGetLightxv): array must be of type Int32Array" << endl;
-			exit(1);
-		}
-
-
-		glGetLightxv(light, pname, params);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "getMaterialxv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("getMaterialxv requires 3 arguments");
-			return;
-		}
-
-		GLenum face = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
-
-		GLfixed* params = nullptr;
-		if (args[2]->IsInt32Array()) {
-			v8::Local<v8::Int32Array> view = (args[2]).As<v8::Int32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			params = reinterpret_cast<GLfixed*>(bdata);
-		} else {
-			cout << "ERROR(glGetMaterialxv): array must be of type Int32Array" << endl;
-			exit(1);
-		}
-
-
-		glGetMaterialxv(face, pname, params);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "getTexEnvxv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("getTexEnvxv requires 3 arguments");
-			return;
-		}
-
-		GLenum env = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
-
-		GLfixed* params = nullptr;
-		if (args[2]->IsInt32Array()) {
-			v8::Local<v8::Int32Array> view = (args[2]).As<v8::Int32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			params = reinterpret_cast<GLfixed*>(bdata);
-		} else {
-			cout << "ERROR(glGetTexEnvxv): array must be of type Int32Array" << endl;
-			exit(1);
-		}
-
-
-		glGetTexEnvxv(env, pname, params);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "getTexParameterxv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("getTexParameterxv requires 3 arguments");
-			return;
-		}
-
-		GLenum target = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
-
-		GLfixed* params = nullptr;
-		if (args[2]->IsInt32Array()) {
-			v8::Local<v8::Int32Array> view = (args[2]).As<v8::Int32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			params = reinterpret_cast<GLfixed*>(bdata);
-		} else {
-			cout << "ERROR(glGetTexParameterxv): array must be of type Int32Array" << endl;
-			exit(1);
-		}
-
-
-		glGetTexParameterxv(target, pname, params);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "pointParameterx"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("pointParameterx requires 2 arguments");
-			return;
-		}
-
-		GLenum pname = args[0]->Uint32Value();
-		GLfixed param = args[1]->Int32Value();
-
-		glPointParameterx(pname, param);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "pointParameterxv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("pointParameterxv requires 2 arguments");
-			return;
-		}
-
-		GLenum pname = args[0]->Uint32Value();
-
-		GLfixed* params = nullptr;
-		if (args[1]->IsInt32Array()) {
-			v8::Local<v8::Int32Array> view = (args[1]).As<v8::Int32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			params = reinterpret_cast<GLfixed*>(bdata);
-		} else {
-			cout << "ERROR(glPointParameterxv): array must be of type Int32Array" << endl;
-			exit(1);
-		}
-
-
-		glPointParameterxv(pname, params);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "texParameterxv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("texParameterxv requires 3 arguments");
-			return;
-		}
-
-		GLenum target = args[0]->Uint32Value();
-		GLenum pname = args[1]->Uint32Value();
-
-		GLfixed* params = nullptr;
-		if (args[2]->IsInt32Array()) {
-			v8::Local<v8::Int32Array> view = (args[2]).As<v8::Int32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			params = reinterpret_cast<GLfixed*>(bdata);
-		} else {
-			cout << "ERROR(glTexParameterxv): array must be of type Int32Array" << endl;
-			exit(1);
-		}
-
-
-		glTexParameterxv(target, pname, params);
-	}));
+	// 	glPolygonOffsetx(factor, units);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "rotatex"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 4) {
+	// 		V8Helper::_instance->throwException("rotatex requires 4 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLfixed angle = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLfixed x = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLfixed y = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLfixed z = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	glRotatex(angle, x, y, z);
+	// }).ToLocalChecked());
+
+
+	// obj->Set(String::NewFromUtf8(isolate, "scalex"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 3) {
+	// 		V8Helper::_instance->throwException("scalex requires 3 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLfixed x = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLfixed y = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLfixed z = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	glScalex(x, y, z);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "texEnvx"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 3) {
+	// 		V8Helper::_instance->throwException("texEnvx requires 3 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLfixed param = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	glTexEnvx(target, pname, param);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "texEnvxv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 3) {
+	// 		V8Helper::_instance->throwException("texEnvxv requires 3 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLfixed* params = nullptr;
+	// 	if (args[2]->IsInt32Array()) {
+	// 		v8::Local<v8::Int32Array> view = (args[2]).As<v8::Int32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		params = reinterpret_cast<GLfixed*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glTexEnvxv): array must be of type Int32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glTexEnvxv(target, pname, params);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "texParameterx"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 3) {
+	// 		V8Helper::_instance->throwException("texParameterx requires 3 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLfixed param = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	glTexParameterx(target, pname, param);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "translatex"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 3) {
+	// 		V8Helper::_instance->throwException("translatex requires 3 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLfixed x = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLfixed y = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLfixed z = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	glTranslatex(x, y, z);
+	// }).ToLocalChecked());
+
+
+
+	// /* ------------------------------ GL_REGAL_ES1_1_compatibility ------------------------------ */
+
+
+	// obj->Set(String::NewFromUtf8(isolate, "clipPlanef"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("clipPlanef requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum plane = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLfloat* equation = nullptr;
+	// 	if (args[1]->IsFloat32Array()) {
+	// 		v8::Local<v8::Float32Array> view = (args[1]).As<v8::Float32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		equation = reinterpret_cast<GLfloat*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glClipPlanef): array must be of type Float32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glClipPlanef(plane, equation);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "clipPlanex"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("clipPlanex requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum plane = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLfixed* equation = nullptr;
+	// 	if (args[1]->IsInt32Array()) {
+	// 		v8::Local<v8::Int32Array> view = (args[1]).As<v8::Int32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		equation = reinterpret_cast<GLfixed*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glClipPlanex): array must be of type Int32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glClipPlanex(plane, equation);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "getClipPlanef"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("getClipPlanef requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum pname = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLfloat* eqn = nullptr;
+	// 	if (args[1]->IsFloat32Array()) {
+	// 		v8::Local<v8::Float32Array> view = (args[1]).As<v8::Float32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		eqn = reinterpret_cast<GLfloat*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glGetClipPlanef): array must be of type Float32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glGetClipPlanef(pname, eqn);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "getClipPlanex"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("getClipPlanex requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum pname = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLfixed* eqn = nullptr;
+	// 	if (args[1]->IsInt32Array()) {
+	// 		v8::Local<v8::Int32Array> view = (args[1]).As<v8::Int32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		eqn = reinterpret_cast<GLfixed*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glGetClipPlanex): array must be of type Int32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glGetClipPlanex(pname, eqn);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "getFixedv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("getFixedv requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum pname = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLfixed* params = nullptr;
+	// 	if (args[1]->IsInt32Array()) {
+	// 		v8::Local<v8::Int32Array> view = (args[1]).As<v8::Int32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		params = reinterpret_cast<GLfixed*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glGetFixedv): array must be of type Int32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glGetFixedv(pname, params);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "getLightxv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 3) {
+	// 		V8Helper::_instance->throwException("getLightxv requires 3 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum light = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLfixed* params = nullptr;
+	// 	if (args[2]->IsInt32Array()) {
+	// 		v8::Local<v8::Int32Array> view = (args[2]).As<v8::Int32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		params = reinterpret_cast<GLfixed*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glGetLightxv): array must be of type Int32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glGetLightxv(light, pname, params);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "getMaterialxv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 3) {
+	// 		V8Helper::_instance->throwException("getMaterialxv requires 3 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum face = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLfixed* params = nullptr;
+	// 	if (args[2]->IsInt32Array()) {
+	// 		v8::Local<v8::Int32Array> view = (args[2]).As<v8::Int32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		params = reinterpret_cast<GLfixed*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glGetMaterialxv): array must be of type Int32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glGetMaterialxv(face, pname, params);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "getTexEnvxv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 3) {
+	// 		V8Helper::_instance->throwException("getTexEnvxv requires 3 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum env = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLfixed* params = nullptr;
+	// 	if (args[2]->IsInt32Array()) {
+	// 		v8::Local<v8::Int32Array> view = (args[2]).As<v8::Int32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		params = reinterpret_cast<GLfixed*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glGetTexEnvxv): array must be of type Int32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glGetTexEnvxv(env, pname, params);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "getTexParameterxv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 3) {
+	// 		V8Helper::_instance->throwException("getTexParameterxv requires 3 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLfixed* params = nullptr;
+	// 	if (args[2]->IsInt32Array()) {
+	// 		v8::Local<v8::Int32Array> view = (args[2]).As<v8::Int32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		params = reinterpret_cast<GLfixed*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glGetTexParameterxv): array must be of type Int32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glGetTexParameterxv(target, pname, params);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "pointParameterx"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("pointParameterx requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum pname = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLfixed param = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	glPointParameterx(pname, param);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "pointParameterxv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("pointParameterxv requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum pname = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLfixed* params = nullptr;
+	// 	if (args[1]->IsInt32Array()) {
+	// 		v8::Local<v8::Int32Array> view = (args[1]).As<v8::Int32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		params = reinterpret_cast<GLfixed*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glPointParameterxv): array must be of type Int32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glPointParameterxv(pname, params);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "texParameterxv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 3) {
+	// 		V8Helper::_instance->throwException("texParameterxv requires 3 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLfixed* params = nullptr;
+	// 	if (args[2]->IsInt32Array()) {
+	// 		v8::Local<v8::Int32Array> view = (args[2]).As<v8::Int32Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		params = reinterpret_cast<GLfixed*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glTexParameterxv): array must be of type Int32Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glTexParameterxv(target, pname, params);
+	// }).ToLocalChecked());
 
 
 
@@ -18164,17 +18176,17 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	CREATE_CONSTANT_ACCESSOR("GEOMETRY_BIT", GL_GEOMETRY_BIT);
 	CREATE_CONSTANT_ACCESSOR("IMAGE_BIT", GL_IMAGE_BIT);
 
-	tpl->Set(String::NewFromUtf8(isolate, "addressSpace"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("addressSpace requires 2 arguments");
-			return;
-		}
+	// obj->Set(String::NewFromUtf8(isolate, "addressSpace"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("addressSpace requires 2 arguments");
+	// 		return;
+	// 	}
 
-		GLenum space = args[0]->Uint32Value();
-		GLbitfield mask = args[1]->Uint32Value();
+	// 	GLenum space = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+	// 	GLbitfield mask = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
-		glAddressSpace(space, mask);
-	}));
+	// 	glAddressSpace(space, mask);
+	// }).ToLocalChecked());
 
 
 
@@ -18211,51 +18223,51 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	/* ------------------------------ GL_SGIX_mpeg1 ------------------------------ */
 
 
-	tpl->Set(String::NewFromUtf8(isolate, "getMPEGQuantTableubv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("getMPEGQuantTableubv requires 2 arguments");
-			return;
-		}
+	// obj->Set(String::NewFromUtf8(isolate, "getMPEGQuantTableubv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("getMPEGQuantTableubv requires 2 arguments");
+	// 		return;
+	// 	}
 
-		GLenum target = args[0]->Uint32Value();
+	// 	GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
-		GLubyte* values = nullptr;
-		if (args[1]->IsUint8Array()) {
-			v8::Local<v8::Uint8Array> view = (args[1]).As<v8::Uint8Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			values = reinterpret_cast<GLubyte*>(bdata);
-		} else {
-			cout << "ERROR(glGetMPEGQuantTableubv): array must be of type Uint8Array" << endl;
-			exit(1);
-		}
-
-
-		glGetMPEGQuantTableubv(target, values);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "mPEGQuantTableubv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("mPEGQuantTableubv requires 2 arguments");
-			return;
-		}
-
-		GLenum target = args[0]->Uint32Value();
-
-		GLubyte* values = nullptr;
-		if (args[1]->IsUint8Array()) {
-			v8::Local<v8::Uint8Array> view = (args[1]).As<v8::Uint8Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			values = reinterpret_cast<GLubyte*>(bdata);
-		} else {
-			cout << "ERROR(glMPEGQuantTableubv): array must be of type Uint8Array" << endl;
-			exit(1);
-		}
+	// 	GLubyte* values = nullptr;
+	// 	if (args[1]->IsUint8Array()) {
+	// 		v8::Local<v8::Uint8Array> view = (args[1]).As<v8::Uint8Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		values = reinterpret_cast<GLubyte*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glGetMPEGQuantTableubv): array must be of type Uint8Array" << endl;
+	// 		//exit(1);
+	// 	}
 
 
-		glMPEGQuantTableubv(target, values);
-	}));
+	// 	glGetMPEGQuantTableubv(target, values);
+	// }).ToLocalChecked());
+
+	// obj->Set(String::NewFromUtf8(isolate, "mPEGQuantTableubv"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	// 	if (args.Length() != 2) {
+	// 		V8Helper::_instance->throwException("mPEGQuantTableubv requires 2 arguments");
+	// 		return;
+	// 	}
+
+	// 	GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+
+	// 	GLubyte* values = nullptr;
+	// 	if (args[1]->IsUint8Array()) {
+	// 		v8::Local<v8::Uint8Array> view = (args[1]).As<v8::Uint8Array>();
+	// 		auto buffer = view->Buffer();
+	// 		void *bdata = view->Buffer()->GetContents().Data();
+	// 		values = reinterpret_cast<GLubyte*>(bdata);
+	// 	} else {
+	// 		//cout << "ERROR(glMPEGQuantTableubv): array must be of type Uint8Array" << endl;
+	// 		//exit(1);
+	// 	}
+
+
+	// 	glMPEGQuantTableubv(target, values);
+	// }).ToLocalChecked());
 
 
 
@@ -18315,8 +18327,4 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 	// empty / skipped / ignored: GL_WIN_scene_markerXXX
 	// empty / skipped / ignored: GL_WIN_specular_fog
 	// empty / skipped / ignored: GL_WIN_swap_hint
-
-
-
-
 }

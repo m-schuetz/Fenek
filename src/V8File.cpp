@@ -23,12 +23,12 @@ Local<ObjectTemplate> createV8FileTemplate(v8::Isolate *isolate) {
 
 		auto isolate = Isolate::GetCurrent();
 
-		Local<Promise::Resolver> resolver = v8::Promise::Resolver::New(isolate);
+		Local<Promise::Resolver> resolver = v8::Promise::Resolver::New(isolate->GetCurrentContext()).ToLocalChecked();
 
 		long long currentID = resolverID++;
 		resolvers[currentID] = PersistentResolver(isolate, resolver);
 
-		int numBytes = args[0]->Int32Value();
+		int numBytes = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		Local<Object> self = args.Holder();
 		Local<External> wrap = Local<External>::Cast(self->GetInternalField(0));
@@ -51,7 +51,7 @@ Local<ObjectTemplate> createV8FileTemplate(v8::Isolate *isolate) {
 				auto persistantResolver = resolvers[currentID];
 				Local<Promise::Resolver> resolver = Local<Promise::Resolver>::New(isolate, persistantResolver);
 
-				resolver->Resolve(v8Buffer);
+				resolver->Resolve(isolate->GetCurrentContext(), v8Buffer);
 
 				resolvers.erase(currentID);
 			});
@@ -74,7 +74,7 @@ Local<ObjectTemplate> createV8FileTemplate(v8::Isolate *isolate) {
 		void* ptr = wrap->Value();
 		File *file = static_cast<File*>(ptr);
 
-		int location = args[0]->IntegerValue();
+		int64_t location = args[0]->IntegerValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		file->setReadLocation(location);
 	}));
@@ -90,7 +90,7 @@ Local<ObjectTemplate> createV8FileTemplate(v8::Isolate *isolate) {
 		void* ptr = wrap->Value();
 		File *file = static_cast<File*>(ptr);
 
-		int location = args[0]->IntegerValue();
+		int64_t location = args[0]->IntegerValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		double size = double(file->fileSize());
 
@@ -103,7 +103,7 @@ Local<ObjectTemplate> createV8FileTemplate(v8::Isolate *isolate) {
 Local<Object> v8Object(File *file) {
 	auto isolate = V8Helper::instance()->isolate;
 	auto tpl = createV8FileTemplate(isolate);
-	Local<Object> obj = tpl->NewInstance();
+	Local<Object> obj = tpl->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
 	obj->SetInternalField(0, External::New(isolate, file));
 
 	return obj;

@@ -54,8 +54,8 @@ void V8Helper::setupVR(){
 			return;
 		}
 	
-		unsigned int left = args[0]->Uint32Value();
-		unsigned int right = args[1]->Uint32Value();
+		unsigned int left = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		unsigned int right = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 	
 		OpenVRHelper::instance()->submit(left, right);
 	}));
@@ -66,8 +66,8 @@ void V8Helper::setupVR(){
 			return;
 		}
 
-		unsigned int left = args[0]->Uint32Value();
-		unsigned int right = args[1]->Uint32Value();
+		unsigned int left = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		unsigned int right = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		OpenVRHelper::instance()->submitDistortionApplied(left, right);
 	}));
@@ -78,14 +78,14 @@ void V8Helper::setupVR(){
 			return;
 		}
 
-		unsigned int width = args[0]->Uint32Value();
-		unsigned int height = args[1]->Uint32Value();
+		unsigned int width = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		unsigned int height = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		
 
 		auto isolate = Isolate::GetCurrent();
 		Local<ObjectTemplate> tmplMap = ObjectTemplate::New(isolate);
-		auto object = tmplMap->NewInstance();
+		auto object = tmplMap->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
 
 		{
 			EVREye eye = EVREye::Eye_Left;
@@ -327,8 +327,8 @@ void V8Helper::setupVR(){
 		auto isolate = Isolate::GetCurrent();
 		auto ovr = OpenVRHelper::instance();
 
-		float near = args[0]->NumberValue();
-		float far = args[1]->NumberValue();
+		float near = args[0]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		float far = args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		dmat4 pose = ovr->getProjection(vr::EVREye::Eye_Left, near, far);
 
@@ -352,8 +352,8 @@ void V8Helper::setupVR(){
 		auto isolate = Isolate::GetCurrent();
 		auto ovr = OpenVRHelper::instance();
 
-		float near = args[0]->NumberValue();
-		float far = args[1]->NumberValue();
+		float near = args[0]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		float far = args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		dmat4 pose = ovr->getProjection(vr::EVREye::Eye_Right, near, far);
 
@@ -488,9 +488,9 @@ void V8Helper::setupVR(){
 		args.GetReturnValue().Set(obj);
 	}));
 
-	Local<Object> obj = tpl->NewInstance();
 
-	context->Global()->Set(
-		String::NewFromUtf8(isolate, "vr"),
-		obj);
+	auto name = String::NewFromUtf8(isolate, "vr");
+	Local<Object> obj = tpl->NewInstance(context).ToLocalChecked();
+
+	global->Set(name, obj);
 }

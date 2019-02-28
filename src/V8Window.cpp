@@ -30,7 +30,7 @@ void V8Helper::setupWindow(){
 		info.GetReturnValue().Set(width);
 	}, [](Local<String> property, Local<Value> value, const PropertyCallbackInfo<void>& info) {
 
-		int width = value->NumberValue();
+		int width = value->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		auto window = V8Helper::instance()->window;
 
@@ -51,7 +51,7 @@ void V8Helper::setupWindow(){
 		info.GetReturnValue().Set(height);
 	}, [](Local<String> property, Local<Value> value, const PropertyCallbackInfo<void>& info) {
 
-		int height = value->NumberValue();
+		int height = value->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		auto window = V8Helper::instance()->window;
 
@@ -71,7 +71,7 @@ void V8Helper::setupWindow(){
 		info.GetReturnValue().Set(x);
 	}, [](Local<String> property, Local<Value> value, const PropertyCallbackInfo<void>& info) {
 
-		int x = value->NumberValue();
+		int x = value->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		auto window = V8Helper::instance()->window;
 
@@ -92,7 +92,7 @@ void V8Helper::setupWindow(){
 		info.GetReturnValue().Set(y);
 	}, [](Local<String> property, Local<Value> value, const PropertyCallbackInfo<void>& info) {
 
-		int y = value->NumberValue();
+		int y = value->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		auto window = V8Helper::instance()->window;
 
@@ -127,7 +127,7 @@ void V8Helper::setupWindow(){
 
 		auto isolate = Isolate::GetCurrent();
 		Local<ObjectTemplate> monitorsTempl = ObjectTemplate::New(isolate);
-		auto objMonitors = monitorsTempl->NewInstance();
+		auto objMonitors = monitorsTempl->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
 
 		auto lMonitors = Array::New(isolate, numMonitors);
 
@@ -136,7 +136,7 @@ void V8Helper::setupWindow(){
 			const GLFWvidmode * mode = glfwGetVideoMode(monitors[i]);
 
 			Local<ObjectTemplate> monitorTempl = ObjectTemplate::New(isolate);
-			auto objMonitor = monitorTempl->NewInstance();
+			auto objMonitor = monitorTempl->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
 
 			auto lWidth = v8::Integer::New(isolate, mode->width);
 			auto lHeight = v8::Integer::New(isolate, mode->height);
@@ -159,16 +159,17 @@ void V8Helper::setupWindow(){
 	});
 
 	V8Helper::_instance->registerFunction("insertTextAt", [](const FunctionCallbackInfo<Value>& args) {
+	//V8Helper::_instance->context->Global()->Set(String::NewFromUtf8(isolate, "insertTextAt"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("insertTextAt requires 3 arguments");
 			return;
 		}
 
-		String::Utf8Value textUTF8(args[0]);
+		String::Utf8Value textUTF8(v8::Isolate::GetCurrent(), args[0]);
 		string text = *textUTF8;
 
-		int x = args[1]->Int32Value();
-		int y = args[2]->Int32Value();
+		int x = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		int y = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		std::thread t([text, x, y]() {
 
@@ -301,12 +302,13 @@ void V8Helper::setupWindow(){
 	});
 
 	V8Helper::_instance->registerFunction("addEventListener", [](const FunctionCallbackInfo<Value>& args) {
+	//V8Helper::_instance->context->Global()->Set(String::NewFromUtf8(isolate, "addEventListener"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("addEventListener requires 2 arguments");
 			return;
 		}
 
-		String::Utf8Value eventNameUTF8(args[0]);
+		String::Utf8Value eventNameUTF8(v8::Isolate::GetCurrent(), args[0]);
 		string eventName = *eventNameUTF8;
 
 		Local<Value> callbackValue = args[1];
@@ -334,7 +336,7 @@ void V8Helper::setupWindow(){
 
 				argv[0] = obj;
 
-				local->Call(local, argc, argv);
+				local->Call(v8::Isolate::GetCurrent()->GetCurrentContext(), local, argc, argv);
 			});
 		} else if (eventName == "mousescroll") {
 			Application::instance()->addMouseScrollListener([isolate, persistent](MouseScrollEvent data) {
@@ -355,7 +357,7 @@ void V8Helper::setupWindow(){
 
 				argv[0] = obj;
 
-				local->Call(local, argc, argv);
+				local->Call(v8::Isolate::GetCurrent()->GetCurrentContext(), local, argc, argv);
 			});
 		} else if (eventName == "mousedown") {
 			Application::instance()->addMouseDownListener([isolate, persistent](MouseButtonEvent data) {
@@ -376,7 +378,7 @@ void V8Helper::setupWindow(){
 
 				argv[0] = obj;
 
-				local->Call(local, argc, argv);
+				local->Call(v8::Isolate::GetCurrent()->GetCurrentContext(), local, argc, argv);
 			});
 		} else if (eventName == "mouseup") {
 			Application::instance()->addMouseUpListener([isolate, persistent](MouseButtonEvent data) {
@@ -397,7 +399,7 @@ void V8Helper::setupWindow(){
 
 				argv[0] = obj;
 
-				local->Call(local, argc, argv);
+				local->Call(v8::Isolate::GetCurrent()->GetCurrentContext(), local, argc, argv);
 			});
 		} else if (eventName == "keyevent") {
 			Application::instance()->addKeyEventListener([isolate, persistent](KeyEvent data) {
@@ -426,7 +428,7 @@ void V8Helper::setupWindow(){
 
 				argv[0] = obj;
 
-				local->Call(local, argc, argv);
+				local->Call(v8::Isolate::GetCurrent()->GetCurrentContext(), local, argc, argv);
 			});
 		}
 		
@@ -434,7 +436,7 @@ void V8Helper::setupWindow(){
 
 
 
-	Local<Object> obj = tpl->NewInstance();
+	Local<Object> obj = tpl->NewInstance(v8::Isolate::GetCurrent()->GetCurrentContext()).ToLocalChecked();
 
 	context->Global()->Set(
 		String::NewFromUtf8(isolate, "window"),

@@ -12,12 +12,14 @@ if($("desktop_mirror")){
 	mirror.updateMatrixWorld();
 }
 
-reportState(false);
+reportState(true);
 
-MSAA_SAMPLES = 4; // MSAA 1 only works if EDL is disable
-EDL_ENABLED = true; // Eye-Dome-Lighting. Only currently available form of illumination
-RENDER_DEFAULT_ENABLED = true;
+MSAA_SAMPLES = 1; // MSAA 1 only works if EDL is disable
+EDL_ENABLED = false; // Eye-Dome-Lighting. Only currently available form of illumination
+RENDER_DEFAULT_ENABLED = false;
 desktopMirrorEnabled = true;
+DEBUG_USER_FILTER_CAM = false;
+GLTimerQueries.enabled = false;
 
 { // set window position
 	let monitors = window.monitors;

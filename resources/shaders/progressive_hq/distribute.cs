@@ -61,26 +61,27 @@ void main(){
 		return;
 	}
 
-	//targetBuffer[targetIndex] = inputBuffer[inputIndex];
-	
-
 	// If there is already a point at the target location, 
 	// move that point to a free spot at the end first
 	if(targetIndex < uOffset){
 		targetBuffer[sequentialIndex] = targetBuffer[targetIndex];
 	}
-	
-	targetBuffer[targetIndex].ux = inputBuffer[inputIndex].ux;
-	targetBuffer[targetIndex].uy = inputBuffer[inputIndex].uy;
-	targetBuffer[targetIndex].uz = inputBuffer[inputIndex].uz;
 
-	targetBuffer[targetIndex].colors_orig = inputBuffer[inputIndex].colors;
-	targetBuffer[targetIndex].colors_avg = 0;
-	targetBuffer[targetIndex].accR = 0;
-	targetBuffer[targetIndex].accG = 0;
-	targetBuffer[targetIndex].accB = 0;
-	targetBuffer[targetIndex].accA = 0;
+	Vertex vi = inputBuffer[inputIndex];
+	VertexTarget vt;
 
+	vt.ux = vi.ux;
+	vt.uy = vi.uy;
+	vt.uz = vi.uz;
+
+	vt.colors_orig = vi.colors;
+	vt.colors_avg = 0;
+	vt.accR = 0;
+	vt.accG = 0;
+	vt.accB = 0;
+	vt.accA = 0;
+
+	targetBuffer[targetIndex] = vt;
 }
 
 

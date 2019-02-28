@@ -33,11 +33,15 @@ watchJS(`${jsDir}/render/render_vr.js`);
 watchJS(`${jsDir}/render/render_regular.js`);
 watchJS(`${jsDir}/render/render_pointcloud_octree.js`);
 watchJS(`${jsDir}/render/render_progressive.js`);
+watchJS(`${jsDir}/render/render_progressive_hq.js`);
+watchJS(`${jsDir}/render/render_pointcloud_basic.js`);
 watchJS(`${jsDir}/render/render_compute.js`);
 watchJS(`${jsDir}/render/render_clod.js`);
 
 watchJS(`${jsDir}/scene/PointCloudOctree.js`);
 watchJS(`${jsDir}/scene/PointCloudProgressive.js`);
+watchJS(`${jsDir}/scene/PointCloudProgressiveHQ.js`);
+watchJS(`${jsDir}/scene/PointCloudBasic.js`);
 watchJS(`${jsDir}/scene/PointCloudExp.js`);
 
 watchJS(`${jsDir}/math/Intersections.js`);
@@ -67,12 +71,12 @@ let gradientTexture = new GLTexture(gradientImage.width, gradientImage.height, g
 
 runJSFile(`${jsDir}/scripts/createDefaultScene.js`);
 runJSFile(`${jsDir}/scripts/createScene.js`);
-//runJSFile(`${jsDir}/scripts/createPointCloudScene.js`);
+runJSFile(`${jsDir}/scripts/createPointCloudScene.js`);
 runJSFile(`${jsDir}/scripts/createControllers.js`);
 
-runJSFile(`${jsDir}/scripts/createSpot.js`);
+//runJSFile(`${jsDir}/scripts/createSpot.js`);
 //watchJS(`${jsDir}/scripts/createSpotNew.js`);
-runJSFile(`${jsDir}/scripts/createBlub.js`);
+//runJSFile(`${jsDir}/scripts/createBlub.js`);
 
 watchJS(`${jsDir}/update.js`);
 
@@ -90,6 +94,22 @@ watchJS(`${jsDir}/execute_drawperf.js`);
 
 
 
+
+// render = () => {
+
+// 	//log(456);
+// };
+
+// update = () => {
+// 	//log(123);
+// };
+
+// //log("test");
+
+
+// gl.useProgram
+
+// //1 + 2
 
 
 

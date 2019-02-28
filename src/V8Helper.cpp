@@ -102,71 +102,164 @@ string getNumberedLines(string str, int first, int last) {
 	return result;
 }
 
-void V8Helper::runScript(string command) {
+
+// TODO copy&paste from v8 code example samples/shell.cc
+// Extracts a C string from a V8 Utf8Value.
+const char* ToCString(const v8::String::Utf8Value& value) {
+	return *value ? *value : "<string conversion failed>";
+}
+
+// TODO copy&paste from v8 code example samples/shell.cc
+void ReportException(v8::Isolate* isolate, v8::TryCatch* try_catch) {
+	v8::HandleScope handle_scope(isolate);
+	v8::String::Utf8Value exception(isolate, try_catch->Exception());
+	const char* exception_string = ToCString(exception);
+	v8::Local<v8::Message> message = try_catch->Message();
+	if (message.IsEmpty()) {
+		// V8 didn't provide any extra information about this error; just
+		// print the exception.
+		fprintf(stderr, "%s\n", exception_string);
+	} else {
+		// Print (filename):(line number): (message).
+		v8::String::Utf8Value filename(isolate,
+			message->GetScriptOrigin().ResourceName());
+		v8::Local<v8::Context> context(isolate->GetCurrentContext());
+		const char* filename_string = ToCString(filename);
+		int linenum = message->GetLineNumber(context).FromJust();
+		fprintf(stderr, "%s:%i: %s\n", filename_string, linenum, exception_string);
+		// Print line of source code.
+		v8::String::Utf8Value sourceline(
+			isolate, message->GetSourceLine(context).ToLocalChecked());
+		const char* sourceline_string = ToCString(sourceline);
+		fprintf(stderr, "%s\n", sourceline_string);
+		// Print wavy underline (GetUnderline is deprecated).
+		int start = message->GetStartColumn(context).FromJust();
+		for (int i = 0; i < start; i++) {
+			fprintf(stderr, " ");
+		}
+		int end = message->GetEndColumn(context).FromJust();
+		for (int i = start; i < end; i++) {
+			fprintf(stderr, "^");
+		}
+		fprintf(stderr, "\n");
+		v8::Local<v8::Value> stack_trace_string;
+		if (try_catch->StackTrace(context).ToLocal(&stack_trace_string) &&
+			stack_trace_string->IsString() &&
+			v8::Local<v8::String>::Cast(stack_trace_string)->Length() > 0) {
+			v8::String::Utf8Value stack_trace(isolate, stack_trace_string);
+			const char* stack_trace_string = ToCString(stack_trace);
+			fprintf(stderr, "%s\n", stack_trace_string);
+		}
+	}
+}
+
+bool V8Helper::runScript(string command) {
 
 	//cout << ">> " << command << endl;
+	bool report_exceptions = true;
+	bool print_result = true;
+
+	
+
+	
+
+	v8::Context::Scope context_scope(context);
 
 	auto source = String::NewFromUtf8(isolate, command.c_str(),
 		NewStringType::kNormal).ToLocalChecked();
-	auto script = Script::Compile(context, source);
-	if (script.IsEmpty()) {
-		cout << "failed to compile script" << endl;
-		cout << command << endl;
-		return;
-	}
 
-	auto lscript = script.ToLocalChecked();
+	v8::Local<v8::String> name(
+		v8::String::NewFromUtf8(context->GetIsolate(), "(blabla)",
+			v8::NewStringType::kNormal).ToLocalChecked());
 
-	TryCatch trycatch(isolate);
+	v8::HandleScope handle_scope(isolate);
+	v8::TryCatch try_catch(isolate);
+	v8::ScriptOrigin origin(name);
+	v8::Local<v8::Context> context(isolate->GetCurrentContext());
+	v8::Local<v8::Script> script;
 
-	auto result = lscript->Run(context);
-	if (result.IsEmpty()) {
-		cout << "failed to run script" << endl;
-		//cout << command << endl;
-
-		Local<Value> exception = trycatch.Exception();
-		String::Utf8Value exception_str(exception);
-
-		Local<Value> trace = trycatch.StackTrace();
-		String::Utf8Value trace_str(trace);
-		
-		string exceptionStr = *exception_str;
-		string traceStr = *trace_str;
-
-		
-		
-		cout << "====" << endl;
-		//cout << exceptionStr << endl;
-		//cout << "====" << endl;
-		
-		cout << traceStr << endl;
-		cout << "====" << endl;
-
-		int line = getErrorLine(traceStr);
-
-		if (line >= 0) {
-			string lines = getNumberedLines(command, line - 2, line + 2);
-			cout << lines;
+	auto result = v8::Script::Compile(context, source, &origin);
+	if (!result.ToLocal(&script)) {
+		// Print errors that happened during compilation.
+		if (report_exceptions)
+			ReportException(isolate, &try_catch);
+		return false;
+	} else {
+		v8::Local<v8::Value> result;
+		if (!script->Run(context).ToLocal(&result)) {
+			assert(try_catch.HasCaught());
+			// Print errors that happened during execution.
+			if (report_exceptions)
+				ReportException(isolate, &try_catch);
+			return false;
 		} else {
-			cout << ":(" << endl;
+			assert(!try_catch.HasCaught());
+			if (print_result && !result->IsUndefined()) {
+				// If all went well and the result wasn't undefined then print
+				// the returned value.
+				v8::String::Utf8Value str(isolate, result);
+				const char* cstr = ToCString(str);
+				printf("%s\n", cstr);
+			}
+			return true;
 		}
-
-		cout << "====" << endl;
-		//cout << traceStr << endl;
-		//cout << "====" << endl;
-
-
-		return;
 	}
 
-	auto lresult = result.ToLocalChecked();
+	//auto lscript = script.ToLocalChecked();
+
+	//TryCatch trycatch(isolate);
+
+	//auto result = lscript->Run(context);
+	//if (result.IsEmpty()) {
+	//	cout << "failed to run script" << endl;
+	//	//cout << command << endl;
+
+	//	//Local<Value> exception = trycatch.Exception();
+	//	//String::Utf8Value exception_str(exception);
+	//	String::Utf8Value exception_str(isolate, trycatch.Exception());
+
+	//	//Local<Value> trace = trycatch.StackTrace(isolate->GetCurrentContext()).ToLocalChecked();
+	//	//String::Utf8Value trace_str(trace);
+	//	//v8::String::Utf8Value trace_str(isolate, stack_trace_string);
+	//	auto stack_trace_string = trycatch.StackTrace(context).ToLocalChecked();
+	//	v8::String::Utf8Value trace_str(isolate, stack_trace_string);
+	//	
+	//	string exceptionStr = *exception_str;
+	//	string traceStr = *trace_str;
+	//	
+	//	cout << "====" << endl;
+	//	//cout << exceptionStr << endl;
+	//	//cout << "====" << endl;
+	//	
+	//	cout << traceStr << endl;
+	//	cout << "====" << endl;
+
+	//	int line = getErrorLine(traceStr);
+
+	//	if (line >= 0) {
+	//		string lines = getNumberedLines(command, line - 2, line + 2);
+	//		cout << lines;
+	//	} else {
+	//		cout << ":(" << endl;
+	//	}
+
+	//	cout << "====" << endl;
+	//	//cout << traceStr << endl;
+	//	//cout << "====" << endl;
 
 
-	String::Utf8Value utf8(lresult);
+	//	return;
+	//}
 
-	if (*utf8 != nullptr) {
-		cout << string(*utf8) << endl;
-	}
+	//auto lresult = result.ToLocalChecked();
+
+
+	////String::Utf8Value utf8(isolate->GetCurrentContext(), lresult);
+	//String::Utf8Value utf8(isolate, lresult);
+
+	//if (*utf8 != nullptr) {
+	//	cout << string(*utf8) << endl;
+	//}
 }
 
 unordered_map<string, int> constants;
@@ -183,12 +276,17 @@ void V8Helper::setupGL() {
 	// built-in global functions.
 	Local<ObjectTemplate> tpl = ObjectTemplate::New(this->isolate);
 	tpl->SetInternalFieldCount(1);
+	Local<Object> obj = tpl->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
 
 	
+//#define CREATE_CONSTANT_ACCESSOR( name, value) \
+//	obj->SetAccessor(String::NewFromUtf8(isolate, name, NewStringType::kInternalized).ToLocalChecked(), [](Local<String> property, const PropertyCallbackInfo<Value>& info) { \
+//		info.GetReturnValue().Set(value); \
+//	})
+
 #define CREATE_CONSTANT_ACCESSOR( name, value) \
-	tpl->SetAccessor(String::NewFromUtf8(isolate, name), [](Local<String> property, const PropertyCallbackInfo<Value>& info) { \
-		info.GetReturnValue().Set(value); \
-	})
+	obj->Set(String::NewFromUtf8(isolate, name), v8::Integer::New(isolate, value));
+
 
 
 	// ----------------------------
@@ -203,7 +301,7 @@ void V8Helper::setupGL() {
 	// ----------------------------
 	
 	
-	setupV8GLExtBindings(tpl);
+	setupV8GLExtBindings(obj);
 	//setupV8GLExtBindings(tpl, constants);
 
 	CREATE_CONSTANT_ACCESSOR("VERSION_1_1", 1);
@@ -745,161 +843,55 @@ void V8Helper::setupGL() {
 
 
 
-
-
-
-	tpl->Set(String::NewFromUtf8(isolate, "uniform1f"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("uniform1f requires 2 arguments");
-			return;
-		}
-
-		String::Utf8Value aUniformLocation(args[0]);
-		String::Utf8Value aValue(args[1]);
-
-		int uniformLocation = std::stoi(*aUniformLocation);
-		float value = std::stof(*aValue);
-
-		glUniform1f(uniformLocation, value);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "uniform2f"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("uniform2f requires 3 arguments");
-			return;
-		}
-
-		String::Utf8Value aUniformLocation(args[0]);
-		String::Utf8Value aValue1(args[1]);
-		String::Utf8Value aValue2(args[2]);
-
-		int uniformLocation = std::stoi(*aUniformLocation);
-		float value1 = std::stof(*aValue1);
-		float value2 = std::stof(*aValue2);
-
-		glUniform2f(uniformLocation, value1, value2);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "uniform3f"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 4) {
-			V8Helper::_instance->throwException("uniform3f requires 4 arguments");
-			return;
-		}
-
-		String::Utf8Value aUniformLocation(args[0]);
-		String::Utf8Value aValue1(args[1]);
-		String::Utf8Value aValue2(args[2]);
-		String::Utf8Value aValue3(args[3]);
-
-		int uniformLocation = std::stoi(*aUniformLocation);
-		float value1 = std::stof(*aValue1);
-		float value2 = std::stof(*aValue2);
-		float value3 = std::stof(*aValue3);
-
-		glUniform3f(uniformLocation, value1, value2, value3);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "uniform4f"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 5) {
-			V8Helper::_instance->throwException("uniform4f requires 5 arguments");
-			return;
-		}
-
-		String::Utf8Value aUniformLocation(args[0]);
-		String::Utf8Value aValue1(args[1]);
-		String::Utf8Value aValue2(args[2]);
-		String::Utf8Value aValue3(args[3]);
-		String::Utf8Value aValue4(args[4]);
-
-		int uniformLocation = std::stoi(*aUniformLocation);
-		float value1 = std::stof(*aValue1);
-		float value2 = std::stof(*aValue2);
-		float value3 = std::stof(*aValue3);
-		float value4 = std::stof(*aValue4);
-
-		glUniform4f(uniformLocation, value1, value2, value3, value4);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "uniformMatrix4fv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 4) {
-			V8Helper::_instance->throwException("uniformMatrix4fv requires 4 arguments");
-			return;
-		}
-
-		String::Utf8Value aUniformLocation(args[0]);
-		String::Utf8Value aCount(args[1]);
-		String::Utf8Value aTranspose(args[2]);
-
-		int uniformLocation = std::stoi(*aUniformLocation);
-		int count = std::stoi(*aCount);
-		GLboolean transpose = std::stoi(*aTranspose);
-
-		float *data = nullptr;
-		if (args[3]->IsFloat32Array()) {
-			v8::Local<v8::Float32Array> view = (args[3]).As<v8::Float32Array>();
-
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-
-			data = reinterpret_cast<float*>(bdata);
-		} else {
-			cout << "ERROR: array must be of type Float32Array" << endl;
-			exit(1);
-		}
-
-		glUniformMatrix4fv(uniformLocation, count, transpose, data);
-		//glUniform4f(uniformLocation, value1, value2, value3, value4);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "clearColor"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "clearColor"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("clearColor requires 4 arguments");
 			return;
 		}
 
-		float red = args[0]->NumberValue();
-		float green= args[1]->NumberValue();
-		float blue = args[2]->NumberValue();
-		float alpha = args[3]->NumberValue();
+		float red = (float)args[0]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		float green= (float)args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		float blue = (float)args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		float alpha = (float)args[3]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		//cout << key << ": " << value << endl;
 		glClearColor(red, green, blue, alpha);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "clearDepth"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "clearDepth"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("clearDepth requires 1 arguments");
 			return;
 		}
 
-		double depth = args[0]->NumberValue();
+		double depth = args[0]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glClearDepth(depth);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "depthFunc"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "depthFunc"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("depthFunc requires 1 arguments");
 			return;
 		}
 
-		GLenum depthFunc = args[0]->Uint32Value();
+		GLenum depthFunc = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glDepthFunc(depthFunc);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "clear"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "clear"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("clear requires 1 argument");
 			return;
 		}
 
-		GLbitfield mask = args[0]->Uint32Value();
+		GLbitfield mask = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glClear(mask);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "createVertexArray"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& info) {
+	obj->Set(String::NewFromUtf8(isolate, "createVertexArray"), Function::New(context, [](const FunctionCallbackInfo<Value>& info) {
 		if (info.Length() != 0) {
 			V8Helper::_instance->throwException("createVertexArray requires 0 arguments");
 			return;
@@ -909,9 +901,9 @@ void V8Helper::setupGL() {
 		glCreateVertexArrays(1, &vao);
 
 		info.GetReturnValue().Set(vao);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "createTexture"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& info) {
+	obj->Set(String::NewFromUtf8(isolate, "createTexture"), Function::New(context, [](const FunctionCallbackInfo<Value>& info) {
 		if (info.Length() != 0) {
 			V8Helper::_instance->throwException("createTexture requires 0 arguments");
 			return;
@@ -921,32 +913,32 @@ void V8Helper::setupGL() {
 		glGenTextures(1, &tex);
 
 		info.GetReturnValue().Set(tex);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "deleteTexture"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& info) {
+	obj->Set(String::NewFromUtf8(isolate, "deleteTexture"), Function::New(context, [](const FunctionCallbackInfo<Value>& info) {
 		if (info.Length() != 1) {
 			V8Helper::_instance->throwException("deleteTexture requires 1 arguments");
 			return;
 		}
 
-		GLuint tex = info[0]->Uint32Value();
+		GLuint tex = info[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 		glDeleteTextures(1, &tex);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "texImage2D"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "texImage2D"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 9) {
 			V8Helper::_instance->throwException("texImage2D requires 9 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLint level = args[1]->Int32Value();
-		GLint internalFormat = args[2]->Int32Value();
-		GLsizei width = args[3]->Int32Value();
-		GLsizei height = args[4]->Int32Value();
-		GLint border = args[5]->Int32Value();
-		GLenum format = args[6]->Uint32Value();
-		GLenum type = args[7]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint level = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint internalFormat = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei height = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint border = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum format = args[6]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[7]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 		
 		void* data = nullptr;
 		if (args[8]->IsArrayBuffer()) {
@@ -959,7 +951,7 @@ void V8Helper::setupGL() {
 			void *bdata = view->Buffer()->GetContents().Data();
 			data = reinterpret_cast<void*>(bdata);
 		} else if (args[8]->IsNumber()) {
-			int value = args[8]->NumberValue();
+			int value = (int)args[8]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 			data = (void*)value;
 		} else {
 			cout << "ERROR(texImage2D): array must be of type ArrayBuffer" << endl;
@@ -967,22 +959,22 @@ void V8Helper::setupGL() {
 		}
 
 		glTexImage2D(target, level, internalFormat, width, height, border, format, type, data);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "texSubImage2D"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "texSubImage2D"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 9) {
 			V8Helper::_instance->throwException("texSubImage2D requires 9 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->Uint32Value();
-		GLint level = args[1]->Int32Value();
-		GLint xoffset = args[2]->Int32Value();
-		GLint yoffset = args[3]->Int32Value();
-		GLsizei width = args[4]->Int32Value();
-		GLsizei height = args[5]->Int32Value();
-		GLenum format = args[6]->Uint32Value();
-		GLenum type = args[7]->Uint32Value();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint level = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint xoffset = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint yoffset = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[4]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei height = args[5]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum format = args[6]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum type = args[7]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		void* data = nullptr;
 		if (args[8]->IsArrayBuffer()) {
@@ -995,7 +987,7 @@ void V8Helper::setupGL() {
 			void *bdata = view->Buffer()->GetContents().Data();
 			data = reinterpret_cast<void*>(bdata);
 		} else if (args[8]->IsNumber()) {
-			int value = args[8]->NumberValue();
+			int value = args[8]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 			data = (void*)value;
 		} else {
 			cout << "ERROR(texImage2D): array must be of type ArrayBuffer" << endl;
@@ -1003,37 +995,9 @@ void V8Helper::setupGL() {
 		}
 
 		glTexSubImage2D(target, level, xoffset, yoffset, width, height, format, type, data);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "multiTexCoord4i"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 5) {
-			V8Helper::_instance->throwException("multiTexCoord4i requires 5 arguments");
-			return;
-		}
-
-		String::Utf8Value targetUTF8(args[0]);
-		GLenum target = std::stoul(*targetUTF8);
-
-		String::Utf8Value sUTF8(args[1]);
-		GLint s = std::stoi(*sUTF8);
-
-		String::Utf8Value tUTF8(args[2]);
-		GLint t = std::stoi(*tUTF8);
-
-		String::Utf8Value rUTF8(args[3]);
-		GLint r = std::stoi(*rUTF8);
-
-		String::Utf8Value qUTF8(args[4]);
-		GLint q = std::stoi(*qUTF8);
-
-
-
-		glMultiTexCoord4i(target, s, t, r, q);
-
-		// args.GetReturnValue().Set(fb);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "createProgram"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& info) {
+	obj->Set(String::NewFromUtf8(isolate, "createProgram"), Function::New(context, [](const FunctionCallbackInfo<Value>& info) {
 		if (info.Length() != 0) {
 			V8Helper::_instance->throwException("createProgram requires 0 arguments");
 			return;
@@ -1042,29 +1006,29 @@ void V8Helper::setupGL() {
 		GLuint program = glCreateProgram();
 
 		info.GetReturnValue().Set(program);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "createShader"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& info) {
+	obj->Set(String::NewFromUtf8(isolate, "createShader"), Function::New(context, [](const FunctionCallbackInfo<Value>& info) {
 		if (info.Length() != 1) {
 			V8Helper::_instance->throwException("createShader requires 1 arguments");
 			return;
 		}
 
-		GLenum shaderType = info[0]->Int32Value();
+		GLenum shaderType = info[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLuint shader = glCreateShader(shaderType);
 
 		info.GetReturnValue().Set(shader);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "shaderSource"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& info) {
+	obj->Set(String::NewFromUtf8(isolate, "shaderSource"), Function::New(context, [](const FunctionCallbackInfo<Value>& info) {
 		if (info.Length() != 2) {
 			V8Helper::_instance->throwException("shaderSource requires 2 arguments");
 			return;
 		}
 
-		int shader = info[0]->Int32Value();
-		String::Utf8Value sourceUTF8(info[1]);
+		int shader = info[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		String::Utf8Value sourceUTF8(v8::Isolate::GetCurrent(), info[1]);
 		string source = *sourceUTF8;
 
 		const char* csource = source.c_str();
@@ -1073,16 +1037,16 @@ void V8Helper::setupGL() {
 		glShaderSource(shader, 1, &csource, NULL);
 
 		info.GetReturnValue().Set(shader);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getUniformLocation"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& info) {
+	obj->Set(String::NewFromUtf8(isolate, "getUniformLocation"), Function::New(context, [](const FunctionCallbackInfo<Value>& info) {
 		if (info.Length() != 2) {
 			V8Helper::_instance->throwException("getUniformLocation requires 2 arguments");
 			return;
 		}
 
-		int program = info[0]->Int32Value();
-		String::Utf8Value nameUTF8(info[1]);
+		int program = info[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		String::Utf8Value nameUTF8(v8::Isolate::GetCurrent(), info[1]);
 		string name = *nameUTF8;
 
 		const char* cname = name.c_str();
@@ -1091,16 +1055,16 @@ void V8Helper::setupGL() {
 		auto id = glGetUniformLocation(program, cname);
 
 		info.GetReturnValue().Set(id);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getUniformBlockIndex"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& info) {
+	obj->Set(String::NewFromUtf8(isolate, "getUniformBlockIndex"), Function::New(context, [](const FunctionCallbackInfo<Value>& info) {
 		if (info.Length() != 2) {
 			V8Helper::_instance->throwException("getUniformBlockIndex requires 2 arguments");
 			return;
 		}
 
-		int program = info[0]->Int32Value();
-		String::Utf8Value nameUTF8(info[1]);
+		int program = info[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		String::Utf8Value nameUTF8(v8::Isolate::GetCurrent(), info[1]);
 		string name = *nameUTF8;
 		const char* cname = name.c_str();
 
@@ -1108,9 +1072,9 @@ void V8Helper::setupGL() {
 		auto index = glGetUniformBlockIndex(program, cname);
 
 		info.GetReturnValue().Set(index);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getError"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& info) {
+	obj->Set(String::NewFromUtf8(isolate, "getError"), Function::New(context, [](const FunctionCallbackInfo<Value>& info) {
 		if (info.Length() != 0) {
 			V8Helper::_instance->throwException("getError requires 0 arguments");
 			return;
@@ -1119,9 +1083,9 @@ void V8Helper::setupGL() {
 		int error = glGetError();
 
 		info.GetReturnValue().Set(error);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "createBuffer"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& info) {
+	obj->Set(String::NewFromUtf8(isolate, "createBuffer"), Function::New(context, [](const FunctionCallbackInfo<Value>& info) {
 		if (info.Length() != 0) {
 			V8Helper::_instance->throwException("createBuffer requires 0 arguments");
 			return;
@@ -1131,54 +1095,26 @@ void V8Helper::setupGL() {
 		glCreateBuffers(1, &buffer);
 
 		info.GetReturnValue().Set(buffer);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "bindVertexArray"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 1) {
-			V8Helper::_instance->throwException("bindVertexArray requires 1 argument");
-			return;
-		}
+	//obj->Set(String::NewFromUtf8(isolate, "glBindBufferBase"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
+	//	if (args.Length() != 3) {
+	//		V8Helper::_instance->throwException("glBindBufferBase requires 3 argument");
+	//		return;
+	//	}
 
-		String::Utf8Value handleUTF8(args[0]);
+	//	String::Utf8Value targetUTF8(args[0]);
+	//	String::Utf8Value indexUTF8(args[1]);
+	//	String::Utf8Value bufferUTF8(args[2]);
 
-		int handle = std::stoi(*handleUTF8);
+	//	GLenum target = std::stoi(*targetUTF8);
+	//	GLuint index = std::stoi(*indexUTF8);
+	//	GLuint buffer = std::stoi(*bufferUTF8);
 
-		glBindVertexArray(handle);
-	}));
+	//	glBindBufferBase(target, index, buffer);
+	//}));
 
-	tpl->Set(String::NewFromUtf8(isolate, "glBindBufferBase"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("glBindBufferBase requires 3 argument");
-			return;
-		}
-
-		String::Utf8Value targetUTF8(args[0]);
-		String::Utf8Value indexUTF8(args[1]);
-		String::Utf8Value bufferUTF8(args[2]);
-
-		GLenum target = std::stoi(*targetUTF8);
-		GLuint index = std::stoi(*indexUTF8);
-		GLuint buffer = std::stoi(*bufferUTF8);
-
-		glBindBufferBase(target, index, buffer);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "bindBuffer"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("bindBuffer requires 2 argument");
-			return;
-		}
-
-		String::Utf8Value typeUTF8(args[0]);
-		String::Utf8Value handleUTF8(args[1]);
-
-		int type = std::stoi(*typeUTF8);
-		int handle = std::stoi(*handleUTF8);
-
-		glBindBuffer(type, handle);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "createFramebuffer"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "createFramebuffer"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 0) {
 			V8Helper::_instance->throwException("createFramebuffer requires 0 arguments");
 			return;
@@ -1188,466 +1124,104 @@ void V8Helper::setupGL() {
 		glGenFramebuffers(1, &fb);
 
 		args.GetReturnValue().Set(fb);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "bindFramebuffer"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("bindFramebuffer requires 2 argument");
-			return;
-		}
-
-		String::Utf8Value targetUTF8(args[0]);
-		String::Utf8Value framebufferUTF8(args[1]);
-
-		GLenum target = std::stoi(*targetUTF8);
-		GLuint framebuffer = std::stoi(*framebufferUTF8);
-
-		glBindFramebuffer(target, framebuffer);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "framebufferTexture2D"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 5) {
-			V8Helper::_instance->throwException("framebufferTexture2D requires 5 argument");
-			return;
-		}
-		
-		String::Utf8Value targetUTF8(args[0]);
-		String::Utf8Value attachmentUTF8(args[1]);
-		String::Utf8Value textargetUTF8(args[2]);
-		String::Utf8Value textureUTF8(args[3]);
-		String::Utf8Value levelUTF8(args[4]);
-
-		GLenum target = std::stoi(*targetUTF8);
-		GLenum attachment = std::stoi(*attachmentUTF8);
-		GLenum textarget = std::stoi(*textargetUTF8);
-		GLuint texture = std::stoi(*textureUTF8);
-		GLint level = std::stoi(*levelUTF8);
-
-		glFramebufferTexture2D(target, attachment, textarget, texture, level);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "blitFramebuffer"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 10) {
-			V8Helper::_instance->throwException("blitFramebuffer requires 10 argument");
-			return;
-		}
-
-		String::Utf8Value srcX0UTF8(args[0]);
-		String::Utf8Value srcY0UTF8(args[1]);
-		String::Utf8Value srcX1UTF8(args[2]);
-		String::Utf8Value srcY1UTF8(args[3]);
-		String::Utf8Value dstX0UTF8(args[4]);
-		String::Utf8Value dstY0UTF8(args[5]);
-		String::Utf8Value dstX1UTF8(args[6]);
-		String::Utf8Value dstY1UTF8(args[7]);
-		String::Utf8Value maskUTF8(args[8]);
-		String::Utf8Value filterUTF8(args[9]);
-
-		GLint srcX0 = std::stoi(*srcX0UTF8);
-		GLint srcY0 = std::stoi(*srcY0UTF8);
-		GLint srcX1 = std::stoi(*srcX1UTF8);
-		GLint srcY1 = std::stoi(*srcY1UTF8);
-		GLint dstX0 = std::stoi(*srcX0UTF8);
-		GLint dstY0 = std::stoi(*srcY0UTF8);
-		GLint dstX1 = std::stoi(*srcX1UTF8);
-		GLint dstY1 = std::stoi(*srcY1UTF8);
-		GLbitfield mask = std::stoi(*maskUTF8);
-		GLenum filter = std::stoi(*filterUTF8);
-
-		glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "blitNamedFramebuffer"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 12) {
-			V8Helper::_instance->throwException("blitNamedFramebuffer requires 12 argument");
-			return;
-		}
-
-		String::Utf8Value readBufferUTF8(args[0]);
-		String::Utf8Value drawBufferUTF8(args[1]);
-
-		String::Utf8Value srcX0UTF8(args[2]);
-		String::Utf8Value srcY0UTF8(args[3]);
-		String::Utf8Value srcX1UTF8(args[4]);
-		String::Utf8Value srcY1UTF8(args[5]);
-		String::Utf8Value dstX0UTF8(args[6]);
-		String::Utf8Value dstY0UTF8(args[7]);
-		String::Utf8Value dstX1UTF8(args[8]);
-		String::Utf8Value dstY1UTF8(args[9]);
-		String::Utf8Value maskUTF8(args[10]);
-		String::Utf8Value filterUTF8(args[11]);
-
-
-		GLuint readBuffer = std::stoi(*readBufferUTF8);
-		GLuint drawBuffer = std::stoi(*drawBufferUTF8);
-
-		GLint srcX0 = std::stoi(*srcX0UTF8);
-		GLint srcY0 = std::stoi(*srcY0UTF8);
-		GLint srcX1 = std::stoi(*srcX1UTF8);
-		GLint srcY1 = std::stoi(*srcY1UTF8);
-		GLint dstX0 = std::stoi(*dstX0UTF8);
-		GLint dstY0 = std::stoi(*dstY0UTF8);
-		GLint dstX1 = std::stoi(*dstX1UTF8);
-		GLint dstY1 = std::stoi(*dstY1UTF8);
-		GLbitfield mask = std::stoi(*maskUTF8);
-		GLenum filter = std::stoi(*filterUTF8);
-
-		glBlitNamedFramebuffer(readBuffer, drawBuffer, srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "viewport"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "viewport"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("viewport requires 4 argument");
 			return;
 		}
 
-		String::Utf8Value xUTF8(args[0]);
-		String::Utf8Value yUTF8(args[1]);
-		String::Utf8Value widthUTF8(args[2]);
-		String::Utf8Value heightUTF8(args[3]);
-
-		GLint x = std::stoi(*xUTF8);
-		GLint y = std::stoi(*yUTF8);
-		GLsizei width = std::stoi(*widthUTF8);
-		GLsizei height = std::stoi(*heightUTF8);
+		GLint x = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint y = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei width = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei height = args[3]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glViewport(x, y, width, height);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "bindTextureUnit"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 2) {
-			V8Helper::_instance->throwException("bindTextureUnit requires 2 argument");
-			return;
-		}
-
-		String::Utf8Value unitUTF8(args[0]);
-		String::Utf8Value textureUTF8(args[1]);
-
-		GLuint unit = std::stoi(*unitUTF8);
-		GLuint texture = std::stoi(*textureUTF8);
-
-		glBindTextureUnit(unit, texture);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "bindImageTexture"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 7) {
-			V8Helper::_instance->throwException("bindImageTexture requires 7 argument");
-			return;
-		}
-
-		String::Utf8Value unitUTF8(args[0]);
-		String::Utf8Value textureUTF8(args[1]);
-		String::Utf8Value levelUTF8(args[2]);
-		String::Utf8Value layeredUTF8(args[3]);
-		String::Utf8Value layerUTF8(args[4]);
-		String::Utf8Value accessUTF8(args[5]);
-		String::Utf8Value formatUTF8(args[6]);
-
-		GLuint unit = std::stoi(*unitUTF8);
-		GLuint texture = std::stoi(*textureUTF8);
-		GLint level = std::stoi(*levelUTF8);
-		GLboolean layered = std::stoi(*layeredUTF8);
-		GLint layer = std::stoi(*layerUTF8);
-		GLenum access = std::stoi(*accessUTF8);
-		GLenum format = std::stoi(*formatUTF8);
-
-		glBindImageTexture(unit, texture, level, layered, layer, access, format);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "dispatchCompute"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("dispatchCompute requires 3 argument");
-			return;
-		}
-
-		String::Utf8Value num_groups_xUTF8(args[0]);
-		String::Utf8Value num_groups_yUTF8(args[1]);
-		String::Utf8Value num_groups_zUTF8(args[2]);
-
-		GLuint num_groups_x = std::stoi(*num_groups_xUTF8);
-		GLuint num_groups_y = std::stoi(*num_groups_yUTF8);
-		GLuint num_groups_z = std::stoi(*num_groups_zUTF8);
-
-		glDispatchCompute(num_groups_x, num_groups_y, num_groups_z);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "bindTexture"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "bindTexture"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("bindTexture requires 2 argument");
 			return;
 		}
 
-		//String::Utf8Value targetUTF8(args[0]);
-		//String::Utf8Value textureUTF8(args[1]);
-
-		//int target = std::stoi(*targetUTF8);
-		//int texture = std::stoi(*textureUTF8);
-
-		GLenum target = args[0]->Uint32Value();
-		GLuint texture = args[1]->IntegerValue();
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLuint texture = args[1]->IntegerValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glBindTexture(target, texture);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "activeTexture"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 1) {
-			V8Helper::_instance->throwException("activeTexture requires 1 argument");
-			return;
-		}
-
-		String::Utf8Value textureUTF8(args[0]);
-
-		GLenum texture = std::stoi(*textureUTF8);
-
-		glActiveTexture(texture);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "texParameteri"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "texParameteri"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("texParameteri requires 3 argument");
 			return;
 		}
 
-		String::Utf8Value targetUTF8(args[0]);
-		String::Utf8Value pnameUTF8(args[1]);
-		String::Utf8Value paramUTF8(args[2]);
-
-		GLenum target = std::stoul(*targetUTF8);
-		GLenum pname = std::stoul(*pnameUTF8);
-		GLint param = std::stoi(*paramUTF8);
+		GLenum target = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint param = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glTexParameteri(target, pname, param);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "bufferData"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 4) {
-			V8Helper::_instance->throwException("bufferData requires 4 argument");
-			return;
-		}
-
-		//String::Utf8Value targetUTF8(args[0]);
-		String::Utf8Value sizeUTF8(args[1]);
-		String::Utf8Value usageUTF8(args[3]);
-
-		//GLenum target = std::stoi(*targetUTF8);
-		GLenum target = args[0]->Uint32Value();
-		GLsizeiptr size = args[1]->Uint32Value();
-		GLenum usage = args[3]->Uint32Value();
-
-		float *data = nullptr;
-		if (args[2]->IsFloat32Array()) {
-			v8::Local<v8::Float32Array> view = (args[2]).As<v8::Float32Array>();
-
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-
-			data = reinterpret_cast<float*>(bdata);
-
-		} else {
-			//cout << "ERROR: array must be of type Float32Array" << endl;
-			//exit(1);
-		}
-
-		glBufferData(target, size, data, usage);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "namedBufferData"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 4) {
-			V8Helper::_instance->throwException("namedBufferData requires 4 argument");
-			return;
-		}
-
-		String::Utf8Value bufferUTF8(args[0]);
-		String::Utf8Value sizeUTF8(args[1]);
-		String::Utf8Value usageUTF8(args[3]);
-
-		int buffer = std::stoi(*bufferUTF8);
-		int size = std::stoi(*sizeUTF8);
-		int usage = std::stoi(*usageUTF8);
-
-		float *data = nullptr;
-		if (args[2]->IsFloat32Array()) {
-			v8::Local<v8::Float32Array> view = (args[2]).As<v8::Float32Array>();
-
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-
-			data = reinterpret_cast<float*>(bdata);
-
-		} else {
-			cout << "ERROR: array must be of type Float32Array" << endl;
-			exit(1);
-		}
-
-		glNamedBufferData(buffer, size, data, usage);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "getUniformfv"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("getUniformfv requires 3 arguments");
-			return;
-		}
-
-		String::Utf8Value programUTF8(args[0]);
-		GLuint program = std::stoul(*programUTF8);
-
-		String::Utf8Value locationUTF8(args[1]);
-		GLint location = std::stoi(*locationUTF8);
-
-
-		float *params = nullptr;
-		if (args[2]->IsFloat32Array()) {
-			v8::Local<v8::Float32Array> view = (args[2]).As<v8::Float32Array>();
-			auto buffer = view->Buffer();
-			void *bdata = view->Buffer()->GetContents().Data();
-			params = reinterpret_cast<float*>(bdata);
-		} else {
-			cout << "ERROR: array must be of type Float32Array" << endl;
-			exit(1);
-		}
-
-
-
-		glGetUniformfv(program, location, params);
-
-		// args.GetReturnValue().Set(fb);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "enableVertexAttribArray"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 1) {
-			V8Helper::_instance->throwException("enableVertexAttribArray requires 1 argument");
-			return;
-		}
-
-		String::Utf8Value indexUTF8(args[0]);
-
-		int index = std::stoi(*indexUTF8);
-
-		glEnableVertexAttribArray(index);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "blendFunc"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "blendFunc"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("blendFunc requires 2 arguments");
 			return;
 		}
 
-		String::Utf8Value sfactorUTF8(args[0]);
-		String::Utf8Value dfactorUTF8(args[1]);
-
-		GLenum sfactor = std::stoi(*sfactorUTF8);
-		GLenum dfactor = std::stoi(*dfactorUTF8);
+		GLenum sfactor = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum dfactor = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glBlendFunc(sfactor, dfactor);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "flush"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "flush"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 0) {
 			V8Helper::_instance->throwException("flush requires 0 arguments");
 			return;
 		}
 
 		glFlush();
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "enable"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "enable"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("enable requires 1 argument");
 			return;
 		}
 
-		String::Utf8Value enumUTF8(args[0]);
-
-		GLenum value = std::stoi(*enumUTF8);
+		GLenum value = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glEnable(value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "disable"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "disable"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("disable requires 1 argument");
 			return;
 		}
 
-		String::Utf8Value enumUTF8(args[0]);
-
-		GLenum value = std::stoi(*enumUTF8);
+		GLenum value = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glDisable(value);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribPointer"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 6) {
-			V8Helper::_instance->throwException("vertexAttribPointer requires 6 arguments");
-			return;
-		}
-
-		String::Utf8Value indexUTF8(args[0]);
-		String::Utf8Value sizeUTF8(args[1]);
-		String::Utf8Value typeUTF8(args[2]);
-		String::Utf8Value normalizedUTF8(args[3]);
-		String::Utf8Value strideUTF8(args[4]);
-		String::Utf8Value pointerUTF8(args[5]);
-
-		GLuint index = std::stoi(*indexUTF8);
-		GLint size = std::stoi(*sizeUTF8);
-		GLenum type = std::stoi(*typeUTF8);
-		GLboolean normalized = std::stoi(*normalizedUTF8);
-		GLsizei stride = std::stoi(*strideUTF8);
-		int pointer = std::stoi(*pointerUTF8);
-
-		glVertexAttribPointer(index, size, type, normalized, stride, reinterpret_cast<const void*>(pointer));
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "useProgram"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 1) {
-			V8Helper::_instance->throwException("useProgram requires 1 argument");
-			return;
-		}
-
-		int program = args[0]->Int32Value();
-
-		glUseProgram(program);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "memoryBarrier"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 1) {
-			V8Helper::_instance->throwException("memoryBarrier requires 1 argument");
-			return;
-		}
-
-		String::Utf8Value barriersUTF8(args[0]);
-
-		GLbitfield barriers = std::stoi(*barriersUTF8);
-
-		glMemoryBarrier(barriers);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "bindVertexArray"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 1) {
-			V8Helper::_instance->throwException("bindVertexArray requires 1 argument");
-			return;
-		}
-
-		GLuint vao = args[0]->Uint32Value();
-
-		glBindVertexArray(vao);
-	}));
-
-	tpl->Set(String::NewFromUtf8(isolate, "drawArrays"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "drawArrays"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 3) {
 			V8Helper::_instance->throwException("drawArrays requires 3 arguments");
 			return;
 		}
 
-		GLenum mode = args[0]->Uint32Value();
-		GLint first = args[1]->Int32Value();
-		GLsizei count = args[2]->Int32Value();
+		GLenum mode = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLint first = args[1]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLsizei count = args[2]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glDrawArrays(mode, first, count);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "createQuery"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "createQuery"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 0) {
 			V8Helper::_instance->throwException("createQuery requires 0 arguments");
 			return;
@@ -1657,27 +1231,27 @@ void V8Helper::setupGL() {
 		glGenQueries(1, &queryID);
 
 		args.GetReturnValue().Set(queryID);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "deleteQuery"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "deleteQuery"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("deleteQuery requires 1 arguments");
 			return;
 		}
 
-		unsigned int queryID = args[0]->Uint32Value();
+		unsigned int queryID = args[0]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		glDeleteQueries(1, &queryID);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getQueryObjectui64"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getQueryObjectui64"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("getQueryObjectui64 requires 2 arguments");
 			return;
 		}
 
-		int query = args[0]->Int32Value();
-		GLenum pname = args[1]->Uint32Value();
+		int query = args[0]->Int32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		GLenum pname = args[1]->Uint32Value(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		unsigned long long params;
 		glGetQueryObjectui64v(query, pname, &params);
@@ -1685,26 +1259,26 @@ void V8Helper::setupGL() {
 		double val = (double)params;
 
 		args.GetReturnValue().Set(val);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "depthMask"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "depthMask"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("depthMask requires 1 arguments");
 			return;
 		}
 
-		bool mask = args[0]->BooleanValue();
+		bool mask = args[0]->BooleanValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(false);
 
 		glDepthMask(mask);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "getInteger64v"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "getInteger64v"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("depthMask requires 1 arguments");
 			return;
 		}
 
-		GLenum target = args[0]->IntegerValue();
+		GLenum target = args[0]->IntegerValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
 		GLint64 value;
 
@@ -1713,18 +1287,18 @@ void V8Helper::setupGL() {
 		double v = value;
 
 		args.GetReturnValue().Set(v);
-	}));
+	}).ToLocalChecked());
 
-	tpl->Set(String::NewFromUtf8(isolate, "exit"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	obj->Set(String::NewFromUtf8(isolate, "exit"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("exit requires 0 arguments");
 			return;
 		}
 
 		exit(0);
-	}));
+	}).ToLocalChecked());
 
-	Local<Object> obj = tpl->NewInstance();
+	
 
 	context->Global()->Set(
 		String::NewFromUtf8(isolate, "gl"),
@@ -1739,13 +1313,43 @@ void V8Helper::setupGL() {
 
 void V8Helper::setupV8() {
 
-	V8Helper::_instance->registerFunction("acquireDesktopTexture", [](const FunctionCallbackInfo<Value>& args) {
+
+	//auto testFunc = [](const FunctionCallbackInfo<Value>& args) {
+	//	cout << "lala!!" << endl;
+	//};
+
+	//auto testFunc2 = [](const FunctionCallbackInfo<Value>& args) {
+	//	cout << "omg!!" << endl;
+	//};
+
+
+	auto global = v8::ObjectTemplate::New(isolate);
+
+	//registerFunction("test", [](const FunctionCallbackInfo<Value>& args) {
+	//	cout << "woohoo!!" << endl;
+	//});
+
+	//return v8::Context::New(isolate, NULL, global);
+
+
+	context = v8::Context::New(isolate, NULL, global);
+
+	Context::Scope context_scope(context);
+
+	this->global = context->Global();
+
+	/*auto f2Name = v8::String::NewFromUtf8(isolate, "test2");
+	auto f2 = v8::Function::New(context, testFunc2).ToLocalChecked();
+	glob->Set(f2Name, f2);*/
+	
+
+	registerFunction("acquireDesktopTexture", [](const FunctionCallbackInfo<Value>& args) {
 		auto app = Application::instance();
 		DesktopTexture result = app->acquireDesktopTexture();
 
 		auto isolate = Isolate::GetCurrent();
 		Local<ObjectTemplate> imgTempl = ObjectTemplate::New(isolate);
-		auto object = imgTempl->NewInstance();
+		auto object = imgTempl->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
 
 		auto lTextureHandle = v8::Integer::New(isolate, result.textureHandle);
 		auto lHasChanged = v8::Boolean::New(isolate, result.hasChanged);
@@ -1756,7 +1360,7 @@ void V8Helper::setupV8() {
 		args.GetReturnValue().Set(object);
 	});
 
-	V8Helper::_instance->registerFunction("getCursorData", [](const FunctionCallbackInfo<Value>& args) {
+	registerFunction("getCursorData", [](const FunctionCallbackInfo<Value>& args) {
 		auto app = Application::instance();
 		MouseCursor cursor = app->getCursor();
 
@@ -1777,7 +1381,7 @@ void V8Helper::setupV8() {
 		auto ltype = v8::Integer::New(isolate, cursor.type);
 		auto lpitch = v8::Integer::New(isolate, cursor.pitch);
 
-		auto object = imgTempl->NewInstance();
+		auto object = imgTempl->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
 
 		object->Set(String::NewFromUtf8(isolate, "width"), lwidth);
 		object->Set(String::NewFromUtf8(isolate, "height"), lheight);
@@ -1790,14 +1394,16 @@ void V8Helper::setupV8() {
 		args.GetReturnValue().Set(object);
 	});
 
-	V8Helper::_instance->registerFunction("setDebugValue", [](const FunctionCallbackInfo<Value>& args) {
+	registerFunction("setDebugValue", [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("setDebugValue requires 2 arguments");
 			return;
 		}
 
-		String::Utf8Value strKey(args[0]);
-		String::Utf8Value strValue(args[1]);
+		auto isolate = v8::Isolate::GetCurrent();
+
+		String::Utf8Value strKey(isolate, args[0]);
+		String::Utf8Value strValue(isolate, args[1]);
 
 		string key = *strKey;
 		string value = *strValue;
@@ -1807,13 +1413,15 @@ void V8Helper::setupV8() {
 		//cout << key << ": " << value << endl;
 	});
 
-	V8Helper::_instance->registerFunction("removeDebugValue", [](const FunctionCallbackInfo<Value>& args) {
+	registerFunction("removeDebugValue", [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("removeDebugValue requires 1 arguments");
 			return;
 		}
 
-		String::Utf8Value strKey(args[0]);
+		auto isolate = v8::Isolate::GetCurrent();
+
+		String::Utf8Value strKey(isolate, args[0]);
 
 		string key = *strKey;
 
@@ -1822,37 +1430,41 @@ void V8Helper::setupV8() {
 		//cout << key << ": " << value << endl;
 	});
 
-	V8Helper::_instance->registerFunction("reportState", [](const FunctionCallbackInfo<Value>& args) {
+	registerFunction("reportState", [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("reportState requires 1 arguments");
 			return;
 		}
 
-		bool reportState = args[0]->BooleanValue();
+		bool reportState = args[0]->BooleanValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(false);
 
 		Application::instance()->reportState = reportState;
 	});
 
-	V8Helper::_instance->registerFunction("log", [](const FunctionCallbackInfo<Value>& args) {
+	registerFunction("log", [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("log requires 1 argument");
 			return;
 		}
 
-		String::Utf8Value messageUTF8(args[0]);
+		auto isolate = v8::Isolate::GetCurrent();
+
+		String::Utf8Value messageUTF8(isolate, args[0]);
 
 		string message = *messageUTF8;
 
 		cout << message << endl;
 	});
 
-	V8Helper::_instance->registerFunction("readFile", [](const FunctionCallbackInfo<Value>& args) {
+	registerFunction("readFile", [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("readFile requires 1 arguments");
 			return;
 		}
 
-		String::Utf8Value fileUTF8(args[0]);
+		auto isolate = v8::Isolate::GetCurrent();
+
+		String::Utf8Value fileUTF8(isolate, args[0]);
 
 		string file = *fileUTF8;
 
@@ -1868,7 +1480,7 @@ void V8Helper::setupV8() {
 		args.GetReturnValue().Set(v8Buffer);
 	});
 
-	V8Helper::_instance->registerFunction("loadImage", [](const FunctionCallbackInfo<Value>& args) {
+	registerFunction("loadImage", [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("loadImage requires 1 arguments");
 			return;
@@ -1876,7 +1488,7 @@ void V8Helper::setupV8() {
 
 		auto isolate = Isolate::GetCurrent();
 
-		String::Utf8Value fileUTF8(args[0]);
+		String::Utf8Value fileUTF8(isolate, args[0]);
 		string file = *fileUTF8;
 
 		int width, height, channels;
@@ -1900,7 +1512,7 @@ void V8Helper::setupV8() {
 		//imgTempl->Set(isolate, "height", lheight);
 		//imgTempl->Set(isolate, "data", v8Buffer);
 
-		auto object = imgTempl->NewInstance();
+		auto object = imgTempl->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
 
 		object->Set(String::NewFromUtf8(isolate, "width"), lwidth);
 		object->Set(String::NewFromUtf8(isolate, "height"), lheight);
@@ -1912,13 +1524,15 @@ void V8Helper::setupV8() {
 
 	
 
-	V8Helper::_instance->registerFunction("readTextFile", [](const FunctionCallbackInfo<Value>& args) {
+	registerFunction("readTextFile", [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("readFile requires 1 arguments");
 			return;
 		}
 
-		String::Utf8Value fileUTF8(args[0]);
+		auto isolate = v8::Isolate::GetCurrent();
+
+		String::Utf8Value fileUTF8(isolate, args[0]);
 
 		string file = *fileUTF8;
 
@@ -1933,13 +1547,15 @@ void V8Helper::setupV8() {
 		args.GetReturnValue().Set(v8str);
 	});
 
-	V8Helper::_instance->registerFunction("openFile", [](const FunctionCallbackInfo<Value>& args) {
+	registerFunction("openFile", [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("openFile requires 1 arguments");
 			return;
 		}
 
-		String::Utf8Value vsSourceUTF8(args[0]);
+		auto isolate = v8::Isolate::GetCurrent();
+
+		String::Utf8Value vsSourceUTF8(isolate, args[0]);
 
 		string path = *vsSourceUTF8;
 
@@ -1950,19 +1566,20 @@ void V8Helper::setupV8() {
 		args.GetReturnValue().Set(v8File);
 	});
 
-	V8Helper::_instance->registerFunction("monitorFile", [](const FunctionCallbackInfo<Value>& args) {
+	registerFunction("monitorFile", [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("monitorFile requires 2 arguments");
 			return;
 		}
 
-		String::Utf8Value fileUTF8(args[0]);
+		v8::Isolate *isolate = Isolate::GetCurrent();
+
+		String::Utf8Value fileUTF8(isolate, args[0]);
 		string file = *fileUTF8;
 
 		Local<Value> callbackValue = args[1];
 		Local<Function> callback = Local<Function>::Cast(callbackValue);
 
-		auto isolate = Isolate::GetCurrent();
 		auto persistent = PersistentFunction(isolate, callback);
 
 		monitorFile(file, [isolate, persistent]() {
@@ -1972,7 +1589,7 @@ void V8Helper::setupV8() {
 			int argc = 0;
 			Local<Value> argv[1];
 			
-			local->Call(local, argc, argv);
+			local->Call(isolate->GetCurrentContext(), local, argc, argv);
 
 		});
 
@@ -1980,14 +1597,16 @@ void V8Helper::setupV8() {
 		//args.GetReturnValue().Set(v8Shader);
 	});
 
-	V8Helper::_instance->registerFunction("watchShader", [](const FunctionCallbackInfo<Value>& args) {
+	registerFunction("watchShader", [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 2) {
 			V8Helper::_instance->throwException("watchShader requires 2 arguments");
 			return;
 		}
 
-		String::Utf8Value vsSourceUTF8(args[0]);
-		String::Utf8Value fsSourceUTF8(args[1]);
+		auto isolate = v8::Isolate::GetCurrent();
+
+		String::Utf8Value vsSourceUTF8(isolate, args[0]);
+		String::Utf8Value fsSourceUTF8(isolate, args[1]);
 
 		string vsSource = *vsSourceUTF8;
 		string fsSource = *fsSourceUTF8;
@@ -2007,13 +1626,15 @@ void V8Helper::setupV8() {
 		args.GetReturnValue().Set(v8Shader);
 	});
 
-	V8Helper::_instance->registerFunction("watchComputeShader", [](const FunctionCallbackInfo<Value>& args) {
+	registerFunction("watchComputeShader", [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("watchComputeShader requires 1 argument");
 			return;
 		}
 
-		String::Utf8Value csSourceUTF8(args[0]);
+		auto isolate = v8::Isolate::GetCurrent();
+
+		String::Utf8Value csSourceUTF8(isolate, args[0]);
 
 		string csSource = *csSourceUTF8;
 
@@ -2027,13 +1648,15 @@ void V8Helper::setupV8() {
 		args.GetReturnValue().Set(v8Shader);
 	});
 
-	V8Helper::_instance->registerFunction("watchJS", [](const FunctionCallbackInfo<Value>& args) {
+	registerFunction("watchJS", [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("watchJS requires 1 argument");
 			return;
 		}
 
-		String::Utf8Value jsSourceUTF8(args[0]);
+		auto isolate = v8::Isolate::GetCurrent();
+
+		String::Utf8Value jsSourceUTF8(isolate, args[0]);
 
 		string jsSource = *jsSourceUTF8;
 
@@ -2046,13 +1669,15 @@ void V8Helper::setupV8() {
 		});
 	});
 
-	V8Helper::_instance->registerFunction("runJSFile", [](const FunctionCallbackInfo<Value>& args) {
+	registerFunction("runJSFile", [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("runJSFile requires 1 argument");
 			return;
 		}
 
-		String::Utf8Value jsSourceUTF8(args[0]);
+		auto isolate = v8::Isolate::GetCurrent();
+
+		String::Utf8Value jsSourceUTF8(isolate, args[0]);
 
 		string jsSource = *jsSourceUTF8;
 
@@ -2061,7 +1686,7 @@ void V8Helper::setupV8() {
 		V8Helper::instance()->runScript(code);
 	});
 
-	V8Helper::_instance->registerFunction("now", [](const FunctionCallbackInfo<Value>& args) {
+	registerFunction("now", [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 0) {
 			V8Helper::_instance->throwException("now requires 0 arguments");
 			return;
@@ -2079,18 +1704,18 @@ void V8Helper::setupV8() {
 	static unordered_map<long long, PersistentResolver> resolvers;
 	static long long resolverID = 0;
 
-	V8Helper::_instance->registerFunction("readFileAsync", [](const FunctionCallbackInfo<Value>& args) {
+	registerFunction("readFileAsync", [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("readFileAsync requires 1 arguments");
 			return;
 		}
 		auto isolate = Isolate::GetCurrent();
 
-		String::Utf8Value fileUTF8(args[0]);
+		String::Utf8Value fileUTF8(isolate, args[0]);
 
 		string file = *fileUTF8;
 
-		Local<Promise::Resolver> resolver = v8::Promise::Resolver::New(isolate);
+		Local<Promise::Resolver> resolver = v8::Promise::Resolver::New(isolate->GetCurrentContext()).ToLocalChecked();
 
 		long long currentID = resolverID++;
 		resolvers[currentID] = PersistentResolver(isolate, resolver);
@@ -2110,7 +1735,7 @@ void V8Helper::setupV8() {
 				auto persistantResolver = resolvers[currentID];
 				Local<Promise::Resolver> resolver = Local<Promise::Resolver>::New(isolate, persistantResolver);
 
-				resolver->Resolve(v8Buffer);
+				resolver->Resolve(isolate->GetCurrentContext(), v8Buffer);
 
 				resolvers.erase(currentID);
 			});
@@ -2143,7 +1768,8 @@ void V8Helper::setupV8() {
 		unsigned char a;
 	};
 
-	V8Helper::_instance->registerFunction("loadNodeAsync", [](const FunctionCallbackInfo<Value>& args) {
+	registerFunction("loadNodeAsync", [](const FunctionCallbackInfo<Value>& args) {
+	//V8Helper::_instance->context->Global()->Set(String::NewFromUtf8(isolate, "loadNodeAsync"), Function::New(context, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 5) {
 			V8Helper::_instance->throwException("loadNodeAsync requires 5 arguments");
 			return;
@@ -2151,15 +1777,15 @@ void V8Helper::setupV8() {
 
 		auto isolate = Isolate::GetCurrent();
 
-		String::Utf8Value fileUTF8(args[0]);
+		String::Utf8Value fileUTF8(isolate, args[0]);
 
 		string file = *fileUTF8;
-		float scale = args[1]->NumberValue();
-		float minX = args[2]->NumberValue();
-		float minY = args[3]->NumberValue();
-		float minZ = args[4]->NumberValue();
+		float scale = (float)args[1]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		float minX = (float)args[2]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		float minY = (float)args[3]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+		float minZ = (float)args[4]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
 
-		Local<Promise::Resolver> resolver = v8::Promise::Resolver::New(isolate);
+		Local<Promise::Resolver> resolver = v8::Promise::Resolver::New(isolate->GetCurrentContext()).ToLocalChecked();
 
 		long long currentID = resolverID++;
 		resolvers[currentID] = PersistentResolver(isolate, resolver);
@@ -2207,7 +1833,7 @@ void V8Helper::setupV8() {
 				auto persistantResolver = resolvers[currentID];
 				Local<Promise::Resolver> resolver = Local<Promise::Resolver>::New(isolate, persistantResolver);
 
-				resolver->Resolve(v8Buffer);
+				resolver->Resolve(isolate->GetCurrentContext(), v8Buffer);
 
 				resolvers.erase(currentID);
 			});
@@ -2216,7 +1842,6 @@ void V8Helper::setupV8() {
 		t.detach();
 
 		args.GetReturnValue().Set(resolver->GetPromise());
-
 	});
 
 
