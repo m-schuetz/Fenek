@@ -4322,6 +4322,12 @@ void V8Helper::setupV8GLExtBindings(Local<Object>& obj){
 			auto buffer = view->Buffer();
 			void *bdata = view->Buffer()->GetContents().Data();
 			pointer = reinterpret_cast<void*>(bdata);
+		} else if (args[5]->IsNumber()) {
+
+			// TODO manual modification of generated code
+			size_t val = (int)args[5]->NumberValue(v8::Isolate::GetCurrent()->GetCurrentContext()).FromMaybe(-1);
+			pointer = reinterpret_cast<void*>(val);
+
 		} else {
 			//cout << "ERROR(glVertexAttribPointer): array must be of type ArrayBuffer" << endl;
 			//exit(1);

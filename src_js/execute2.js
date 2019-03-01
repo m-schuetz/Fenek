@@ -16,8 +16,8 @@ reportState(true);
 
 MSAA_SAMPLES = 1; // MSAA 1 only works if EDL is disable
 EDL_ENABLED = false; // Eye-Dome-Lighting. Only currently available form of illumination
-RENDER_DEFAULT_ENABLED = false;
-desktopMirrorEnabled = true;
+RENDER_DEFAULT_ENABLED = true;
+desktopMirrorEnabled = false;
 DEBUG_USER_FILTER_CAM = false;
 GLTimerQueries.enabled = false;
 

@@ -103,16 +103,32 @@ void main() {
 			vNew.accA += cNew.a;
 		}
 
-		float ww = 0.1;
-		vOld.accR += ww * vOld.accA * cNew.r;
-		vOld.accG += ww * vOld.accA * cNew.g;
-		vOld.accB += ww * vOld.accA * cNew.b;
-		vOld.accA += ww * vOld.accA * cNew.a;
+		// float ww = 0.1;
+		// vOld.accR += ww * vOld.accA * cNew.r;
+		// vOld.accG += ww * vOld.accA * cNew.g;
+		// vOld.accB += ww * vOld.accA * cNew.b;
+		// vOld.accA += ww * vOld.accA * cNew.a;
 
-		vNew.accR += ww * vNew.accA * cOld.r;
-		vNew.accG += ww * vNew.accA * cOld.g;
-		vNew.accB += ww * vNew.accA * cOld.b;
-		vNew.accA += ww * vNew.accA * cOld.a;
+		// vNew.accR += ww * vNew.accA * cOld.r;
+		// vNew.accG += ww * vNew.accA * cOld.g;
+		// vNew.accB += ww * vNew.accA * cOld.b;
+		// vNew.accA += ww * vNew.accA * cOld.a;
+
+		float ww = 0.01;
+		vOld.accR += ww * vNew.accA * cNew.r;
+		vOld.accG += ww * vNew.accA * cNew.g;
+		vOld.accB += ww * vNew.accA * cNew.b;
+		vOld.accA += ww * vNew.accA * cNew.a;
+
+		vNew.accR = vOld.accR + ww * cNew.r;
+		vNew.accG = vOld.accG + ww * cNew.g;
+		vNew.accB = vOld.accB + ww * cNew.b;
+		vNew.accA = vOld.accA + ww * cNew.a;
+
+		vOld.accR = vNew.accR;
+		vOld.accG = vNew.accG;
+		vOld.accB = vNew.accB;
+		vOld.accA = vNew.accA;
 
 		float red = 0.9;
 		if(vOld.accA > 100){

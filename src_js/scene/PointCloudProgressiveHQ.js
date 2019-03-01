@@ -127,7 +127,7 @@ if(typeof PointCloudProgressiveHQ === "undefined"){
 
 			// 4
 			let numPoints = headerView.getUint32(107, true);
-			numPoints = Math.min(numPoints, 120 * 1000 * 1000);
+			numPoints = Math.min(numPoints, 58 * 1000 * 1000);
 
 			// 20
 
@@ -140,12 +140,6 @@ if(typeof PointCloudProgressiveHQ === "undefined"){
 			let ox = headerView.getFloat64(155, true);
 			let oy = headerView.getFloat64(163, true);
 			let oz = headerView.getFloat64(171, true);
-
-			//let bytesPerPoint = 16;
-			//let vbo = new ArrayBuffer(numPoints * bytesPerPoint);
-			//let vboF32 = new Float32Array(vbo);
-			//let vboU8 = new Uint8Array(vbo);
-
 
 			let bytesPerPoint = 0;
 			let chunkBytesPerPoint = 16;
@@ -308,7 +302,7 @@ if(typeof PointCloudProgressiveHQ === "undefined"){
 					//gl.bindVertexArray(0);
 
 					let duration = now() - start;
-					//log(`duration: ${duration}`);
+					log(`duration: ${(1000 * duration).toFixed(3)}`);
 
 					source = await file.readBytes(pointsPerChunk * pointDataRecordLength);
 					start = now();
@@ -316,9 +310,9 @@ if(typeof PointCloudProgressiveHQ === "undefined"){
 					sourceView = new DataView(source);
 					
 
-					vboChunk = new ArrayBuffer(pointsPerChunk * chunkBytesPerPoint);
-					vboChunkU8 = new Uint8Array(vboChunk);
-					vboChunkView = new DataView(vboChunk);
+					// vboChunk = new ArrayBuffer(pointsPerChunk * chunkBytesPerPoint);
+					// vboChunkU8 = new Uint8Array(vboChunk);
+					// vboChunkView = new DataView(vboChunk);
 
 					i_local = 0;
 					i_bucket++;

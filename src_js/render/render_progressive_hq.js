@@ -79,12 +79,12 @@ renderPointCloudProgressiveHQ = function(pointcloud, view, proj, target){
 	//doUpdates = true;
 
 	let batchSize = 1 * 1000 * 1000;
-	let pointSize = 2;
+	let pointSize = 1;
 
 	//batchSize = 0.003 * 1000 * 1000;
 	//batchSize = 3 * 1000 * 1000;
 
-	{ // REPROJECT
+	if(true){ // REPROJECT
 		GLTimerQueries.mark("render-progressive-hq-reproject-start");
 		gl.useProgram(shReproject.program);
 

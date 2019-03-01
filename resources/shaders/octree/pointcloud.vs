@@ -164,16 +164,16 @@ void main() {
 
 	vColor = vColor * uColorMultiplier;
 
-	{
-		float lod = float(getLOD(node));	
-		lod = node.level;
-		//vec4 gColor = texture(uGradient, -vec2(float(node.level) / 6.5, 0.1));
-		float u = lod / 10;
-		u = -pow(u, 2.0);
-		vec4 gColor = texture(uGradient, vec2(u, 0));
+	// {
+	// 	float lod = float(getLOD(node));	
+	// 	lod = node.level;
+	// 	//vec4 gColor = texture(uGradient, -vec2(float(node.level) / 6.5, 0.1));
+	// 	float u = lod / 10;
+	// 	u = -pow(u, 2.0);
+	// 	vec4 gColor = texture(uGradient, vec2(u, 0));
 
-		vColor = gColor.xyz;
-	}
+	// 	vColor = gColor.xyz;
+	// }
 
 
 }

@@ -927,13 +927,13 @@ loadOctreePlane = function(){
 //loadExpAffandi_6_02_to_04();
 
 // loadProgressiveHeidentor();
-// loadProgressiveHQHeidentor();
+//loadProgressiveHQHeidentor();
 //loadBasicHeidentor();
 //loadProgressiveLion();
 //loadProgressiveCandiSari();
 //loadProgressiveRetz();
-//loadProgressiveRetzHQ();
-loadBasicRetz();
+loadProgressiveRetzHQ();
+//loadBasicRetz();
 //loadProgressiveEclepens();
 
 //loadOctreeHeidentor();

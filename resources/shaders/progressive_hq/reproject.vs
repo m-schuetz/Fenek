@@ -47,6 +47,8 @@ void main() {
 	if(aAcc.a == 0.0){
 		vColor = vec3(1, 0, 0);
 	}
+
+	// vColor = vec3(aAcc.a / 100, 0, 0);
 	
 	vVertexID = vec4(
 		float((gl_VertexID >>  0) & 255) / 255.0,

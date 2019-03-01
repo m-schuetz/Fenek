@@ -70,7 +70,7 @@ let gradientTexture = new GLTexture(gradientImage.width, gradientImage.height, g
 
 
 runJSFile(`${jsDir}/scripts/createDefaultScene.js`);
-runJSFile(`${jsDir}/scripts/createScene.js`);
+// runJSFile(`${jsDir}/scripts/createScene.js`);
 runJSFile(`${jsDir}/scripts/createPointCloudScene.js`);
 runJSFile(`${jsDir}/scripts/createControllers.js`);
 

@@ -113,6 +113,9 @@ if(typeof PointCloudBasic === "undefined"){
 						attribute.offset);	
 				}
 
+				log(`stride: ${stride}`);
+				log(`bytesPerPoint: ${bytesPerPoint}`);
+
 				gl.bindVertexArray(0);
 
 				glbuffer.count = numPoints;
@@ -127,25 +130,14 @@ if(typeof PointCloudBasic === "undefined"){
 
 			await file.setReadLocation(offsetToPointData);
 
-			log(10);
-			let pointsPerChunk = 100 * 1000;
-			log(pointsPerChunk);
-			log(pointDataRecordLength);
-
-			log(file);
+			let pointsPerChunk = 1000 * 1000;
 
 			let source = await file.readBytes(pointsPerChunk * pointDataRecordLength);
-			log(20);
 			let sourceView = new DataView(source);
-			log(30);
 
 			let vboChunk = new ArrayBuffer(pointsPerChunk * bytesPerPoint);
-			log(40);
 			let vboChunkU8 = new Uint8Array(vboChunk);
-			log(50);
 			let vboChunkView = new DataView(vboChunk);
-
-			log(100);
 
 			let start = now();
 			let i_local = 0;
@@ -182,24 +174,20 @@ if(typeof PointCloudBasic === "undefined"){
 
 				if(i_local === pointsPerChunk && (i + 1) < numPoints){
 
-					//log(i_local);
-
-					let to = (i + 1) - pointsPerChunk;
-					gl.namedBufferSubData(glbuffer.vbo, to * bytesPerPoint, vboChunk.byteLength, vboChunk);
+					let byteOffset = ((i + 1) - pointsPerChunk) * bytesPerPoint;
+					let byteLength = i_local * bytesPerPoint;
+					gl.namedBufferSubData(glbuffer.vbo, byteOffset, byteLength, vboChunk);
 
 					glbuffer.count = i;
-
+					
 					let duration = now() - start;
-					log(`duration: ${duration.toFixed(3)}`);
+					log(`duration: ${(1000 * duration).toFixed(3)}`);
 
 					source = await file.readBytes(pointsPerChunk * pointDataRecordLength);
 					start = now();
 
 					sourceView = new DataView(source);
 
-					vboChunk = new ArrayBuffer(pointsPerChunk * bytesPerPoint);
-					vboChunkU8 = new Uint8Array(vboChunk);
-					vboChunkView = new DataView(vboChunk);
 
 					i_local = 0;
 				}
