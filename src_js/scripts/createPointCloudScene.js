@@ -531,8 +531,8 @@ loadExpMatterhorn120 = function(){
 	scene.root.add(node);
 
 	view.set(
-		[3.21100208995429, 2.658987782300026, -0.2640089331301896],
-		[0.4097924229397498, 0.8982746832937245, 2.6127698880080517]
+		[-1.8204076918589662, 2.289776556075605, 0.06528482032585115],
+		[0.000740107278769591, 0.9033393805050794, -1.8488956537070833]
 	);
 }
 
@@ -915,7 +915,7 @@ loadOctreePlane = function(){
 // loadOctreeEndeavor();
 
 
-// loadExpMatterhorn120();
+loadExpMatterhorn120();
 // loadOctreeMatterhorn120();
 
 
@@ -932,7 +932,7 @@ loadOctreePlane = function(){
 //loadProgressiveLion();
 //loadProgressiveCandiSari();
 //loadProgressiveRetz();
-loadProgressiveRetzHQ();
+//loadProgressiveRetzHQ();
 //loadBasicRetz();
 //loadProgressiveEclepens();
 

@@ -47,7 +47,8 @@ var updateCamera = function(){
 
 	//log(camera.fov);
 
-	if(vr.isActive()){
+	//[TESTING] THIS IS ABSOLUTELY WRONG AND ONLY FOR TESTING!!!!
+	if(vr.isActive() && false){
 		
 		//let [near, far] = [1, 1000];
 		let hmdPose = new Matrix4().set(vr.getHMDPose());

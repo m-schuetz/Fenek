@@ -1,6 +1,6 @@
 
 
-//vr.start();
+vr.start();
 
 // allows you to adjust the mirror depending on your VR room setup
 if($("desktop_mirror")){
@@ -12,14 +12,19 @@ if($("desktop_mirror")){
 	mirror.updateMatrixWorld();
 }
 
-reportState(true);
+reportState(false);
 
-MSAA_SAMPLES = 1; // MSAA 1 only works if EDL is disable
+log(view.position);
+
+MSAA_SAMPLES = 4; // MSAA 1 only works if EDL is disable
 EDL_ENABLED = false; // Eye-Dome-Lighting. Only currently available form of illumination
 RENDER_DEFAULT_ENABLED = true;
 desktopMirrorEnabled = false;
 DEBUG_USER_FILTER_CAM = false;
 GLTimerQueries.enabled = false;
+
+CLOD_RANGE = [0.2, 2.2];
+CLOD_BATCH_SIZE = 200 * 1000 * 1000;
 
 { // set window position
 	let monitors = window.monitors;

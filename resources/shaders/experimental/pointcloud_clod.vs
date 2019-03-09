@@ -122,6 +122,6 @@ void main() {
 	vPointSize = gl_PointSize;
 
 	gl_PointSize *= 0.8;
-	//gl_PointSize = 5;
+	gl_PointSize = 1;
 }
 

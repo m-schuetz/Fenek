@@ -131,6 +131,34 @@ updateCLOD = function(pointcloud, view, proj){
 		view = cam.world.getInverse();
 		proj = cam.projectionMatrix;
 	}
+
+	// [TESTING]
+	if(vr.isActive()){
+		let {near, far} = camera;
+		let hmdPose = new Matrix4().set(vr.getHMDPose());
+		let leftProj = new Matrix4().set(vr.getLeftProjection(near, far));
+		let rightProj = new Matrix4().set(vr.getRightProjection(near, far));
+
+		let vrcam = new Camera();
+
+		vrcam.position = new Vector3(0, 0, 0).applyMatrix4(hmdPose);
+		vrcam.transform = hmdPose;
+		vrcam.world = hmdPose;
+		vrcam.updateProjectionMatrix();
+		//camera.projectionMatrix = rightProj;
+		vrcam.fov = 90;
+
+		let view = vrcam.transform.getInverse();
+		let proj = vrcam.projectionMatrix;
+
+		vrcam.updateProjectionMatrix();
+		vrcam.updateMatrixWorld();
+
+		let size = vr.getRecommmendedRenderTargetSize();
+		vrcam.size = size;
+
+		cam = vrcam;
+	}
 	
 
 	let shader = state.shader;

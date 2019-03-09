@@ -573,7 +573,12 @@ var render = function(){
 	gl.enable(gl.VERTEX_PROGRAM_POINT_SIZE);
 
 	if(vr.isActive()){
-		renderVR();
+		// [TESTING]
+		//renderVR();
+
+		vr.updatePose();
+		vr.processEvents();
+		renderRegular();
 	}else{
 		renderRegular();
 	}
