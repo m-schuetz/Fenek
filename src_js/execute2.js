@@ -15,7 +15,8 @@ if($("desktop_mirror")){
 reportState(false);
 
 MSAA_SAMPLES = 4; // MSAA 1 only works if EDL is disable
-EDL_ENABLED = true; // Eye-Dome-Lighting. Only currently available form of illumination
+EDL_ENABLED = false; // Eye-Dome-Lighting. Only currently available form of illumination
+SSAO_ENABLED = true; // Screen Space Ambient Occlusion
 RENDER_DEFAULT_ENABLED = true;
 desktopMirrorEnabled = true;
 

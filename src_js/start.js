@@ -45,7 +45,14 @@ watchJS(`${jsDir}/math/Intersections.js`);
 watchJS(`${jsDir}/Shader.js`);
 
 let fbo = new Framebuffer();
-fbo.setNumColorAttachments(2);
+fbo.colorAttachmentsInfo = [
+	{ inter_format: gl.RGBA8, format: gl.RGBA, type: gl.UNSIGNED_BYTE },
+	{ inter_format: gl.RGBA16F, format: gl.RGBA, type: gl.FLOAT },
+	{ inter_format: gl.RGBA16F, format: gl.RGBA, type: gl.FLOAT },
+	{ inter_format: gl.RGBA16F, format: gl.RGBA, type: gl.FLOAT },
+	{ inter_format: gl.RGBA16F, format: gl.RGBA, type: gl.FLOAT },
+];
+fbo.setNumColorAttachments(5);
 
 let desktopMirrorEnabled = true;
 

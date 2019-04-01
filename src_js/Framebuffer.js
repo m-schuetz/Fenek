@@ -10,6 +10,7 @@ class Framebuffer{
 		this.height = 0;
 		this.samples = 1;
 		this.numColorAttachments = 1;
+		this.colorAttachmentsInfo = undefined;
 
 		this.setSize(512, 512);
 	}
@@ -65,13 +66,23 @@ class Framebuffer{
 
 				gl.bindTexture(texType, texture);
 
+				let inter_format = gl.RGBA8;
+				let format = gl.RGBA;
+				let type = gl.UNSIGNED_BYTE;
+
+				if(this.colorAttachmentsInfo !== undefined) {
+					inter_format = this.colorAttachmentsInfo[i].inter_format;
+					format = this.colorAttachmentsInfo[i].format;
+					type = this.colorAttachmentsInfo[i].type;
+				}
+
 				if(samples === 1){
 					gl.texParameteri(texType, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 					gl.texParameteri(texType, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 
-					gl.texImage2D(texType, 0, gl.RGBA8, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, 0);
+					gl.texImage2D(texType, 0, inter_format, width, height, 0, format, type, 0);
 				}else{
-					gl.texImage2DMultisample(texType, samples, gl.RGBA8, width, height, false);
+					gl.texImage2DMultisample(texType, samples, inter_format, width, height, false);
 				}
 
 				gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0 + i, texType, texture, 0);

@@ -2122,6 +2122,63 @@ void V8Helper::setupV8() {
 
 	});
 
+	V8Helper::_instance->registerFunction("loadImageAsync", [](const FunctionCallbackInfo<Value>& args)
+	{
+		if (args.Length() != 1) {
+			V8Helper::_instance->throwException("loadImage requires 1 arguments");
+			return;
+		}
+
+		auto isolate = Isolate::GetCurrent();
+
+		String::Utf8Value fileUTF8(args[0]);
+		string file = *fileUTF8;
+
+		Local<Promise::Resolver> resolver = v8::Promise::Resolver::New(isolate);
+
+		long long currentID = resolverID++;
+		resolvers[currentID] = PersistentResolver(isolate, resolver);
+
+		thread t([file, isolate, currentID]() {
+
+			int width, height, channels;
+			unsigned char *data = stbi_load(file.c_str(), &width, &height, &channels, 4);
+
+			int size = width * height * 4;
+
+			schedule([currentID, isolate, data, width, height, size]() {
+				Local<ArrayBuffer> v8Buffer = v8::ArrayBuffer::New(Isolate::GetCurrent(), size);
+
+				auto v8Data = v8Buffer->GetContents().Data();
+
+				// TODO: load file content directly to v8 buffer to 2x allocation and a copy
+				memcpy(v8Data, data, size);
+
+				Local<ObjectTemplate> imgTempl = ObjectTemplate::New(isolate);
+
+				auto lwidth = v8::Integer::New(isolate, width);
+				auto lheight = v8::Integer::New(isolate, height);
+
+				auto object = imgTempl->NewInstance();
+
+				object->Set(String::NewFromUtf8(isolate, "width"), lwidth);
+				object->Set(String::NewFromUtf8(isolate, "height"), lheight);
+				object->Set(String::NewFromUtf8(isolate, "data"), v8Buffer);
+
+				auto persistantResolver = resolvers[currentID];
+				Local<Promise::Resolver> resolver = Local<Promise::Resolver>::New(isolate, persistantResolver);
+
+				resolver->Resolve(object);
+
+				resolvers.erase(currentID);
+			});
+
+		});
+		t.detach();
+
+		args.GetReturnValue().Set(resolver->GetPromise());
+	});
+
 
 	struct IPoint {
 		int ux;

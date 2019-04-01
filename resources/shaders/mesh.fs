@@ -1,9 +1,12 @@
 #version 450
 
 layout(location = 0) out vec4 out_color;
+layout(location = 1) out vec4 out_position;
+layout(location = 2) out vec4 out_normal;
 
 in vec2 vUV;
-in vec3 vNormal;
+in vec4 vPositionVP;
+in vec4 vNormalVP;
 
 layout(binding = 0) uniform sampler2D uTexture;
 
@@ -17,6 +20,9 @@ void main() {
 	if(texcol.a == 0){
 		discard;
 	}
+
+	out_position = vPositionVP;
+	out_normal = normalize(vNormalVP);
 
 	//out_color = vec4(vUV, 0, 1);
 
