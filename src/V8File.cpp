@@ -79,6 +79,20 @@ Local<ObjectTemplate> createV8FileTemplate(v8::Isolate *isolate) {
 		file->setReadLocation(location);
 	}));
 
+	tpl->Set(String::NewFromUtf8(isolate, "close"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+		if (args.Length() != 0) {
+			V8Helper::_instance->throwException("close requires 0 arguments");
+			return;
+		}
+
+		Local<Object> self = args.Holder();
+		Local<External> wrap = Local<External>::Cast(self->GetInternalField(0));
+		void* ptr = wrap->Value();
+		File *file = static_cast<File*>(ptr);
+
+		file->close();
+	}));
+
 	tpl->Set(String::NewFromUtf8(isolate, "fileSize"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 0) {
 			V8Helper::_instance->throwException("fileSize requires 0 arguments");

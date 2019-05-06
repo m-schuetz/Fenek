@@ -37,9 +37,11 @@ var renderRegular = function() {
 
 	gl.enable(gl.DEPTH_TEST);
 	//gl.disable(gl.DEPTH_TEST);
-	gl.depthFunc(gl.LESS);
+
+	//gl.depthFunc(gl.LESS);
 	//gl.clipControl(gl.LOWER_LEFT, gl.NEGATIVE_ONE_TO_ONE );
 	//gl.clearDepth(1);
+
 	gl.clipControl(gl.LOWER_LEFT, gl.ZERO_TO_ONE);
 	gl.clearDepth(0);
 	gl.enable(gl.DEPTH_TEST);
@@ -51,7 +53,14 @@ var renderRegular = function() {
 	gl.bindFramebuffer(gl.FRAMEBUFFER, fbo.handle);
 
 	gl.viewport(0, 0, fbo.width, fbo.height);
-	gl.clearColor(0, 0, 0, 1);
+	
+	{
+		let u = 0.5 * Math.sin(20 * now()) + 0.5;
+		let v = u * 0.5 + 0.3;
+		gl.clearColor(v, 0, 0, 1);
+	}
+
+	//gl.clearColor(0, 0, 0, 1);
 	//gl.clearColor(1, 1, 1, 1);
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	

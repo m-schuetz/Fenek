@@ -245,8 +245,25 @@ loadProgressiveHeidentor = function(){
 		[-11.542882308346643, 7.178273756296709, 5.3013466701128715],
 		[-0.7992052516487097, 3.523237342807562, 1.849253974346153]
 	);
+}
 
-	
+loadBasicHeidentor = function(){
+	let pc = new PointCloudBasic("heidentor", "C:/dev/pointclouds/heidentor.las");
+
+	let s = 3.6;
+	pc.world.elements.set([
+		s, 0, 0, 0, 
+			0, 0, s, 0, 
+			0, s, 0, 0, 
+			0, 0, 1, 1, 
+	]);
+
+	scene.root.add(pc);
+
+	view.set(
+		[-11.542882308346643, 7.178273756296709, 5.3013466701128715],
+		[-0.7992052516487097, 3.523237342807562, 1.849253974346153]
+	);
 }
 
 loadProgressiveLion = function(){
@@ -833,7 +850,7 @@ loadOctreePlane = function(){
 // loadOctreePlane();
 
 
-loadExpEndeavor();
+//loadExpEndeavor();
 // loadOctreeEndeavor();
 
 
@@ -848,6 +865,7 @@ loadExpEndeavor();
 //loadExpAffandi_1_74_to_76();
 //loadExpAffandi_6_02_to_04();
 
+//loadBasicHeidentor();
 //loadProgressiveHeidentor();
 //loadProgressiveLion();
 //loadProgressiveCandiSari();

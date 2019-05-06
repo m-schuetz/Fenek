@@ -6,6 +6,7 @@
 #include <filesystem>
 #include <cstdlib>
 #include <iomanip>
+#include <random>
 
 #include "GL\glew.h"
 #include "GLFW\glfw3.h"
@@ -36,6 +37,15 @@ double now() {
 #include "V8Helper.h"
 #include "utils.h"
 #include "Shader.h"
+
+struct GLUpdateBuffer{
+	void* mapPtr = nullptr;
+	uint32_t size = 0;
+	GLuint handle = 0;
+	void* data = nullptr;
+};
+
+static GLUpdateBuffer updateBuffer = GLUpdateBuffer();
 
 static void APIENTRY debugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam) {
 
@@ -204,6 +214,145 @@ int main() {
 
 	auto updateJS = V8Helper::instance()->compileScript("update();");
 	auto renderJS = V8Helper::instance()->compileScript("render();");
+
+	{
+
+		int numPoints = 70'000'000;
+		int bytesPerPoint = 16;
+
+		updateBuffer.size = numPoints * bytesPerPoint;
+
+		glCreateBuffers(1, &updateBuffer.handle);
+
+		//{// map buffer method
+		//	GLbitfield storageFlags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
+		//	glNamedBufferStorage(updateBuffer.handle, updateBuffer.size, nullptr, storageFlags);
+
+		//	GLbitfield mapFlags = GL_MAP_WRITE_BIT | GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
+		//	updateBuffer.mapPtr = glMapNamedBufferRange(updateBuffer.handle, 0, updateBuffer.size, mapFlags);
+		//}
+
+		{ // bufferData method
+			
+			glNamedBufferData(updateBuffer.handle, updateBuffer.size, nullptr, GL_DYNAMIC_DRAW);
+
+			updateBuffer.data = malloc(10'000'000 * 16);
+		}
+		
+
+	}
+
+	V8Helper::_instance->registerFunction("test", [](const FunctionCallbackInfo<Value>& args) {
+		if (args.Length() != 0) {
+			V8Helper::_instance->throwException("test requires 0 arguments");
+			return;
+		}
+
+		cout << "test start" << endl;
+
+		thread t([]() {
+			float* fptr = reinterpret_cast<float*>(updateBuffer.data);
+			uint8_t* u8ptr = reinterpret_cast<uint8_t*>(updateBuffer.data);
+			int byteOffset = 0;
+
+			int bytePerPoint = 16;
+			int numUpdatedPoints = 1'000'000;
+
+			std::random_device rd;
+			std::mt19937 mt(rd());
+			std::uniform_real_distribution<float> dist(-1.0, 1.0);
+
+			for (int i = 0; i < numUpdatedPoints; i++) {
+
+				fptr[4 * byteOffset + 4 * i + 0] = dist(mt);
+				fptr[4 * byteOffset + 4 * i + 1] = dist(mt);
+				fptr[4 * byteOffset + 4 * i + 2] = dist(mt);
+
+				u8ptr[16 * byteOffset + 16 * i + 12] = 255 * (0.5 * dist(mt) + 0.5);
+				u8ptr[16 * byteOffset + 16 * i + 13] = 255 * (0.5 * dist(mt) + 0.5);
+				u8ptr[16 * byteOffset + 16 * i + 14] = 255 * (0.5 * dist(mt) + 0.5);
+				u8ptr[16 * byteOffset + 16 * i + 15] = 255;
+			}
+
+
+
+			//fptr[offset + 0] = 1.0;
+			//fptr[offset + 1] = 2.0;
+			//fptr[offset + 2] = 4.0;
+
+			//int size = 3 * sizeof(float);
+			int size = numUpdatedPoints * 16;
+
+			cout << "test points updated pinned" << endl;
+
+			schedule([byteOffset, size]() {
+				cout << "test flusing" << endl;
+				//glFlushMappedNamedBufferRange(updateBuffer.handle, byteOffset, size);
+				glNamedBufferSubData(updateBuffer.handle, 0, size, updateBuffer.data);
+				cout << "test flushed" << endl;
+			});
+
+		});
+		t.detach();
+
+
+		args.GetReturnValue().Set(updateBuffer.handle);
+	});
+
+	//V8Helper::_instance->registerFunction("test", [](const FunctionCallbackInfo<Value>& args) {
+	//	if (args.Length() != 0) {
+	//		V8Helper::_instance->throwException("test requires 0 arguments");
+	//		return;
+	//	}
+
+	//	cout << "test start" << endl;
+
+	//	thread t([]() {
+	//		float* fptr = reinterpret_cast<float*>(updateBuffer.mapPtr);
+	//		uint8_t* u8ptr = reinterpret_cast<uint8_t*>(updateBuffer.mapPtr);
+	//		int byteOffset = 0;
+
+	//		int bytePerPoint = 16;
+	//		int numUpdatedPoints = 1'000'000;
+
+	//		std::random_device rd;
+	//		std::mt19937 mt(rd());
+	//		std::uniform_real_distribution<double> dist(-1.0, 1.0);
+
+	//		for (int i = 0; i < numUpdatedPoints; i++) {
+	//			fptr[4 * byteOffset + 4 * i + 0] = dist(mt);
+	//			fptr[4 * byteOffset + 4 * i + 1] = dist(mt);
+	//			fptr[4 * byteOffset + 4 * i + 2] = dist(mt);
+
+	//			u8ptr[16 * byteOffset + 16 * i + 12] = 255;
+	//			u8ptr[16 * byteOffset + 16 * i + 13] = 255;
+	//			u8ptr[16 * byteOffset + 16 * i + 14] = 0;
+	//			u8ptr[16 * byteOffset + 16 * i + 15] = 255;
+	//		}
+
+
+
+	//		//fptr[offset + 0] = 1.0;
+	//		//fptr[offset + 1] = 2.0;
+	//		//fptr[offset + 2] = 4.0;
+
+	//		//int size = 3 * sizeof(float);
+	//		int size = numUpdatedPoints * 16;
+
+	//		cout << "test points updated pinned" << endl;
+
+	//		schedule([byteOffset, size]() {
+	//			cout << "test flusing" << endl;
+	//			glFlushMappedNamedBufferRange(updateBuffer.handle, byteOffset, size);
+	//			cout << "test flushed" << endl;
+	//		});
+	//		
+	//	});
+	//	t.detach();
+
+	//	
+	//	args.GetReturnValue().Set(updateBuffer.handle);
+	//});
 
 	cout << "<entering first render loop> " << "(" << now() << ")" << endl;
 

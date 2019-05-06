@@ -325,7 +325,7 @@ var renderDefault = function(node, view, proj, target){
 		gl.depthMask(false);
 	}
 
-	let isDesktopMirror = node.name === "desktop_mirror";
+	//let isDesktopMirror = node.name === "desktop_mirror";
 
 	for(let buffer of buffers){
 		gl.bindVertexArray(buffer.vao);
@@ -396,7 +396,9 @@ var renderBuffers = function(view, proj, target){
 			activeProgram = shader.program;
 		}
 
-		gl.useProgram(shader.program);
+		//gl.useProgram(shader.program);
+
+		
 		
 		if(node.name === "desktop_mirror"){
 			gl.activeTexture(gl.TEXTURE0 + 0);
@@ -411,14 +413,14 @@ var renderBuffers = function(view, proj, target){
 			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
 		}
 
-		if(USER_STUDY_BLENDING){
-			gl.enable(gl.BLEND);
-			gl.blendFunc(gl.ONE, gl.ONE);
-			gl.disable(gl.DEPTH_TEST);
-		}else{
-			gl.disable(gl.BLEND);
-			gl.enable(gl.DEPTH_TEST);
-		}
+		// if(USER_STUDY_BLENDING){
+		// 	gl.enable(gl.BLEND);
+		// 	gl.blendFunc(gl.ONE, gl.ONE);
+		// 	gl.disable(gl.DEPTH_TEST);
+		// }else{
+		// 	gl.disable(gl.BLEND);
+		// 	gl.enable(gl.DEPTH_TEST);
+		// }
 
 		//log(node.name);
 
@@ -429,6 +431,15 @@ var renderBuffers = function(view, proj, target){
 			//renderPointCloudCompute(node, view, proj, target);
 			renderPointCloudProgressive(node, view, proj, target);
 			//renderDefault(node, view, proj, target);
+		}
+		else if(node instanceof PointCloudBasic){
+			//renderPointCloudCompute(node, view, proj, target);
+			//renderPointCloudProgressive(node, view, proj, target);
+
+			//log(node.transform.elements)
+
+			//log(node.name);
+			renderDefault(node, view, proj, target);
 		}
 		else if(node instanceof PointCloudExp){
 			//renderPointCloudCompute(node, view, proj, target);

@@ -99,7 +99,7 @@ let cameras = {
 view.position.set(-2.7096674667729195, 5.112884171558154, 5.6011204817203994);
 view.lookAt(-0.8075575002596201, 1, -0.7614239455653012);
 
-createDesktopMirror();
+//createDesktopMirror();
 createImageSpaceQuad();
 
 runJSFile(`${jsDir}/scripts/createSkybox.js`);

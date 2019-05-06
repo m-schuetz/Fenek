@@ -80,5 +80,8 @@
     <ClInclude Include="include\v8File.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\LASLoader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

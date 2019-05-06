@@ -5,6 +5,7 @@
 #include <vector>
 #include <chrono>
 #include <regex>
+#include <thread>
 
 #include "GL\glew.h"
 #include "GLFW\glfw3.h"
@@ -18,6 +19,7 @@
 #include "V8Shader.h"
 #include "V8ComputeShader.h"
 #include "V8File.h"
+#include "LASLoader.h"
 
 using std::vector;
 using std::cout;
@@ -1451,6 +1453,29 @@ void V8Helper::setupGL() {
 		glBufferData(target, size, data, usage);
 	}));
 
+	//tpl->Set(String::NewFromUtf8(isolate, "mapNamedBufferRange"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+	//	if (args.Length() != 4) {
+	//		V8Helper::_instance->throwException("bufferData requires 4 argument");
+	//		return;
+	//	}
+
+	//	//String::Utf8Value targetUTF8(args[0]);
+	//	String::Utf8Value sizeUTF8(args[1]);
+	//	String::Utf8Value usageUTF8(args[3]);
+
+	//	//GLenum target = std::stoi(*targetUTF8);
+	//	GLuint buffer = args[0]->Uint32Value();
+	//	GLintptr size = args[1]->Uint32Value();
+	//	GLsizeiptr offset = args[2]->Uint32Value();
+	//	GLbitfield bitfield = args[3]->Uint32Value();
+
+	//	void* pointer = glMapNamedBufferRange(buffer, size, offset, bitfield);
+
+	//		
+
+
+	//}));
+
 	tpl->Set(String::NewFromUtf8(isolate, "namedBufferData"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 4) {
 			V8Helper::_instance->throwException("namedBufferData requires 4 argument");
@@ -1943,11 +1968,15 @@ void V8Helper::setupV8() {
 
 		string path = *vsSourceUTF8;
 
-		File *file = new File(path);
-		auto v8File = v8Object(file);
+		if (fs::exists(path)) {
+			File *file = new File(path);
+			auto v8File = v8Object(file);
 
-		//auto programID = shader->program;
-		args.GetReturnValue().Set(v8File);
+			//auto programID = shader->program;
+			args.GetReturnValue().Set(v8File);
+		} else {
+			//args.GetReturnValue().Set(v8::Null);
+		}
 	});
 
 	V8Helper::_instance->registerFunction("monitorFile", [](const FunctionCallbackInfo<Value>& args) {
@@ -2046,6 +2075,25 @@ void V8Helper::setupV8() {
 		});
 	});
 
+	V8Helper::_instance->registerFunction("monitorJS", [](const FunctionCallbackInfo<Value>& args) {
+		if (args.Length() != 1) {
+			V8Helper::_instance->throwException("monitorJS requires 1 argument");
+			return;
+		}
+
+		String::Utf8Value jsSourceUTF8(args[0]);
+
+		string jsSource = *jsSourceUTF8;
+
+		//string code = loadFileAsString(jsSource);
+		//V8Helper::instance()->runScriptSilent(code);
+
+		monitorFile(jsSource, [jsSource]() {
+			string code = loadFileAsString(jsSource);
+			V8Helper::instance()->runScriptSilent(code);
+		});
+	});
+
 	V8Helper::_instance->registerFunction("runJSFile", [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("runJSFile requires 1 argument");
@@ -2059,6 +2107,101 @@ void V8Helper::setupV8() {
 		string code = loadFileAsString(jsSource);
 
 		V8Helper::instance()->runScript(code);
+	});
+
+	V8Helper::_instance->registerFunction("test", [](const FunctionCallbackInfo<Value>& args) {
+		if (args.Length() != 0) {
+			V8Helper::_instance->throwException("test requires 0 arguments");
+			return;
+		}
+
+		string path = "C:/dev/pointclouds/eclepens.las";
+		LASLoaderThreaded::LASLoader *loader = new LASLoaderThreaded::LASLoader(path);
+
+		GLuint vboHandle;
+		glCreateBuffers(1, &vboHandle);
+
+		int numBytes = loader->header.numPoints * 16;
+		//glNamedBufferData(vboHandle, numBytes, nullptr, GL_DYNAMIC_DRAW);
+		GLbitfield storageFlags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT;
+		glNamedBufferStorage(vboHandle, numBytes, nullptr, storageFlags);
+
+		GLbitfield mapFlags = GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_WRITE_BIT | GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_PERSISTENT_BIT;
+		void* mapptr = glMapNamedBufferRange(vboHandle, 0, numBytes, mapFlags);
+		//void* mapptr = glMapNamedBuffer(vboHandle, numBytes, flags);
+
+		//thread t([loader, vboHandle]() {
+		thread t([loader, vboHandle, mapptr]() {
+
+			int offset = 0;
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+			while (!loader->allChunksServed()) {
+
+				std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+				if (loader->hasChunkAvailable()) {
+					auto chunk = loader->getNextChunk();
+
+					float *dataF32 = reinterpret_cast<float*>(mapptr);
+					//float *dataF32 = new float[chunk.size * 4];
+					uint32_t *dataU32 = reinterpret_cast<uint32_t*>(dataF32);
+
+					uint32_t* dataChunkRGBA = reinterpret_cast<uint32_t*>(chunk.rgba.data());
+
+					for (int i = 0; i < chunk.size; i++) {
+						dataF32[4 * i + 0] = chunk.position[3 * i + 0];
+						dataF32[4 * i + 1] = chunk.position[3 * i + 1];
+						dataF32[4 * i + 2] = chunk.position[3 * i + 2];
+						dataU32[4 * i + 3] = dataChunkRGBA[i];
+						
+					}
+
+					schedule([vboHandle, chunk, offset, dataF32, mapptr]() {
+						auto threadID = std::this_thread::get_id();
+						cout << "handling chunk in thread: " << threadID << endl;
+
+						int numBytes = chunk.size * 16;
+
+						glFlushMappedNamedBufferRange(vboHandle, offset, numBytes);
+
+						//GLuint vboHandle;
+						//glCreateBuffers(1, &vboHandle);
+						
+						//glNamedBufferData(vboHandle, numBytes, nullptr, GL_DYNAMIC_DRAW);
+						//glNamedBufferData(vboHandle, numBytes, nullptr, GL_DYNAMIC_DRAW);
+
+						int chunkSizeBytes = chunk.size * 16;
+						const void *data = reinterpret_cast<const void*>(dataF32);
+						//glNamedBufferSubData(vboHandle, offset, chunkSizeBytes, data);
+						//glNamedBufferData(vboHandle, numBytes, nullptr, GL_DYNAMIC_DRAW);
+						//glNamedBufferData(vboHandle, numBytes, data, GL_DYNAMIC_DRAW);
+
+						
+
+						//auto start = now();
+						//memcpy(mapptr, reinterpret_cast<void*>(dataF32), chunkSizeBytes);
+						//auto end = now();
+						//auto duration = end - start;
+						//cout << "duration memcpy: " << duration << endl;
+
+						//glFlushMappedNamedBufferRange(vboHandle, offset, chunkSizeBytes);
+						//glUnmapNamedBuffer(vboHandle);
+					});
+
+					offset += chunk.size * 16;
+
+					cout << "new chunk available, size: " << chunk.size << endl;
+
+					return;
+				}
+
+			}
+		});
+		t.detach();
+		
+
 	});
 
 	V8Helper::_instance->registerFunction("now", [](const FunctionCallbackInfo<Value>& args) {

@@ -150,6 +150,7 @@
   <ItemGroup>
     <ClInclude Include="include\Application.h" />
     <ClInclude Include="include\ComputeShader.h" />
+    <ClInclude Include="include\LASLoader.h" />
     <ClInclude Include="include\OpenVRHelper.h" />
     <ClInclude Include="include\Shader.h" />
     <ClInclude Include="include\utils.h" />

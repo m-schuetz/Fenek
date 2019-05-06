@@ -1,18 +1,60 @@
+// #version 450
+
+// layout(location = 0) in vec3 aPosition;
+// layout(location = 1) in vec4 aColor;
+// layout(location = 2) in float aRandom;
+
+// layout(std140, binding = 4) uniform shader_data{
+// 	mat4 transform;
+// 	mat4 world;
+// 	mat4 view;
+// 	mat4 proj;
+
+// 	float time;
+// 	vec2 screenSize;
+
+// } ssArgs;
+
+
+// out vec3 vColor;
+
+// void main() {
+
+// 	vec4 pos = ssArgs.transform * vec4(aPosition, 1.0);
+
+// 	gl_Position = pos;
+
+// 	vColor = aColor.rgb;
+
+// 	gl_PointSize = 2.0;
+// }
+
 #version 450
 
 layout(location = 0) in vec3 aPosition;
 layout(location = 1) in vec4 aColor;
 layout(location = 2) in float aRandom;
 
-layout(location = 0) uniform int uNodeIndex;
-layout(location = 1) uniform mat4 uTransform;
+//layout(location = 0) uniform int uNodeIndex;
+//layout(location = 1) uniform mat4 uTransform;
+
+layout(std140, binding = 4) uniform shader_data{
+	mat4 transform;
+	mat4 world;
+	mat4 view;
+	mat4 proj;
+
+	float time;
+	vec2 screenSize;
+
+} ssArgs;
 
 
 out vec3 vColor;
 
 void main() {
 
-	vec4 pos = uTransform * vec4(aPosition, 1.0);
+	vec4 pos = ssArgs.transform * vec4(aPosition, 1.0);
 
 	gl_Position = pos;
 
