@@ -11,6 +11,8 @@
 #include "GL\glew.h"
 #include "GLFW\glfw3.h"
 
+#include "LASLoader.h"
+
 
 using std::unordered_map;
 using std::vector;
@@ -217,63 +219,82 @@ int main() {
 
 	{
 
-		int numPoints = 70'000'000;
+		int numPoints = 3'000'000;
 		int bytesPerPoint = 16;
 
 		updateBuffer.size = numPoints * bytesPerPoint;
 
 		glCreateBuffers(1, &updateBuffer.handle);
 
-		//{// map buffer method
-		//	GLbitfield storageFlags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
-		//	glNamedBufferStorage(updateBuffer.handle, updateBuffer.size, nullptr, storageFlags);
+		{// map buffer method, see https://www.slideshare.net/CassEveritt/approaching-zero-driver-overhead/85
+			GLbitfield mapFlags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
+			GLbitfield storageFlags = mapFlags | GL_DYNAMIC_STORAGE_BIT;
 
-		//	GLbitfield mapFlags = GL_MAP_WRITE_BIT | GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
-		//	updateBuffer.mapPtr = glMapNamedBufferRange(updateBuffer.handle, 0, updateBuffer.size, mapFlags);
-		//}
+			glNamedBufferStorage(updateBuffer.handle, updateBuffer.size, nullptr, storageFlags);
 
-		{ // bufferData method
-			
-			glNamedBufferData(updateBuffer.handle, updateBuffer.size, nullptr, GL_DYNAMIC_DRAW);
-
-			updateBuffer.data = malloc(10'000'000 * 16);
+			updateBuffer.mapPtr = glMapNamedBufferRange(updateBuffer.handle, 0, updateBuffer.size, mapFlags);
 		}
+
+		//{ // bufferData method
+		//	
+		//	glNamedBufferData(updateBuffer.handle, updateBuffer.size, nullptr, GL_DYNAMIC_DRAW);
+
+		//	updateBuffer.data = malloc(10'000'000 * 16);
+		//}
 		
 
 	}
 
+
 	V8Helper::_instance->registerFunction("test", [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 0) {
+		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("test requires 0 arguments");
 			return;
 		}
 
 		cout << "test start" << endl;
 
+		String::Utf8Value fileUTF8(args[0]);
+
+		string file = *fileUTF8;
+
+		LASLoaderThreaded::LASLoader* loader = new LASLoaderThreaded::LASLoader(file);
+
 		thread t([]() {
-			float* fptr = reinterpret_cast<float*>(updateBuffer.data);
-			uint8_t* u8ptr = reinterpret_cast<uint8_t*>(updateBuffer.data);
+			float* fptr = reinterpret_cast<float*>(updateBuffer.mapPtr);
+			uint8_t* u8ptr = reinterpret_cast<uint8_t*>(updateBuffer.mapPtr);
 			int byteOffset = 0;
 
 			int bytePerPoint = 16;
 			int numUpdatedPoints = 1'000'000;
 
+			//std::random_device rd;
+			//std::mt19937 mt(rd());
+			//std::uniform_real_distribution<double> dist(-1.0, 1.0);
+
 			std::random_device rd;
 			std::mt19937 mt(rd());
 			std::uniform_real_distribution<float> dist(-1.0, 1.0);
+			std::uniform_real_distribution<float> dist01(-1.0, 1.0);
 
-			for (int i = 0; i < numUpdatedPoints; i++) {
+			for (int j = 0; j < 1000; j++) {
 
-				fptr[4 * byteOffset + 4 * i + 0] = dist(mt);
-				fptr[4 * byteOffset + 4 * i + 1] = dist(mt);
-				fptr[4 * byteOffset + 4 * i + 2] = dist(mt);
+				float t = now();
 
-				u8ptr[16 * byteOffset + 16 * i + 12] = 255 * (0.5 * dist(mt) + 0.5);
-				u8ptr[16 * byteOffset + 16 * i + 13] = 255 * (0.5 * dist(mt) + 0.5);
-				u8ptr[16 * byteOffset + 16 * i + 14] = 255 * (0.5 * dist(mt) + 0.5);
-				u8ptr[16 * byteOffset + 16 * i + 15] = 255;
+				for (int i = 0; i < numUpdatedPoints; i++) {
+					fptr[4 * byteOffset + 4 * i + 0] = dist(mt);
+					fptr[4 * byteOffset + 4 * i + 1] = 0.1 * dist(mt) + 2.0 * (sin(t) + 1);
+					fptr[4 * byteOffset + 4 * i + 2] = dist(mt);
+
+					u8ptr[16 * byteOffset + 16 * i + 12] = dist01(mt) * 255;
+					u8ptr[16 * byteOffset + 16 * i + 13] = dist01(mt) * 255;
+					u8ptr[16 * byteOffset + 16 * i + 14] = 0;
+					u8ptr[16 * byteOffset + 16 * i + 15] = 255;
+				}
+
+				std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
 			}
-
 
 
 			//fptr[offset + 0] = 1.0;
@@ -285,19 +306,76 @@ int main() {
 
 			cout << "test points updated pinned" << endl;
 
-			schedule([byteOffset, size]() {
-				cout << "test flusing" << endl;
-				//glFlushMappedNamedBufferRange(updateBuffer.handle, byteOffset, size);
-				glNamedBufferSubData(updateBuffer.handle, 0, size, updateBuffer.data);
-				cout << "test flushed" << endl;
-			});
-
+			//schedule([byteOffset, size]() {
+			//	cout << "test flusing" << endl;
+			//	//glFlushMappedNamedBufferRange(updateBuffer.handle, byteOffset, size);
+			//	cout << "test flushed" << endl;
+			//});
+			
 		});
 		t.detach();
 
-
+		
 		args.GetReturnValue().Set(updateBuffer.handle);
 	});
+
+
+	//V8Helper::_instance->registerFunction("test", [](const FunctionCallbackInfo<Value>& args) {
+	//	if (args.Length() != 0) {
+	//		V8Helper::_instance->throwException("test requires 0 arguments");
+	//		return;
+	//	}
+
+	//	cout << "test start" << endl;
+
+	//	thread t([]() {
+	//		float* fptr = reinterpret_cast<float*>(updateBuffer.data);
+	//		uint8_t* u8ptr = reinterpret_cast<uint8_t*>(updateBuffer.data);
+	//		int byteOffset = 0;
+
+	//		int bytePerPoint = 16;
+	//		int numUpdatedPoints = 1'000'000;
+
+	//		std::random_device rd;
+	//		std::mt19937 mt(rd());
+	//		std::uniform_real_distribution<float> dist(-1.0, 1.0);
+
+	//		for (int i = 0; i < numUpdatedPoints; i++) {
+
+	//			fptr[4 * byteOffset + 4 * i + 0] = dist(mt);
+	//			fptr[4 * byteOffset + 4 * i + 1] = dist(mt);
+	//			fptr[4 * byteOffset + 4 * i + 2] = dist(mt);
+
+	//			u8ptr[16 * byteOffset + 16 * i + 12] = 255 * (0.5 * dist(mt) + 0.5);
+	//			u8ptr[16 * byteOffset + 16 * i + 13] = 255 * (0.5 * dist(mt) + 0.5);
+	//			u8ptr[16 * byteOffset + 16 * i + 14] = 255 * (0.5 * dist(mt) + 0.5);
+	//			u8ptr[16 * byteOffset + 16 * i + 15] = 255;
+	//		}
+
+
+
+	//		//fptr[offset + 0] = 1.0;
+	//		//fptr[offset + 1] = 2.0;
+	//		//fptr[offset + 2] = 4.0;
+
+	//		//int size = 3 * sizeof(float);
+	//		int size = numUpdatedPoints * 16;
+
+	//		cout << "test points updated pinned" << endl;
+
+	//		schedule([byteOffset, size]() {
+	//			cout << "test flusing" << endl;
+	//			//glFlushMappedNamedBufferRange(updateBuffer.handle, byteOffset, size);
+	//			glNamedBufferSubData(updateBuffer.handle, 0, size, updateBuffer.data);
+	//			cout << "test flushed" << endl;
+	//		});
+
+	//	});
+	//	t.detach();
+
+
+	//	args.GetReturnValue().Set(updateBuffer.handle);
+	//});
 
 	//V8Helper::_instance->registerFunction("test", [](const FunctionCallbackInfo<Value>& args) {
 	//	if (args.Length() != 0) {

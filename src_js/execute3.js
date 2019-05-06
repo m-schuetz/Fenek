@@ -1,7 +1,7 @@
 
 
 {
-	let handle = test();
+	let handle = test("C:/dev/pointclouds/heidentor.las");
 
 	let pc = new PointCloudBasic("testcloud", "blabla");
 

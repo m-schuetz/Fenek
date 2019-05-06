@@ -19,7 +19,7 @@
 #include "V8Shader.h"
 #include "V8ComputeShader.h"
 #include "V8File.h"
-#include "LASLoader.h"
+//#include "LASLoader.h"
 
 using std::vector;
 using std::cout;
@@ -2109,100 +2109,100 @@ void V8Helper::setupV8() {
 		V8Helper::instance()->runScript(code);
 	});
 
-	V8Helper::_instance->registerFunction("test", [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 0) {
-			V8Helper::_instance->throwException("test requires 0 arguments");
-			return;
-		}
+	//V8Helper::_instance->registerFunction("test", [](const FunctionCallbackInfo<Value>& args) {
+	//	if (args.Length() != 0) {
+	//		V8Helper::_instance->throwException("test requires 0 arguments");
+	//		return;
+	//	}
 
-		string path = "C:/dev/pointclouds/eclepens.las";
-		LASLoaderThreaded::LASLoader *loader = new LASLoaderThreaded::LASLoader(path);
+	//	string path = "C:/dev/pointclouds/eclepens.las";
+	//	LASLoaderThreaded::LASLoader *loader = new LASLoaderThreaded::LASLoader(path);
 
-		GLuint vboHandle;
-		glCreateBuffers(1, &vboHandle);
+	//	GLuint vboHandle;
+	//	glCreateBuffers(1, &vboHandle);
 
-		int numBytes = loader->header.numPoints * 16;
-		//glNamedBufferData(vboHandle, numBytes, nullptr, GL_DYNAMIC_DRAW);
-		GLbitfield storageFlags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT;
-		glNamedBufferStorage(vboHandle, numBytes, nullptr, storageFlags);
+	//	int numBytes = loader->header.numPoints * 16;
+	//	//glNamedBufferData(vboHandle, numBytes, nullptr, GL_DYNAMIC_DRAW);
+	//	GLbitfield storageFlags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT;
+	//	glNamedBufferStorage(vboHandle, numBytes, nullptr, storageFlags);
 
-		GLbitfield mapFlags = GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_WRITE_BIT | GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_PERSISTENT_BIT;
-		void* mapptr = glMapNamedBufferRange(vboHandle, 0, numBytes, mapFlags);
-		//void* mapptr = glMapNamedBuffer(vboHandle, numBytes, flags);
+	//	GLbitfield mapFlags = GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_WRITE_BIT | GL_MAP_FLUSH_EXPLICIT_BIT | GL_MAP_PERSISTENT_BIT;
+	//	void* mapptr = glMapNamedBufferRange(vboHandle, 0, numBytes, mapFlags);
+	//	//void* mapptr = glMapNamedBuffer(vboHandle, numBytes, flags);
 
-		//thread t([loader, vboHandle]() {
-		thread t([loader, vboHandle, mapptr]() {
+	//	//thread t([loader, vboHandle]() {
+	//	thread t([loader, vboHandle, mapptr]() {
 
-			int offset = 0;
+	//		int offset = 0;
 
-			std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+	//		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
-			while (!loader->allChunksServed()) {
+	//		while (!loader->allChunksServed()) {
 
-				std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	//			std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
-				if (loader->hasChunkAvailable()) {
-					auto chunk = loader->getNextChunk();
+	//			if (loader->hasChunkAvailable()) {
+	//				auto chunk = loader->getNextChunk();
 
-					float *dataF32 = reinterpret_cast<float*>(mapptr);
-					//float *dataF32 = new float[chunk.size * 4];
-					uint32_t *dataU32 = reinterpret_cast<uint32_t*>(dataF32);
+	//				float *dataF32 = reinterpret_cast<float*>(mapptr);
+	//				//float *dataF32 = new float[chunk.size * 4];
+	//				uint32_t *dataU32 = reinterpret_cast<uint32_t*>(dataF32);
 
-					uint32_t* dataChunkRGBA = reinterpret_cast<uint32_t*>(chunk.rgba.data());
+	//				uint32_t* dataChunkRGBA = reinterpret_cast<uint32_t*>(chunk.rgba.data());
 
-					for (int i = 0; i < chunk.size; i++) {
-						dataF32[4 * i + 0] = chunk.position[3 * i + 0];
-						dataF32[4 * i + 1] = chunk.position[3 * i + 1];
-						dataF32[4 * i + 2] = chunk.position[3 * i + 2];
-						dataU32[4 * i + 3] = dataChunkRGBA[i];
-						
-					}
+	//				for (int i = 0; i < chunk.size; i++) {
+	//					dataF32[4 * i + 0] = chunk.position[3 * i + 0];
+	//					dataF32[4 * i + 1] = chunk.position[3 * i + 1];
+	//					dataF32[4 * i + 2] = chunk.position[3 * i + 2];
+	//					dataU32[4 * i + 3] = dataChunkRGBA[i];
+	//					
+	//				}
 
-					schedule([vboHandle, chunk, offset, dataF32, mapptr]() {
-						auto threadID = std::this_thread::get_id();
-						cout << "handling chunk in thread: " << threadID << endl;
+	//				schedule([vboHandle, chunk, offset, dataF32, mapptr]() {
+	//					auto threadID = std::this_thread::get_id();
+	//					cout << "handling chunk in thread: " << threadID << endl;
 
-						int numBytes = chunk.size * 16;
+	//					int numBytes = chunk.size * 16;
 
-						glFlushMappedNamedBufferRange(vboHandle, offset, numBytes);
+	//					glFlushMappedNamedBufferRange(vboHandle, offset, numBytes);
 
-						//GLuint vboHandle;
-						//glCreateBuffers(1, &vboHandle);
-						
-						//glNamedBufferData(vboHandle, numBytes, nullptr, GL_DYNAMIC_DRAW);
-						//glNamedBufferData(vboHandle, numBytes, nullptr, GL_DYNAMIC_DRAW);
+	//					//GLuint vboHandle;
+	//					//glCreateBuffers(1, &vboHandle);
+	//					
+	//					//glNamedBufferData(vboHandle, numBytes, nullptr, GL_DYNAMIC_DRAW);
+	//					//glNamedBufferData(vboHandle, numBytes, nullptr, GL_DYNAMIC_DRAW);
 
-						int chunkSizeBytes = chunk.size * 16;
-						const void *data = reinterpret_cast<const void*>(dataF32);
-						//glNamedBufferSubData(vboHandle, offset, chunkSizeBytes, data);
-						//glNamedBufferData(vboHandle, numBytes, nullptr, GL_DYNAMIC_DRAW);
-						//glNamedBufferData(vboHandle, numBytes, data, GL_DYNAMIC_DRAW);
+	//					int chunkSizeBytes = chunk.size * 16;
+	//					const void *data = reinterpret_cast<const void*>(dataF32);
+	//					//glNamedBufferSubData(vboHandle, offset, chunkSizeBytes, data);
+	//					//glNamedBufferData(vboHandle, numBytes, nullptr, GL_DYNAMIC_DRAW);
+	//					//glNamedBufferData(vboHandle, numBytes, data, GL_DYNAMIC_DRAW);
 
-						
+	//					
 
-						//auto start = now();
-						//memcpy(mapptr, reinterpret_cast<void*>(dataF32), chunkSizeBytes);
-						//auto end = now();
-						//auto duration = end - start;
-						//cout << "duration memcpy: " << duration << endl;
+	//					//auto start = now();
+	//					//memcpy(mapptr, reinterpret_cast<void*>(dataF32), chunkSizeBytes);
+	//					//auto end = now();
+	//					//auto duration = end - start;
+	//					//cout << "duration memcpy: " << duration << endl;
 
-						//glFlushMappedNamedBufferRange(vboHandle, offset, chunkSizeBytes);
-						//glUnmapNamedBuffer(vboHandle);
-					});
+	//					//glFlushMappedNamedBufferRange(vboHandle, offset, chunkSizeBytes);
+	//					//glUnmapNamedBuffer(vboHandle);
+	//				});
 
-					offset += chunk.size * 16;
+	//				offset += chunk.size * 16;
 
-					cout << "new chunk available, size: " << chunk.size << endl;
+	//				cout << "new chunk available, size: " << chunk.size << endl;
 
-					return;
-				}
+	//				return;
+	//			}
 
-			}
-		});
-		t.detach();
-		
+	//		}
+	//	});
+	//	t.detach();
+	//	
 
-	});
+	//});
 
 	V8Helper::_instance->registerFunction("now", [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 0) {
