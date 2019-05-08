@@ -573,6 +573,10 @@ var render = function(){
 	//gl.disable(gl.POINT_SPRITE);
 	gl.enable(gl.VERTEX_PROGRAM_POINT_SIZE);
 
+	for(let listener of listeners.render){
+		listener();
+	}
+
 	if(vr.isActive()){
 		renderVR();
 	}else{

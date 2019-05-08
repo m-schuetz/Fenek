@@ -26,6 +26,8 @@ namespace fs = std::experimental::filesystem;
 
 static long long start_time = std::chrono::high_resolution_clock::now().time_since_epoch().count();
 
+int numPointsUploaded = 0;
+
 double now() {
 	auto now = std::chrono::high_resolution_clock::now();
 	long long nanosSinceStart = now.time_since_epoch().count() - start_time;
@@ -219,7 +221,7 @@ int main() {
 
 	{
 
-		int numPoints = 3'000'000;
+		int numPoints = 30'000'000;
 		int bytesPerPoint = 16;
 
 		updateBuffer.size = numPoints * bytesPerPoint;
@@ -260,64 +262,248 @@ int main() {
 
 		LASLoaderThreaded::LASLoader* loader = new LASLoaderThreaded::LASLoader(file);
 
-		thread t([]() {
+		thread t([loader]() {
+			uint8_t *u8ptr = reinterpret_cast<uint8_t*>(updateBuffer.mapPtr);
 			float* fptr = reinterpret_cast<float*>(updateBuffer.mapPtr);
-			uint8_t* u8ptr = reinterpret_cast<uint8_t*>(updateBuffer.mapPtr);
 			int byteOffset = 0;
-
 			int bytePerPoint = 16;
-			int numUpdatedPoints = 1'000'000;
 
-			//std::random_device rd;
-			//std::mt19937 mt(rd());
-			//std::uniform_real_distribution<double> dist(-1.0, 1.0);
+			while (!loader->allChunksServed()) {
 
-			std::random_device rd;
-			std::mt19937 mt(rd());
-			std::uniform_real_distribution<float> dist(-1.0, 1.0);
-			std::uniform_real_distribution<float> dist01(-1.0, 1.0);
+				if (loader->hasChunkAvailable()) {
+					auto chunk = loader->getNextChunk();
 
-			for (int j = 0; j < 1000; j++) {
+					//cout << "new chunk! write it to pinned buffer" << endl;
 
-				float t = now();
+					for (int i = 0; i < chunk->size; i++) {
 
-				for (int i = 0; i < numUpdatedPoints; i++) {
-					fptr[4 * byteOffset + 4 * i + 0] = dist(mt);
-					fptr[4 * byteOffset + 4 * i + 1] = 0.1 * dist(mt) + 2.0 * (sin(t) + 1);
-					fptr[4 * byteOffset + 4 * i + 2] = dist(mt);
+						float *xyz = reinterpret_cast<float*>(u8ptr + byteOffset);
+						uint8_t *rgba = reinterpret_cast<uint8_t*>(u8ptr + byteOffset + 12);
 
-					u8ptr[16 * byteOffset + 16 * i + 12] = dist01(mt) * 255;
-					u8ptr[16 * byteOffset + 16 * i + 13] = dist01(mt) * 255;
-					u8ptr[16 * byteOffset + 16 * i + 14] = 0;
-					u8ptr[16 * byteOffset + 16 * i + 15] = 255;
+						xyz[0] = chunk->position[3 * i + 0];
+						xyz[1] = chunk->position[3 * i + 1];
+						xyz[2] = chunk->position[3 * i + 2];
+
+						rgba[0] = chunk->rgba[4 * i + 0];
+						rgba[1] = chunk->rgba[4 * i + 1];
+						rgba[2] = chunk->rgba[4 * i + 2];
+						rgba[3] = chunk->rgba[4 * i + 3];
+
+						byteOffset += bytePerPoint;
+					}
+
+					delete chunk;
+
+					//cout << "done writing to pinned buffer" << endl;
 				}
 
-				std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
+				std::this_thread::sleep_for(std::chrono::milliseconds(5));
 			}
 
-
-			//fptr[offset + 0] = 1.0;
-			//fptr[offset + 1] = 2.0;
-			//fptr[offset + 2] = 4.0;
-
-			//int size = 3 * sizeof(float);
-			int size = numUpdatedPoints * 16;
-
-			cout << "test points updated pinned" << endl;
-
-			//schedule([byteOffset, size]() {
-			//	cout << "test flusing" << endl;
-			//	//glFlushMappedNamedBufferRange(updateBuffer.handle, byteOffset, size);
-			//	cout << "test flushed" << endl;
-			//});
 			
+			//cout << "test points updated pinned" << endl;
+
 		});
 		t.detach();
 
-		
+
 		args.GetReturnValue().Set(updateBuffer.handle);
 	});
+
+	V8Helper::_instance->registerFunction("loadLASTest", [](const FunctionCallbackInfo<Value>& args) {
+		if (args.Length() != 1) {
+			V8Helper::_instance->throwException("loadLASTest requires 1 arguments");
+			return;
+		}
+
+		cout << "test start" << endl;
+		double start = now();
+
+		String::Utf8Value fileUTF8(args[0]);
+
+		string file = *fileUTF8;
+
+		LASLoaderThreaded::LASLoader* loader = new LASLoaderThreaded::LASLoader(file);
+
+		int bytePerPoint = 16;
+		
+		GLuint handle = 0;
+		glCreateBuffers(1, &handle);
+		
+		uint32_t size = loader->header.numPoints * bytePerPoint;
+		//GLbitfield usage = GL_STATIC_DRAW;
+		GLbitfield usage = GL_STREAM_DRAW;
+		glNamedBufferData(handle, size, nullptr, usage);
+
+		auto isolate = Isolate::GetCurrent();
+		Local<ObjectTemplate> lasTempl = ObjectTemplate::New(isolate);
+		auto objLAS = lasTempl->NewInstance();
+		
+		auto lHandle = v8::Integer::New(isolate, handle);
+		auto lNumPoints = v8::Integer::New(isolate, 0);
+		
+		objLAS->Set(String::NewFromUtf8(isolate, "handle"), lHandle);
+		objLAS->Set(String::NewFromUtf8(isolate, "numPoints"), lNumPoints);
+		
+		auto pObjLAS = v8::Persistent<Object, v8::CopyablePersistentTraits<v8::Object>>(isolate, objLAS);
+
+		thread t([handle, loader, bytePerPoint, start, pObjLAS]() {
+		
+			int targetOffset = 0;
+		
+			int ci = 0;
+		
+			while (!loader->allChunksServed()) {
+		
+				if (loader->hasChunkAvailable()) {
+					auto chunk = loader->getNextChunk();
+		
+					//cout << "processing chunk " << ci << endl;
+					//cout << "blabla chunk " << chunk->size << endl;
+					//cout << "chunk available!" << endl;
+		
+					vector<uint8_t> data(bytePerPoint * chunk->size);
+					
+					int byteOffset = 0;
+					
+					for (int i = 0; i < chunk->size; i++) {
+					
+						float *xyz = reinterpret_cast<float*>(data.data() + byteOffset);
+						uint8_t *rgba = reinterpret_cast<uint8_t*>(data.data() + byteOffset + 12);
+					
+						xyz[0] = chunk->position[3 * i + 0];
+						xyz[1] = chunk->position[3 * i + 1];
+						xyz[2] = chunk->position[3 * i + 2];
+					
+						rgba[0] = chunk->rgba[4 * i + 0];
+						rgba[1] = chunk->rgba[4 * i + 1];
+						rgba[2] = chunk->rgba[4 * i + 2];
+						rgba[3] = chunk->rgba[4 * i + 3];
+					
+						byteOffset += bytePerPoint;
+					}
+					
+					int size = chunk->size * bytePerPoint;
+					int chunkSize = chunk->size;
+					
+					bool isLastOne = loader->allChunksServed();
+		
+					schedule([handle, targetOffset, size, chunkSize, data, ci, start, isLastOne, pObjLAS]() {
+					
+						auto isolate = Isolate::GetCurrent();
+						Local<Object> objLAS = Local<Object>::New(isolate, pObjLAS);
+						
+						glNamedBufferSubData(handle, targetOffset, size, data.data());
+					
+						numPointsUploaded += chunkSize;
+					
+						auto lNumPoints = v8::Integer::New(isolate, numPointsUploaded);
+					
+						objLAS->Set(String::NewFromUtf8(isolate, "numPoints"), lNumPoints);
+						//cout << "numPointsUploaded: " << numPointsUploaded << endl;
+						
+						if (isLastOne) {
+					
+							double end = now();
+							double duration = end - start;
+							cout << "total load to GPU upload duration: " << duration << endl;
+							
+					
+						}
+					});
+		
+					targetOffset += chunk->size * bytePerPoint;
+					ci++;
+		
+					delete chunk;
+		
+					std::this_thread::sleep_for(std::chrono::milliseconds(1));
+				}
+		
+		
+				
+			}
+		
+			
+		
+			
+		
+		});
+		t.detach();
+
+		args.GetReturnValue().Set(objLAS);
+	});
+
+
+	//V8Helper::_instance->registerFunction("test", [](const FunctionCallbackInfo<Value>& args) {
+	//	if (args.Length() != 1) {
+	//		V8Helper::_instance->throwException("test requires 0 arguments");
+	//		return;
+	//	}
+
+	//	cout << "test start" << endl;
+
+	//	String::Utf8Value fileUTF8(args[0]);
+
+	//	string file = *fileUTF8;
+
+	//	LASLoaderThreaded::LASLoader* loader = new LASLoaderThreaded::LASLoader(file);
+
+	//	thread t([]() {
+	//		float* fptr = reinterpret_cast<float*>(updateBuffer.mapPtr);
+	//		uint8_t* u8ptr = reinterpret_cast<uint8_t*>(updateBuffer.mapPtr);
+	//		int byteOffset = 0;
+
+	//		int bytePerPoint = 16;
+	//		int numUpdatedPoints = 5'000'000;
+
+	//		std::random_device rd;
+	//		std::mt19937 mt(rd());
+	//		std::uniform_real_distribution<float> dist(-1.0, 1.0);
+	//		std::uniform_real_distribution<float> dist01(-1.0, 1.0);
+
+	//		float t = now();
+
+	//		for (int i = 0; i < numUpdatedPoints; i++) {
+	//			fptr[4 * byteOffset + 4 * i + 0] = dist(mt);
+	//			fptr[4 * byteOffset + 4 * i + 1] = 0.1 * dist(mt) + 2.0 * (sin(t) + 1);
+	//			fptr[4 * byteOffset + 4 * i + 2] = dist(mt);
+
+	//			u8ptr[16 * byteOffset + 16 * i + 12] = dist01(mt) * 255;
+	//			u8ptr[16 * byteOffset + 16 * i + 13] = dist01(mt) * 255;
+	//			u8ptr[16 * byteOffset + 16 * i + 14] = 0;
+	//			u8ptr[16 * byteOffset + 16 * i + 15] = 255;
+	//		}
+
+	//		//for (int j = 0; j < 10'000; j++) {
+	//		while(true){
+
+	//			float t = now();
+
+	//			float h = sin(t);
+
+	//			for (int i = 0; i < 20'000'000; i += 100) {
+	//				fptr[4 * byteOffset + 4 * i + 1] = 2.0 * h + 1;
+	//			}
+
+	//			auto duration = now() - t;
+	//			cout << "duration: " << duration << "s" << endl;
+
+	//			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
+	//		}
+
+	//		int size = numUpdatedPoints * 16;
+
+	//		cout << "test points updated pinned" << endl;
+	//		
+	//	});
+	//	t.detach();
+
+	//	
+	//	args.GetReturnValue().Set(updateBuffer.handle);
+	//});
 
 
 	//V8Helper::_instance->registerFunction("test", [](const FunctionCallbackInfo<Value>& args) {
@@ -476,6 +662,10 @@ int main() {
 		// ----------------
 
 		EventQueue::instance->process();
+
+		if (timeSinceLastFrame > 0.016) {
+			cout << "too slow! time since last frame: " << int(timeSinceLastFrame * 1000.0) << "ms" << endl;
+		}
 
 		// ----------------
 		// RENDER WITH JAVASCRIPT

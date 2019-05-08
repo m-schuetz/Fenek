@@ -591,6 +591,10 @@ var update = function() {
 
 	let start = now();
 
+	for(let listener of listeners.update){
+		listener();
+	}
+
 	updateCamera();
 
 	updateVRControllers();

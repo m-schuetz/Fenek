@@ -99,6 +99,7 @@
     <Link>
       <AdditionalDependencies>$(SolutionDir)\libs\glfw\lib\msvc2017_x64\glfw3.lib;$(SolutionDir)\libs\v8\v8_libplatform.dll.lib;$(SolutionDir)\libs\v8\v8.dll.lib;$(SolutionDir)\libs\openvr\lib\win64\openvr_api.lib;opengl32.lib;dxgi.lib;d3d11.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(DXSDK_DIR)Lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <Profile>true</Profile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -131,6 +132,8 @@
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>$(SolutionDir)\libs\glfw\lib\msvc2017_x64\glfw3.lib;$(SolutionDir)\libs\v8\v8_libplatform.dll.lib;$(SolutionDir)\libs\v8\v8.dll.lib;$(SolutionDir)\libs\openvr\lib\win64\openvr_api.lib;opengl32.lib;dxgi.lib;d3d11.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(DXSDK_DIR)Lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <Profile>true</Profile>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

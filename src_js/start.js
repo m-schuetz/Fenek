@@ -65,6 +65,11 @@ let desktopMirrorEnabled = true;
 let gradientImage = loadImage(`../../resources/images/gradient_spectral_2d.png`);
 let gradientTexture = new GLTexture(gradientImage.width, gradientImage.height, gradientImage.data);
 
+let listeners = {
+	update: [],
+	render: [],
+};
+
 
 runJSFile(`${jsDir}/scripts/createDefaultScene.js`);
 //runJSFile(`${jsDir}/scripts/createScene.js`);

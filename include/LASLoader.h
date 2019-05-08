@@ -103,22 +103,29 @@ namespace LASLoaderThreaded {
 		LASHeader header;
 
 		vector<char> headerBuffer;
-		vector<Points> chunks;
+		vector<vector<char>*> binaryChunks;
+		vector<Points*> chunks;
 
 		mutex mtx_processing_chunk;
 		mutex mtc_access_chunk;
+		mutex mtx_binary_chunks;
 
 		atomic<uint64_t> numLoaded = 0;
 		atomic<uint64_t> numParsed = 0;
 
-		uint32_t defaultChunkSize = 10'000'000;
+		uint32_t defaultChunkSize = 200'000;
 
 		LASLoader(string file) {
 			this->file = file;
 
 			loadHeader();
 
-			loadPointRecordBuffers();
+			createBinaryLoaderThread();
+			createBinaryChunkParserThread();
+			//createBinaryChunkParserThread();
+			//createBinaryChunkParserThread();
+			//createBinaryChunkParserThread();
+			//createBinaryChunkParserThread();
 		}
 
 		void waitUntilFullyParsed() {
@@ -129,7 +136,7 @@ namespace LASLoaderThreaded {
 				if (hasChunkAvailable()) {
 					auto chunk = getNextChunk();
 
-					cout << "new chunk available, size: " << chunk.size << endl;
+					cout << "new chunk available, size: " << chunk->size << endl;
 				}
 
 				//cout << "sleep " << numLoaded << ", " << numParsed << endl;
@@ -163,10 +170,10 @@ namespace LASLoaderThreaded {
 			return result;
 		}
 
-		Points getNextChunk() {
+		Points* getNextChunk() {
 			lock_guard<mutex> lock(mtc_access_chunk);
 
-			Points chunk;
+			Points* chunk = nullptr;
 
 			if (chunks.size() > 0) {
 				chunk = chunks.back();
@@ -199,7 +206,9 @@ namespace LASLoaderThreaded {
 			header.pointDataFormat = reinterpret_cast<uint8_t*>(headerBuffer.data() + 104)[0];
 			header.pointDataRecordLength = reinterpret_cast<uint16_t*>(headerBuffer.data() + 105)[0];
 			header.numPoints = reinterpret_cast<uint32_t*>(headerBuffer.data() + 107)[0];
-			header.numPoints = reinterpret_cast<uint32_t*>(headerBuffer.data() + 107)[0];
+			header.scaleX = reinterpret_cast<double*>(headerBuffer.data() + 131)[0];
+			header.scaleY = reinterpret_cast<double*>(headerBuffer.data() + 139)[0];
+			header.scaleZ = reinterpret_cast<double*>(headerBuffer.data() + 147)[0];
 
 			cout << "header.headerSize: " << header.headerSize << endl;
 			cout << "header.offsetToPointData: " << header.offsetToPointData << endl;
@@ -210,76 +219,115 @@ namespace LASLoaderThreaded {
 			fhandle.close();
 		}
 
-		void parseBinaryChunk(vector<char> *chunkBuffer) {
 
-			thread t([this, chunkBuffer]() {
+		void createBinaryChunkParserThread() {
 
-				auto start = llnow();
+			thread t([this]() {
 
-				// lock mutex until parsing is done.
-				// if the loading thread tries to acquire the mutex,
-				// it will block until parsing is done.
-				unique_lock<mutex> lock(mtx_processing_chunk);
+				int i = 0;
 
-				int n = (int)chunkBuffer->size() / header.pointDataRecordLength;
-				Points points;
-				points.size = n;
-				points.position.reserve(3 * n);
-				points.rgba.reserve(4 * n);
+				bool done = false;
+				while (!done) {
+					
+					mtx_binary_chunks.lock();
+					if (binaryChunks.size() == 0) {
+						mtx_binary_chunks.unlock();
+						continue;
+					}
+					auto binaryChunk = binaryChunks.back();
+					binaryChunks.pop_back();
+					mtx_binary_chunks.unlock();
 
-				int positionOffset = 0;
-				int rgbOffset = 20; // format 2
+					i++;
+					//cout << "parsing chunk[" << i << "], size: " << binaryChunk->size() << endl;
 
-				for (int i = 0; i < n; i++) {
 
-					int32_t *uXYZ = reinterpret_cast<int32_t*>(chunkBuffer->data() + positionOffset);
-					uint16_t *uRGB = reinterpret_cast<uint16_t*>(chunkBuffer->data() + rgbOffset);
+					{
+						auto start = llnow();
+				
+						// lock mutex until parsing is done.
+						// if the loading thread tries to acquire the mutex,
+						// it will block until parsing is done.
+						unique_lock<mutex> lock(mtx_processing_chunk);
+				
+						int n = (int)binaryChunk->size() / header.pointDataRecordLength;
+						Points* points = new Points();
+						points->size = n;
+						points->position.reserve(3 * n);
+						points->rgba.reserve(4 * n);
+				
+						int positionOffset = 0;
+						int rgbOffset = 20; // format 2
+				
+						for (int i = 0; i < n; i++) {
+				
+							int byteOffset = i * header.pointDataRecordLength;
+				
+							int32_t *uXYZ = reinterpret_cast<int32_t*>(binaryChunk->data() + byteOffset + positionOffset);
+							uint16_t *uRGB = reinterpret_cast<uint16_t*>(binaryChunk->data() + byteOffset + rgbOffset);
+				
+							int32_t ux = uXYZ[0];
+							int32_t uy = uXYZ[1];
+							int32_t uz = uXYZ[2];
+				
+							double x = double(ux) * header.scaleX;
+							double y = double(uy) * header.scaleY;
+							double z = double(uz) * header.scaleZ;
+				
+							uint16_t r16 = uRGB[0];
+							uint16_t g16 = uRGB[1];
+							uint16_t b16 = uRGB[2];
+				
+							uint8_t r = r16 / 256;
+							uint8_t g = g16 / 256;
+							uint8_t b = b16 / 256;
+							uint8_t a = 255;
+				
+							points->position.emplace_back(float(x));
+							points->position.emplace_back(float(y));
+							points->position.emplace_back(float(z));
+				
+							points->rgba.emplace_back(r);
+							points->rgba.emplace_back(g);
+							points->rgba.emplace_back(b);
+							points->rgba.emplace_back(a);
+						}
+				
+						mtc_access_chunk.lock();
+						chunks.emplace_back(points);
+						mtc_access_chunk.unlock();
+				
+						numParsed += n;
+				
+						delete binaryChunk;
+				
+						//std::this_thread::sleep_for(std::chrono::milliseconds(200));
+				
+						auto end = llnow();
+						auto duration = end - start;
+						//cout << "process duration: " << duration << "s" << endl;
+					}
 
-					int32_t ux = uXYZ[0];
-					int32_t uy = uXYZ[1];
-					int32_t uz = uXYZ[2];
 
-					double x = double(ux) * header.scaleX;
-					double y = double(uy) * header.scaleY;
-					double z = double(uz) * header.scaleZ;
 
-					uint16_t r16 = uRGB[0];
-					uint16_t g16 = uRGB[1];
-					uint16_t b16 = uRGB[2];
 
-					uint8_t r = r16 / 256;
-					uint8_t g = g16 / 256;
-					uint8_t b = b16 / 256;
-					uint8_t a = 255;
 
-					points.position.emplace_back(float(x));
-					points.position.emplace_back(float(y));
-					points.position.emplace_back(float(z));
-
-					points.rgba.emplace_back(r);
-					points.rgba.emplace_back(g);
-					points.rgba.emplace_back(b);
-					points.rgba.emplace_back(a);
+					//cout << "lock" << endl;
+					mtx_binary_chunks.lock();
+					//cout << "locked" << endl;
+					done = fullyLoaded() && binaryChunks.size() == 0;
+					//cout << "done: " << (done ? "true" : "false") << endl; 
+					mtx_binary_chunks.unlock();
+					//cout << "unlock" << endl;
 				}
 
-				mtc_access_chunk.lock();
-				chunks.emplace_back(points);
-				mtc_access_chunk.unlock();
-
-				numParsed += n;
-
-				delete chunkBuffer;
-
-				auto end = llnow();
-				auto duration = end - start;
-				cout << "process duration: " << duration << "s" << endl;
+				cout << "done parsing binary chunks" << endl;
 
 			});
 			t.detach();
-
 		}
 
-		void loadPointRecordBuffers() {
+		void createBinaryLoaderThread() {
 
 			thread t([this]() {
 				double start = llnow();
@@ -298,21 +346,42 @@ namespace LASLoaderThreaded {
 					uint32_t chunkSizeBytes = chunkSizePoints * header.pointDataRecordLength;
 
 					vector<char> *chunkBuffer = new vector<char>(chunkSizeBytes);
+					//char* chunkBuffer = reinterpret_cast<char*>(malloc(chunkSizeBytes));
 					handle.read(chunkBuffer->data(), chunkSizeBytes);
+					//handle.read(chunkBuffer, chunkSizeBytes);
+
+					mtx_binary_chunks.lock();
+					binaryChunks.emplace_back(chunkBuffer);
+					mtx_binary_chunks.unlock();
 
 					offset += chunkSizeBytes;
 					pointsLoaded += chunkSizePoints;
 					numLoaded = pointsLoaded;
 
-					if ((pointsLoaded % 10'000'000) == 0) {
-						cout << pointsLoaded << endl;
-					}
+					//if ((pointsLoaded % 10'000'000) == 0) {
+					//	cout << pointsLoaded << endl;
+					//}
 
 					// block if a chunk is already being parsed
 					// otherwise, start parsing it.
-					mtx_processing_chunk.lock();
-					mtx_processing_chunk.unlock();
-					parseBinaryChunk(chunkBuffer);
+					//mtx_processing_chunk.lock();
+					//mtx_processing_chunk.unlock();
+					//parseBinaryChunk(chunkBuffer, chunkSizeBytes);
+
+					
+
+					//int sum = 0;
+
+					//for (int nt = 0; nt < 10; nt++) {
+					//	thread tpc([&sum]() {
+
+					//		sum++;
+
+					//	});
+					//	tpc.detach();
+					//}
+
+					//cout << "sum: " << sum << endl;
 
 					if (pointsLoaded >= header.numPoints) {
 						break;
@@ -325,6 +394,7 @@ namespace LASLoaderThreaded {
 				double end = llnow();
 				double duration = end - start;
 
+				cout << "done loading binary chunks" << endl;
 				cout << "duration: " << duration << endl;
 
 			});

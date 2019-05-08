@@ -1,7 +1,19 @@
 
 
-{
-	let handle = test("C:/dev/pointclouds/heidentor.las");
+// {
+// 	loadLASTest("C:/dev/pointclouds/eclepens.las");
+// }
+
+
+if(true){
+	//let handle = test("C:/dev/pointclouds/heidentor.las");
+	//let las = loadLASTest("C:/dev/pointclouds/heidentor.las");
+	let las = loadLASTest("C:/dev/pointclouds/eclepens.las");
+	let handle = las.handle;
+
+	//let handle = gl.createBuffer();
+	//let size = 1000 * 1000 * 16;
+	//gl.namedBufferData(handle, size, 0, gl.STREAM_DRAW);
 
 	let pc = new PointCloudBasic("testcloud", "blabla");
 
@@ -35,10 +47,11 @@
 
 	gl.bindVertexArray(0);
 
-	glbuffer.count = 2 * 1000 * 1000;
+	//glbuffer.count = 25836417;
+	glbuffer.count = 0;
 
-	let s = 10.6;
-	pc.transform.elements.set([
+	let s = 0.3;
+	pc.world.elements.set([
 		s, 0, 0, 0, 
 		0, 0, s, 0, 
 		0, s, 0, 0, 
@@ -50,4 +63,56 @@
 	log("oashfo");
 
 	scene.root.add(pc);
+
+	listeners.update.push(() => {
+		//log(las.numPoints);
+		glbuffer.count = las.numPoints;
+		//glbuffer.count = 1000 * 1000;;
+	});
+
+	//let data = new ArrayBuffer(1000 * 1000 * 16);
+	//let view = new DataView(data);
+	//for(let i = 0; i < 1000 * 1000; i++){
+
+	//	let x = Math.random();
+	//	let y = Math.random();
+	//	let z = Math.random();
+
+	//	let r = Math.random();
+	//	let g = Math.random();
+	//	let b = Math.random();
+	//	let a = 255;
+
+	//	view.setFloat32(16 * i + 0, x, true);
+	//	view.setFloat32(16 * i + 4, y, true);
+	//	view.setFloat32(16 * i + 8, z, true);
+
+	//	view.setUint8(16 * i + 12, r);
+	//	view.setUint8(16 * i + 13, g);
+	//	view.setUint8(16 * i + 14, b);
+	//	view.setUint8(16 * i + 15, a);
+	//}
+
+	// listeners.update.push(() => {
+	// 	//log("adfi");	
+	// 	let buffer = glbuffer.vbo;
+	// 	let offset = 0;
+	// 	let size = data.byteLength;
+
+	// 	for(let i = 0; i < 1000 * 1000; i += 1000){
+			
+	// 		let pi = Math.random() * 1000 * 1000;
+	// 		pi = parseInt(pi);
+	// 		pi = Math.min(1000 * 1000 - 1, pi);
+
+	// 		view.setUint8(16 * pi + 12, 255);
+	// 		view.setUint8(16 * pi + 13, 0);
+	// 		view.setUint8(16 * pi + 14, 0);
+	// 		view.setUint8(16 * pi + 15, 255);
+
+	// 	}
+
+	// 	gl.namedBufferSubData(buffer, offset, size, data);
+
+	// });
 }
