@@ -7,8 +7,8 @@
 
 if(true){
 	//let handle = test("C:/dev/pointclouds/heidentor.las");
-	//let las = loadLASTest("C:/dev/pointclouds/heidentor.las");
-	let las = loadLASTest("C:/dev/pointclouds/eclepens.las");
+	let las = loadLASTest("C:/dev/pointclouds/heidentor.las");
+	//let las = loadLASTest("C:/dev/pointclouds/eclepens.las");
 	let handle = las.handle;
 
 	//let handle = gl.createBuffer();

@@ -10,6 +10,7 @@
 #include <atomic>
 #include <iostream>
 #include <algorithm>
+#include <sstream>
 
 namespace LASLoaderThreaded {
 
@@ -26,6 +27,7 @@ namespace LASLoaderThreaded {
 	using std::lock_guard;
 	using std::atomic;
 	using std::min;
+	using std::stringstream;
 
 	static long long ll_start_time = std::chrono::high_resolution_clock::now().time_since_epoch().count();
 
@@ -113,7 +115,7 @@ namespace LASLoaderThreaded {
 		atomic<uint64_t> numLoaded = 0;
 		atomic<uint64_t> numParsed = 0;
 
-		uint32_t defaultChunkSize = 200'000;
+		uint32_t defaultChunkSize = 500'000;
 
 		LASLoader(string file) {
 			this->file = file;
@@ -122,6 +124,10 @@ namespace LASLoaderThreaded {
 
 			createBinaryLoaderThread();
 			createBinaryChunkParserThread();
+			createBinaryChunkParserThread();
+			//createBinaryChunkParserThread();
+			//createBinaryChunkParserThread();
+			//createBinaryChunkParserThread();
 			//createBinaryChunkParserThread();
 			//createBinaryChunkParserThread();
 			//createBinaryChunkParserThread();
@@ -234,13 +240,23 @@ namespace LASLoaderThreaded {
 						mtx_binary_chunks.unlock();
 						continue;
 					}
+
+					{
+						//cout << "num chunks available: " << binaryChunks.size() << endl;
+						//stringstream ss;
+						//ss << "parsing by thread: " << std::this_thread::get_id();
+						//ss << ", numParsed: " << numParsed;
+						//ss << ", available: " << binaryChunks.size();
+						//ss << endl;
+						//cout << ss.str();
+					}
+
 					auto binaryChunk = binaryChunks.back();
 					binaryChunks.pop_back();
 					mtx_binary_chunks.unlock();
 
 					i++;
 					//cout << "parsing chunk[" << i << "], size: " << binaryChunk->size() << endl;
-
 
 					{
 						auto start = llnow();
@@ -294,6 +310,7 @@ namespace LASLoaderThreaded {
 						}
 				
 						mtc_access_chunk.lock();
+						//cout << "chunk parsed by thread: " << std::this_thread::get_id() << ", numParsed: " << numParsed << endl;
 						chunks.emplace_back(points);
 						mtc_access_chunk.unlock();
 				

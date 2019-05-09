@@ -357,20 +357,25 @@ int main() {
 			while (!loader->allChunksServed()) {
 		
 				if (loader->hasChunkAvailable()) {
+					auto start01 = now();
 					auto chunk = loader->getNextChunk();
+
+					//cout << "num processed chunks: " << loader->chunks.size() << endl;
 		
 					//cout << "processing chunk " << ci << endl;
 					//cout << "blabla chunk " << chunk->size << endl;
 					//cout << "chunk available!" << endl;
 		
-					vector<uint8_t> data(bytePerPoint * chunk->size);
+					//vector<uint8_t> data(bytePerPoint * chunk->size);
+					uint8_t* data = new uint8_t[bytePerPoint * chunk->size];
 					
 					int byteOffset = 0;
+
 					
 					for (int i = 0; i < chunk->size; i++) {
 					
-						float *xyz = reinterpret_cast<float*>(data.data() + byteOffset);
-						uint8_t *rgba = reinterpret_cast<uint8_t*>(data.data() + byteOffset + 12);
+						float *xyz = reinterpret_cast<float*>(data + byteOffset);
+						uint8_t *rgba = reinterpret_cast<uint8_t*>(data + byteOffset + 12);
 					
 						xyz[0] = chunk->position[3 * i + 0];
 						xyz[1] = chunk->position[3 * i + 1];
@@ -388,13 +393,17 @@ int main() {
 					int chunkSize = chunk->size;
 					
 					bool isLastOne = loader->allChunksServed();
+
+					
 		
 					schedule([handle, targetOffset, size, chunkSize, data, ci, start, isLastOne, pObjLAS]() {
 					
 						auto isolate = Isolate::GetCurrent();
 						Local<Object> objLAS = Local<Object>::New(isolate, pObjLAS);
 						
-						glNamedBufferSubData(handle, targetOffset, size, data.data());
+						glNamedBufferSubData(handle, targetOffset, size, data);
+
+						delete[] data;
 					
 						numPointsUploaded += chunkSize;
 					
@@ -404,19 +413,23 @@ int main() {
 						//cout << "numPointsUploaded: " << numPointsUploaded << endl;
 						
 						if (isLastOne) {
-					
 							double end = now();
 							double duration = end - start;
 							cout << "total load to GPU upload duration: " << duration << endl;
-							
-					
 						}
 					});
+
+					auto end01 = now();
+					int duration = int((end01 - start01) * 1000.0);
+
+					//cout << "to gpu buffer duration: " << duration << endl;
 		
 					targetOffset += chunk->size * bytePerPoint;
 					ci++;
 		
 					delete chunk;
+
+					
 		
 					std::this_thread::sleep_for(std::chrono::milliseconds(1));
 				}
