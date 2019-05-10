@@ -330,7 +330,8 @@ var renderDefault = function(node, view, proj, target){
 	for(let buffer of buffers){
 		gl.bindVertexArray(buffer.vao);
 
-		
+		// FIXME shouldn't need to bind/unbind vbo from vao. trying bc. of compute shader
+		gl.bindBuffer(gl.ARRAY_BUFFER, buffer.vbo);
 		
 		if(buffer.indirect){
 
@@ -358,6 +359,9 @@ var renderDefault = function(node, view, proj, target){
 			}
 
 		}
+
+		// FIXME shouldn't need to bind/unbind vbo from vao. trying bc. of compute shader
+		gl.bindBuffer(gl.ARRAY_BUFFER, 0);
 	}
 
 	gl.disable(gl.BLEND);
@@ -391,10 +395,10 @@ var renderBuffers = function(view, proj, target){
 		let shader = material.shader;
 		let shader_data = shader.uniformBlocks.shader_data;
 
-		if(activeProgram !== shader.program){
+		//if(activeProgram !== shader.program){
 			gl.useProgram(shader.program);
-			activeProgram = shader.program;
-		}
+		//	activeProgram = shader.program;
+		//}
 
 		//gl.useProgram(shader.program);
 

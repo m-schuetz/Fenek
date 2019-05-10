@@ -12,6 +12,7 @@
 #include "GLFW\glfw3.h"
 
 #include "LASLoader.h"
+#include "ProgressiveLoader.h"
 
 
 using std::unordered_map;
@@ -115,7 +116,21 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 //}
 
 
+void uploadHook(ProgressiveLoader* loader, v8::Persistent<Object, v8::CopyablePersistentTraits<v8::Object>> pObjLAS) {
+	loader->uploadNextAvailableChunk();
+	//loader->uploadNextAvailableChunk();
+	//loader->uploadNextAvailableChunk();
 
+	auto isolate = Isolate::GetCurrent();
+	Local<Object> objLAS = Local<Object>::New(isolate, pObjLAS);
+
+	auto lNumPoints = v8::Integer::New(isolate, loader->pointsUploaded);
+	objLAS->Set(String::NewFromUtf8(isolate, "numPoints"), lNumPoints);
+
+	schedule([loader, pObjLAS]() {
+		uploadHook(loader, pObjLAS);
+	});
+};
 
 
 int main() {
@@ -310,6 +325,49 @@ int main() {
 
 		args.GetReturnValue().Set(updateBuffer.handle);
 	});
+
+	V8Helper::_instance->registerFunction("loadLASProgressive", [](const FunctionCallbackInfo<Value>& args) {
+		if (args.Length() != 1) {
+			V8Helper::_instance->throwException("loadLASProgressive requires 1 arguments");
+			return;
+		}
+
+		String::Utf8Value fileUTF8(args[0]);
+		string file = *fileUTF8;
+
+		ProgressiveLoader* loader = new ProgressiveLoader(file);
+
+		auto isolate = Isolate::GetCurrent();
+		Local<ObjectTemplate> lasTempl = ObjectTemplate::New(isolate);
+		auto objLAS = lasTempl->NewInstance();
+
+		auto lHandle = v8::Integer::New(isolate, loader->ssVertexBuffer);
+		auto lNumPoints = v8::Integer::New(isolate, 0);
+
+		objLAS->Set(String::NewFromUtf8(isolate, "handle"), lHandle);
+		objLAS->Set(String::NewFromUtf8(isolate, "numPoints"), lNumPoints);
+
+		auto pObjLAS = v8::Persistent<Object, v8::CopyablePersistentTraits<v8::Object>>(isolate, objLAS);
+
+		//function<void(void)> uploadHook = [uploadHook, loader, pObjLAS]() {
+		//	loader->uploadNextAvailableChunk();
+		//
+		//	auto isolate = Isolate::GetCurrent();
+		//	Local<Object> objLAS = Local<Object>::New(isolate, pObjLAS);
+		//
+		//	auto lNumPoints = v8::Integer::New(isolate, loader->pointsUploaded);
+		//	objLAS->Set(String::NewFromUtf8(isolate, "numPoints"), lNumPoints);
+		//
+		//	schedule(uploadHook);
+		//};
+
+		//schedule(uploadHook);
+
+		uploadHook(loader, pObjLAS);
+
+		args.GetReturnValue().Set(objLAS);
+	});
+
 
 	V8Helper::_instance->registerFunction("loadLASTest", [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {

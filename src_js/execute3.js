@@ -4,12 +4,18 @@
 // 	loadLASTest("C:/dev/pointclouds/eclepens.las");
 // }
 
+// RENDER_DEFAULT_ENABLED = false;
 
 if(true){
 	//let handle = test("C:/dev/pointclouds/heidentor.las");
-	let las = loadLASTest("C:/dev/pointclouds/heidentor.las");
+	//let las = loadLASTest("C:/dev/pointclouds/heidentor.las");
 	//let las = loadLASTest("C:/dev/pointclouds/eclepens.las");
+
+	let las = loadLASProgressive("C:/dev/pointclouds/heidentor.las");
+
 	let handle = las.handle;
+
+	log(`handle: ${handle}`);
 
 	//let handle = gl.createBuffer();
 	//let size = 1000 * 1000 * 16;
@@ -48,7 +54,8 @@ if(true){
 	gl.bindVertexArray(0);
 
 	//glbuffer.count = 25836417;
-	glbuffer.count = 0;
+	//glbuffer.count = 1;
+	glbuffer.count = 10 * 1000 * 1000;
 
 	let s = 0.3;
 	pc.world.elements.set([
@@ -65,8 +72,16 @@ if(true){
 	scene.root.add(pc);
 
 	listeners.update.push(() => {
+
+		let t = now();
+		let u = 0.5 * (Math.sin(3 * t) + 1);
+		u = u * 0.9 + 0.1;
+		let n = parseInt(las.numPoints * u);
+
+		glbuffer.count = n;
+
 		//log(las.numPoints);
-		glbuffer.count = las.numPoints;
+		//glbuffer.count = las.numPoints;
 		//glbuffer.count = 1000 * 1000;;
 	});
 
