@@ -15,14 +15,14 @@ if($("desktop_mirror")){
 
 DEBUG_USER_FILTER_CAM = false;
 
-reportState(false);
+reportState(true);
 
 CLOD_RANGE = [0.4, 1.2];
 CLOD_BATCH_SIZE = 50 * 1000 * 1000;
 
 MSAA_SAMPLES = 4; // MSAA 1 only works if EDL is disable
-EDL_ENABLED = false; // Eye-Dome-Lighting. Only currently available form of illumination
-RENDER_DEFAULT_ENABLED = true;
+EDL_ENABLED = true; // Eye-Dome-Lighting. Only currently available form of illumination
+RENDER_DEFAULT_ENABLED = false;
 desktopMirrorEnabled = false;
 
 //test();
@@ -109,10 +109,10 @@ desktopMirrorEnabled = false;
 // );
 
 // hedientor
-view.set(
-	[-4.79752876425493, 3.352368470609269, 2.9828365829747496],
-	[-0.7549856423151464, 1.8424463357972278, 2.077575445694987],
-);
+// view.set(
+// 	[-4.79752876425493, 3.352368470609269, 2.9828365829747496],
+// 	[-0.7549856423151464, 1.8424463357972278, 2.077575445694987],
+// );
 
 // eclepens
 // view.set(
@@ -120,8 +120,14 @@ view.set(
 // 	[150.8748713083005, -25.123600729799435, 130.80656826984648],
 // );
 
-//log(view.position);
-//log(view.getPivot());
+// Retz
+view.set(
+	[168.75699124717676, -1.6132784586156124, 163.2274624947167],
+	[150.2177732546118, -13.570647286902883, 152.53596373947244]
+);
+
+// log(view.position);
+// log(view.getPivot());
 
 
 

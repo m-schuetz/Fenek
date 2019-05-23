@@ -104,23 +104,19 @@ public:
 			GLuint ssTarget = ssVertexBuffer;
 			GLuint ssIndices = ssChunkIndices;
 
-			//cout << 0 << endl;
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssInput);
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssIndices);
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, ssTarget);
 
-			//cout << 10 << endl;
-			//cout << "csDistribute->uniformLocations: " << csDistribute->uniformLocations["uNumPoints"] << endl;
 			auto uLocation = csDistribute->uniformLocations["uNumPoints"];
 			glUniform1i(uLocation, chunkSize);
-			//cout << 20 << endl;
 			int groups = ceil(double(chunkSize) / 32.0);
 			glDispatchCompute(groups, 1, 1);
-			//cout << 30 << endl;
+			
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, 0);
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, 0);
-			//cout << 40 << endl;
+			
 			glUseProgram(0);
 
 			glMemoryBarrier(GL_ALL_BARRIER_BITS);

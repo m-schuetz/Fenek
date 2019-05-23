@@ -115,11 +115,19 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 //	return string(*utf8_value);
 //}
 
+double startUpload = 0.0;
+double endUpload = 0.0;
+
 
 void uploadHook(ProgressiveLoader* loader, v8::Persistent<Object, v8::CopyablePersistentTraits<v8::Object>> pObjLAS) {
+
+	
+	//cout << "chunks.size(): " << loader->loader->chunks.size() << endl;
+
 	loader->uploadNextAvailableChunk();
 	//loader->uploadNextAvailableChunk();
 	//loader->uploadNextAvailableChunk();
+
 
 	auto isolate = Isolate::GetCurrent();
 	Local<Object> objLAS = Local<Object>::New(isolate, pObjLAS);
@@ -128,7 +136,14 @@ void uploadHook(ProgressiveLoader* loader, v8::Persistent<Object, v8::CopyablePe
 	objLAS->Set(String::NewFromUtf8(isolate, "numPoints"), lNumPoints);
 
 	schedule([loader, pObjLAS]() {
-		uploadHook(loader, pObjLAS);
+
+		if (!loader->isDone()) {
+			uploadHook(loader, pObjLAS);
+		} else {
+			endUpload = now();
+			double duration = endUpload - startUpload;
+			cout << "upload duration: " << duration << "s" << endl;
+		}
 	});
 };
 
@@ -334,6 +349,8 @@ int main() {
 
 		String::Utf8Value fileUTF8(args[0]);
 		string file = *fileUTF8;
+
+		startUpload = now();
 
 		ProgressiveLoader* loader = new ProgressiveLoader(file);
 

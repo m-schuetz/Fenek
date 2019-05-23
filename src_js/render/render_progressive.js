@@ -30,7 +30,8 @@ getRenderProgressiveState = function(target){
 		gl.namedBufferData(ssIndirectCommand, icBytes, new ArrayBuffer(icBytes), gl.DYNAMIC_DRAW);
 
 		let ssIBO = gl.createBuffer();
-		let iboBytes = 10 * 1000 * 1000 * 4;
+		let indexCapacity = 30 * 1000 * 1000;
+		let iboBytes = indexCapacity * 4;
 		gl.namedBufferData(ssIBO, iboBytes, new ArrayBuffer(iboBytes), gl.DYNAMIC_DRAW);
 
 		let fboPrev = new Framebuffer();
@@ -78,7 +79,7 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 	//doUpdates = false;
 	//doUpdates = true;
 
-	let batchSize = 3 * 1000 * 1000;;
+	let batchSize = 10 * 1000 * 1000;;
 
 	//batchSize = 0.003 * 1000 * 1000;
 	//batchSize = 3 * 1000 * 1000;

@@ -221,7 +221,14 @@ namespace LASLoaderThreaded {
 
 			createBinaryLoaderThread();
 			createBinaryChunkParserThread();
-			createBinaryChunkParserThread();
+			//createBinaryChunkParserThread();
+			//createBinaryChunkParserThread();
+			//createBinaryChunkParserThread();
+			//createBinaryChunkParserThread();
+			//createBinaryChunkParserThread();
+			//createBinaryChunkParserThread();
+			//createBinaryChunkParserThread();
+			//createBinaryChunkParserThread();
 		}
 
 		void waitUntilFullyParsed() {
@@ -306,6 +313,12 @@ namespace LASLoaderThreaded {
 			header.scaleY = reinterpret_cast<double*>(headerBuffer.data() + 139)[0];
 			header.scaleZ = reinterpret_cast<double*>(headerBuffer.data() + 147)[0];
 
+			int maxPoints = 134'000'000;
+			if (header.numPoints > maxPoints) {
+				cout << "#points limited to " << maxPoints << ", was " << header.numPoints << endl;
+				header.numPoints = maxPoints;
+			}
+
 			cout << "header.headerSize: " << header.headerSize << endl;
 			cout << "header.offsetToPointData: " << header.offsetToPointData << endl;
 			cout << "header.pointDataFormat: " << header.pointDataFormat << endl;
@@ -333,12 +346,12 @@ namespace LASLoaderThreaded {
 
 					{
 						//cout << "num chunks available: " << binaryChunks.size() << endl;
-						//stringstream ss;
-						//ss << "parsing by thread: " << std::this_thread::get_id();
-						//ss << ", numParsed: " << numParsed;
-						//ss << ", available: " << binaryChunks.size();
-						//ss << endl;
-						//cout << ss.str();
+						stringstream ss;
+						ss << "parsing by thread: " << std::this_thread::get_id();
+						ss << ", numParsed: " << numParsed;
+						ss << ", available: " << binaryChunks.size();
+						ss << endl;
+						cout << ss.str();
 					}
 
 					auto binaryChunk = binaryChunks.back();
@@ -354,7 +367,7 @@ namespace LASLoaderThreaded {
 						// lock mutex until parsing is done.
 						// if the loading thread tries to acquire the mutex,
 						// it will block until parsing is done.
-						unique_lock<mutex> lock(mtx_processing_chunk);
+						//unique_lock<mutex> lock(mtx_processing_chunk);
 				
 						int n = (int)binaryChunk->size() / header.pointDataRecordLength;
 						Points* points = new Points();
@@ -365,7 +378,15 @@ namespace LASLoaderThreaded {
 						points->shuffledOrder = shuffle->getNextValues(n);
 				
 						int positionOffset = 0;
-						int rgbOffset = 20; // format 2
+
+						int rgbOffset = 20;
+
+						if (header.pointDataFormat == 2) {
+							rgbOffset = 20;
+						} else if (header.pointDataFormat == 3) {
+							rgbOffset = 28;
+						}
+						
 				
 						for (int i = 0; i < n; i++) {
 				

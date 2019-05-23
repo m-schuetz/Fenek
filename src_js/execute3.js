@@ -11,7 +11,9 @@ if(true){
 	//let las = loadLASTest("C:/dev/pointclouds/heidentor.las");
 	//let las = loadLASTest("C:/dev/pointclouds/eclepens.las");
 
-	let las = loadLASProgressive("C:/dev/pointclouds/heidentor.las");
+	//let las = loadLASProgressive("C:/dev/pointclouds/heidentor.las");
+	//let las = loadLASProgressive("C:/dev/pointclouds/eclepens.las");
+	let las = loadLASProgressive("C:/dev/pointclouds/Retz_Airborne_Terrestrial_Combined_1cm.las");
 
 	let handle = las.handle;
 
@@ -21,7 +23,8 @@ if(true){
 	//let size = 1000 * 1000 * 16;
 	//gl.namedBufferData(handle, size, 0, gl.STREAM_DRAW);
 
-	let pc = new PointCloudBasic("testcloud", "blabla");
+	let pc = new PointCloudProgressive("testcloud", "blabla");
+	//let pc = new PointCloudBasic("testcloud", "blabla");
 
 	let glbuffer = new GLBuffer();
 
@@ -53,12 +56,16 @@ if(true){
 
 	gl.bindVertexArray(0);
 
+	glbuffer.count =  las.numPoints;
+
+	//log("numPoints: " + las.numPoints);
 	//glbuffer.count = 25836417;
 	//glbuffer.count = 1;
-	glbuffer.count = 10 * 1000 * 1000;
+	//glbuffer.count = 10 * 1000 * 1000;
 
 	let s = 0.3;
-	pc.world.elements.set([
+	pc.transform.elements.set([
+	//pc.world.elements.set([
 		s, 0, 0, 0, 
 		0, 0, s, 0, 
 		0, s, 0, 0, 
@@ -71,19 +78,26 @@ if(true){
 
 	scene.root.add(pc);
 
+
 	listeners.update.push(() => {
-
-		let t = now();
-		let u = 0.5 * (Math.sin(3 * t) + 1);
-		u = u * 0.9 + 0.1;
-		let n = parseInt(las.numPoints * u);
-
-		glbuffer.count = n;
-
-		//log(las.numPoints);
-		//glbuffer.count = las.numPoints;
-		//glbuffer.count = 1000 * 1000;;
+		glbuffer.count = las.numPoints;
 	});
+
+
+
+	//listeners.update.push(() => {
+
+	//	let t = now();
+	//	let u = 0.5 * (Math.sin(3 * t) + 1);
+	//	u = u * 0.9 + 0.1;
+	//	let n = parseInt(las.numPoints * u);
+
+	//	glbuffer.count = n;
+
+	//	//log(las.numPoints);
+	//	//glbuffer.count = las.numPoints;
+	//	//glbuffer.count = 1000 * 1000;;
+	//});
 
 	//let data = new ArrayBuffer(1000 * 1000 * 16);
 	//let view = new DataView(data);
