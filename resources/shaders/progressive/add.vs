@@ -16,6 +16,7 @@ void main() {
 	gl_PointSize = 2.0;
 	
 	vColor = aColor.rgb;
+	//vColor = vec3(1.0, 1.0, 1.0);
 
 	vVertexID = vec4(
 		float((gl_VertexID >>  0) & 255) / 255.0,

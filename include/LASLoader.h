@@ -88,13 +88,16 @@ namespace LASLoaderThreaded {
 			int end = std::min(current + chunkSize, n);
 			int size = end - start;
 
-			vector<uint32_t> values(size);
+			//vector<uint32_t> values(size);
+			vector<uint32_t> values;
+			values.reserve(size);
 
 			for (int i = start; i < end; i++) {
-				values[i - start] = getNextValue();
+				//values[i - start] = getNextValue();
+				values.emplace_back(getNextValue());
 			}
 
-			return std::move(values);
+			return values;
 		}
 
 		/// see 
@@ -143,7 +146,7 @@ namespace LASLoaderThreaded {
 		uint32_t numVLRs = 0;
 		uint8_t pointDataFormat = 0;
 		uint16_t pointDataRecordLength = 0;
-		uint32_t numPoints = 0;
+		uint64_t numPoints = 0;
 		vector<uint32_t> numPointsPerReturn;
 
 		double scaleX = 0;
@@ -304,6 +307,23 @@ namespace LASLoaderThreaded {
 				cout << "header buffer not loaded :x" << endl;
 			}
 
+			header.versionMajor = reinterpret_cast<uint8_t*>(headerBuffer.data() + 24)[0];
+			header.versionMinor = reinterpret_cast<uint8_t*>(headerBuffer.data() + 25)[0];
+
+			if (header.versionMajor >= 1 && header.versionMinor >= 4) {
+				fhandle.seekg(0, std::ios::beg);
+
+				headerSize = 375;
+				headerBuffer.resize(headerSize);
+
+				if (fhandle.read(headerBuffer.data(), headerSize)) {
+					cout << "extended header buffer loaded" << endl;
+				} else {
+					cout << "extended header buffer not loaded :(" << endl;
+				}
+			}
+			
+
 			header.headerSize = reinterpret_cast<uint16_t*>(headerBuffer.data() + 94)[0];
 			header.offsetToPointData = reinterpret_cast<uint32_t*>(headerBuffer.data() + 96)[0];
 			header.pointDataFormat = reinterpret_cast<uint8_t*>(headerBuffer.data() + 104)[0];
@@ -312,6 +332,10 @@ namespace LASLoaderThreaded {
 			header.scaleX = reinterpret_cast<double*>(headerBuffer.data() + 131)[0];
 			header.scaleY = reinterpret_cast<double*>(headerBuffer.data() + 139)[0];
 			header.scaleZ = reinterpret_cast<double*>(headerBuffer.data() + 147)[0];
+
+			if (header.versionMajor >= 1 && header.versionMinor >= 4) {
+				header.numPoints = reinterpret_cast<uint64_t*>(headerBuffer.data() + 247)[0];
+			}
 
 			int maxPoints = 134'000'000;
 			if (header.numPoints > maxPoints) {
@@ -385,6 +409,10 @@ namespace LASLoaderThreaded {
 							rgbOffset = 20;
 						} else if (header.pointDataFormat == 3) {
 							rgbOffset = 28;
+						} else if (header.pointDataFormat == 6) {
+							rgbOffset = 0;
+						} else if (header.pointDataFormat == 7) {
+							rgbOffset = 30;
 						}
 						
 				
