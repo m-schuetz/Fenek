@@ -414,6 +414,9 @@ namespace LASLoaderThreaded {
 						} else if (header.pointDataFormat == 7) {
 							rgbOffset = 30;
 						}
+
+						int beamVectorOffset = 36 + 2 + 2 + 2 + 4;
+						int normalVectorOffset = beamVectorOffset + 3 * 2;
 						
 				
 						for (int i = 0; i < n; i++) {
@@ -422,10 +425,20 @@ namespace LASLoaderThreaded {
 				
 							int32_t *uXYZ = reinterpret_cast<int32_t*>(binaryChunk->data() + byteOffset + positionOffset);
 							uint16_t *uRGB = reinterpret_cast<uint16_t*>(binaryChunk->data() + byteOffset + rgbOffset);
+							int16_t *uBeamVector = reinterpret_cast<int16_t*>(binaryChunk->data() + byteOffset + beamVectorOffset);
+							int16_t *uNormalVector = reinterpret_cast<int16_t*>(binaryChunk->data() + byteOffset + normalVectorOffset);
 				
 							int32_t ux = uXYZ[0];
 							int32_t uy = uXYZ[1];
 							int32_t uz = uXYZ[2];
+
+							float bvx = double(uBeamVector[0]) * 0.0001;
+							float bvy = double(uBeamVector[1]) * 0.0001;
+							float bvz = double(uBeamVector[2]) * 0.0001;
+
+							float nvx = double(uNormalVector[0]) * 0.0001;
+							float nvy = double(uNormalVector[1]) * 0.0001;
+							float nvz = double(uNormalVector[2]) * 0.0001;
 
 							XYZRGBA point;
 				
@@ -441,6 +454,10 @@ namespace LASLoaderThreaded {
 							point.g = g16 / 256;
 							point.b = b16 / 256;
 							point.a = 255;
+
+							//point.r = std::max(0.0f, nvx) * 255;
+							//point.g = std::max(0.0f, nvy) * 255;
+							//point.b = std::max(0.0f, nvz) * 255;
 				
 							points->position.emplace_back(float(point.x));
 							points->position.emplace_back(float(point.y));

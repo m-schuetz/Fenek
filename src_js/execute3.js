@@ -14,7 +14,7 @@ if(true){
 	//let las = loadLASProgressive("C:/dev/pointclouds/heidentor.las");
 	//let las = loadLASProgressive("C:/dev/pointclouds/eclepens.las");
 	//let las = loadLASProgressive("C:/dev/pointclouds/Retz_Airborne_Terrestrial_Combined_1cm.las");
-	let las = loadLASProgressive("C:/dev/pointclouds/wienCity_v2.las");
+	let las = loadLASProgressive("C:/dev/pointclouds/wienCity_v3.las");
 	//let las = loadLASProgressive("C:/dev/pointclouds/wienCity.las");
 
 	let handle = las.handle;

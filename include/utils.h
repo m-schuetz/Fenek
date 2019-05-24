@@ -12,6 +12,7 @@
 #include <vector>
 #include <filesystem>
 #include <chrono>
+#include <functional>
 
 using std::string;
 using std::ifstream;
