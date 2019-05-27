@@ -11,6 +11,7 @@
 #include <iostream>
 #include <algorithm>
 #include <sstream>
+#include <future>
 
 namespace LASLoaderThreaded {
 
@@ -51,6 +52,8 @@ namespace LASLoaderThreaded {
 
 		uint32_t n = 0;
 
+		mutex mtx;
+
 	public:
 
 		ShuffleGenerator(uint32_t size) {
@@ -83,6 +86,8 @@ namespace LASLoaderThreaded {
 
 		/// get the next few values
 		vector<uint32_t> getNextValues(int chunkSize) {
+
+			lock_guard<mutex> guard(mtx);
 
 			int start = current;
 			int end = std::min(current + chunkSize, n);
@@ -224,11 +229,11 @@ namespace LASLoaderThreaded {
 
 			createBinaryLoaderThread();
 			createBinaryChunkParserThread();
-			//createBinaryChunkParserThread();
-			//createBinaryChunkParserThread();
-			//createBinaryChunkParserThread();
-			//createBinaryChunkParserThread();
-			//createBinaryChunkParserThread();
+			createBinaryChunkParserThread();
+			createBinaryChunkParserThread();
+			createBinaryChunkParserThread();
+			createBinaryChunkParserThread();
+			createBinaryChunkParserThread();
 			//createBinaryChunkParserThread();
 			//createBinaryChunkParserThread();
 			//createBinaryChunkParserThread();
@@ -399,7 +404,14 @@ namespace LASLoaderThreaded {
 						points->position.reserve(3 * n);
 						points->rgba.reserve(4 * n);
 						points->xyzrgba.reserve(n);
-						points->shuffledOrder = shuffle->getNextValues(n);
+
+						auto f = &ShuffleGenerator::getNextValues;
+						auto s = shuffle;
+						auto order = std::async(std::launch::async, f, s, n);
+						//auto order = std::async(&shuffle->getNextValues, shuffle, n);
+						points->shuffledOrder = order.get();
+
+						//points->shuffledOrder = shuffle->getNextValues(n);
 				
 						int positionOffset = 0;
 
