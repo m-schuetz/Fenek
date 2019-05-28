@@ -173,6 +173,121 @@ namespace LASLoaderThreaded {
 
 	};
 
+	struct VariableLengthRecord{
+		string userID;
+		uint16_t recordID = 0;
+		uint16_t recordLengthAfterHeader = 0;
+		string description;
+
+		vector<char> buffer;
+	};
+
+	struct ExtraBytes{
+
+		uint8_t reserved[2];
+		uint8_t dataType;
+		uint8_t options;
+		int8_t name[32];
+		uint8_t unused[4];
+		uint8_t noData[24];
+		uint8_t min[24];
+		uint8_t max[24];
+		double scale[3];
+		double offset[3];
+		int8_t description[32];
+
+		vector<uint64_t> noDataU64(){
+			vector<uint64_t> value = {
+				reinterpret_cast<uint64_t*>(noData)[0],
+				reinterpret_cast<uint64_t*>(noData)[1],
+				reinterpret_cast<uint64_t*>(noData)[2]
+			};
+
+			return value;
+		}
+
+		vector<int64_t> noDataI64(){
+			vector<int64_t> value = {
+				reinterpret_cast<int64_t*>(noData)[0],
+				reinterpret_cast<int64_t*>(noData)[1],
+				reinterpret_cast<int64_t*>(noData)[2]
+			};
+
+			return value;
+		}
+
+		vector<double> noDataDouble(){
+			vector<double> value = {
+				reinterpret_cast<double*>(noData)[0],
+				reinterpret_cast<double*>(noData)[1],
+				reinterpret_cast<double*>(noData)[2]
+			};
+
+			return value;
+		}
+
+		vector<uint64_t> minU64(){
+			vector<uint64_t> value = {
+				reinterpret_cast<uint64_t*>(min)[0],
+				reinterpret_cast<uint64_t*>(min)[1],
+				reinterpret_cast<uint64_t*>(min)[2]
+			};
+
+			return value;
+		}
+
+		vector<int64_t> minI64(){
+			vector<int64_t> value = {
+				reinterpret_cast<int64_t*>(min)[0],
+				reinterpret_cast<int64_t*>(min)[1],
+				reinterpret_cast<int64_t*>(min)[2]
+			};
+
+			return value;
+		}
+
+		vector<double> minDouble(){
+			vector<double> value = {
+				reinterpret_cast<double*>(min)[0],
+				reinterpret_cast<double*>(min)[1],
+				reinterpret_cast<double*>(min)[2]
+			};
+
+			return value;
+		}
+
+		vector<uint64_t> maxU64(){
+			vector<uint64_t> value = {
+				reinterpret_cast<uint64_t*>(max)[0],
+				reinterpret_cast<uint64_t*>(max)[1],
+				reinterpret_cast<uint64_t*>(max)[2]
+			};
+
+			return value;
+		}
+
+		vector<int64_t> maxI64(){
+			vector<int64_t> value = {
+				reinterpret_cast<int64_t*>(max)[0],
+				reinterpret_cast<int64_t*>(max)[1],
+				reinterpret_cast<int64_t*>(max)[2]
+			};
+
+			return value;
+		}
+
+		vector<double> maxDouble(){
+			vector<double> value = {
+				reinterpret_cast<double*>(max)[0],
+				reinterpret_cast<double*>(max)[1],
+				reinterpret_cast<double*>(max)[2]
+			};
+
+			return value;
+		}
+
+	};
+
 	struct XYZRGBA {
 		float x;
 		float y;
@@ -204,6 +319,7 @@ namespace LASLoaderThreaded {
 		string file;
 
 		LASHeader header;
+		vector<VariableLengthRecord> variableLengthRecords;
 
 		vector<char> headerBuffer;
 		vector<vector<char>*> binaryChunks;
@@ -224,16 +340,17 @@ namespace LASLoaderThreaded {
 			this->file = file;
 
 			loadHeader();
+			loadVariableLengthRecords();
 
 			shuffle = new ShuffleGenerator(header.numPoints);
 
 			createBinaryLoaderThread();
 			createBinaryChunkParserThread();
 			createBinaryChunkParserThread();
-			createBinaryChunkParserThread();
-			createBinaryChunkParserThread();
-			createBinaryChunkParserThread();
-			createBinaryChunkParserThread();
+			//createBinaryChunkParserThread();
+			//createBinaryChunkParserThread();
+			//createBinaryChunkParserThread();
+			//createBinaryChunkParserThread();
 			//createBinaryChunkParserThread();
 			//createBinaryChunkParserThread();
 			//createBinaryChunkParserThread();
@@ -328,9 +445,11 @@ namespace LASLoaderThreaded {
 				}
 			}
 			
-
+			// TODO probably should use that instead of hardcoding 227 and 375?
 			header.headerSize = reinterpret_cast<uint16_t*>(headerBuffer.data() + 94)[0];
+
 			header.offsetToPointData = reinterpret_cast<uint32_t*>(headerBuffer.data() + 96)[0];
+			header.numVLRs = reinterpret_cast<uint32_t*>(headerBuffer.data() + 100)[0];
 			header.pointDataFormat = reinterpret_cast<uint8_t*>(headerBuffer.data() + 104)[0];
 			header.pointDataRecordLength = reinterpret_cast<uint16_t*>(headerBuffer.data() + 105)[0];
 			header.numPoints = reinterpret_cast<uint32_t*>(headerBuffer.data() + 107)[0];
@@ -355,6 +474,58 @@ namespace LASLoaderThreaded {
 			cout << "header.numPoints: " << header.numPoints << endl;
 
 			fhandle.close();
+		}
+
+		void loadVariableLengthRecords(){
+			ifstream fhandle(file, ios::binary | ios::ate);
+			streamsize size = fhandle.tellg();
+
+			//auto setReadPos = [&fhandle](int offset){fhandle.seekg(offset, std::ios::beg);};
+
+			auto readBytes = [&fhandle](int offset, int length){
+				fhandle.seekg(offset, std::ios::beg);
+				vector<char> data(length);
+
+				fhandle.read(data.data(), length);
+
+				return data;
+			};
+
+			int vlrHeaderSize = 54;
+			int offset = header.headerSize;
+
+			for(int i = 0; i < header.numVLRs; i++){
+				//fhandle.seekg(offset, std::ios::beg);
+				//setReadPos(offset);
+
+				VariableLengthRecord vlr;
+
+				vector<char> buffer = readBytes(offset, vlrHeaderSize);
+
+				vlr.userID = string(buffer.begin() + 2, buffer.begin() + 2 + 16);
+				vlr.recordID = reinterpret_cast<uint16_t*>(buffer.data() + 18)[0];
+				vlr.recordLengthAfterHeader = reinterpret_cast<uint16_t*>(buffer.data() + 20)[0];
+				vlr.description = string(buffer.begin() + 22, buffer.begin() + 22 + 32);
+
+				vlr.buffer = readBytes(offset + vlrHeaderSize, vlr.recordLengthAfterHeader);
+
+				variableLengthRecords.emplace_back(vlr);
+				
+				offset += 54 + vlr.recordLengthAfterHeader;
+			}
+
+			for(VariableLengthRecord &vlr : variableLengthRecords){
+				cout << "==== VLR start ===" << endl;
+
+				cout << "description: " <<  vlr.description << endl;
+				cout << "length: " <<  vlr.recordLengthAfterHeader << endl;
+				cout << "recordID: " <<  vlr.recordID << endl;
+
+
+				cout << "==== VLR end ===" << endl;
+			}
+			
+
 		}
 
 
