@@ -12,6 +12,10 @@
 #include <algorithm>
 #include <sstream>
 #include <future>
+#include <cstdio>
+#include <filesystem>
+
+namespace fs = std::experimental::filesystem;
 
 namespace LASLoaderThreaded {
 
@@ -40,6 +44,18 @@ namespace LASLoaderThreaded {
 
 		return secondsSinceStart;
 	}
+
+	struct BArray {
+		void* data = nullptr;
+		uint8_t* dataU8 = nullptr;
+		uint64_t size = 0;
+
+		BArray(uint64_t size) {
+			this->data = malloc(size);
+			this->dataU8 = reinterpret_cast<uint8_t*>(this->data);
+			this->size = size;
+		}
+	};
 
 	class ShuffleGenerator {
 
@@ -87,7 +103,11 @@ namespace LASLoaderThreaded {
 		/// get the next few values
 		vector<uint32_t> getNextValues(int chunkSize) {
 
+			double tStart = llnow();
+
 			lock_guard<mutex> guard(mtx);
+
+			double tUnlocked = llnow();
 
 			int start = current;
 			int end = std::min(current + chunkSize, n);
@@ -101,6 +121,11 @@ namespace LASLoaderThreaded {
 				//values[i - start] = getNextValue();
 				values.emplace_back(getNextValue());
 			}
+
+			double tEnd = llnow();
+
+			cout << "duration(unlock): " << (1000.0 * (tUnlocked - tStart)) << "ms" << endl;
+			cout << "duration(total): " << (1000.0 * (tEnd - tStart)) << "ms" << endl;
 
 			return values;
 		}
@@ -322,7 +347,7 @@ namespace LASLoaderThreaded {
 		vector<VariableLengthRecord> variableLengthRecords;
 
 		vector<char> headerBuffer;
-		vector<vector<char>*> binaryChunks;
+		vector<BArray*> binaryChunks;
 		vector<Points*> chunks;
 
 		mutex mtx_processing_chunk;
@@ -347,6 +372,13 @@ namespace LASLoaderThreaded {
 			createBinaryLoaderThread();
 			createBinaryChunkParserThread();
 			createBinaryChunkParserThread();
+			createBinaryChunkParserThread();
+			createBinaryChunkParserThread();
+			//createBinaryChunkParserThread();
+			//createBinaryChunkParserThread();
+			//createBinaryChunkParserThread();
+			//createBinaryChunkParserThread();
+			//createBinaryChunkParserThread();
 			//createBinaryChunkParserThread();
 			//createBinaryChunkParserThread();
 			//createBinaryChunkParserThread();
@@ -544,15 +576,15 @@ namespace LASLoaderThreaded {
 						continue;
 					}
 
-					{
-						//cout << "num chunks available: " << binaryChunks.size() << endl;
-						stringstream ss;
-						ss << "parsing by thread: " << std::this_thread::get_id();
-						ss << ", numParsed: " << numParsed;
-						ss << ", available: " << binaryChunks.size();
-						ss << endl;
-						cout << ss.str();
-					}
+					//{
+					//	//cout << "num chunks available: " << binaryChunks.size() << endl;
+					//	stringstream ss;
+					//	ss << "parsing by thread: " << std::this_thread::get_id();
+					//	ss << ", numParsed: " << numParsed;
+					//	ss << ", available: " << binaryChunks.size();
+					//	ss << endl;
+					//	cout << ss.str();
+					//}
 
 					auto binaryChunk = binaryChunks.back();
 					binaryChunks.pop_back();
@@ -569,7 +601,7 @@ namespace LASLoaderThreaded {
 						// it will block until parsing is done.
 						//unique_lock<mutex> lock(mtx_processing_chunk);
 				
-						int n = (int)binaryChunk->size() / header.pointDataRecordLength;
+						int n = binaryChunk->size / uint64_t(header.pointDataRecordLength);
 						Points* points = new Points();
 						points->size = n;
 						points->position.reserve(3 * n);
@@ -606,10 +638,10 @@ namespace LASLoaderThreaded {
 				
 							int byteOffset = i * header.pointDataRecordLength;
 				
-							int32_t *uXYZ = reinterpret_cast<int32_t*>(binaryChunk->data() + byteOffset + positionOffset);
-							uint16_t *uRGB = reinterpret_cast<uint16_t*>(binaryChunk->data() + byteOffset + rgbOffset);
-							int16_t *uBeamVector = reinterpret_cast<int16_t*>(binaryChunk->data() + byteOffset + beamVectorOffset);
-							int16_t *uNormalVector = reinterpret_cast<int16_t*>(binaryChunk->data() + byteOffset + normalVectorOffset);
+							int32_t *uXYZ = reinterpret_cast<int32_t*>(binaryChunk->dataU8 + byteOffset + positionOffset);
+							uint16_t *uRGB = reinterpret_cast<uint16_t*>(binaryChunk->dataU8 + byteOffset + rgbOffset);
+							int16_t *uBeamVector = reinterpret_cast<int16_t*>(binaryChunk->dataU8 + byteOffset + beamVectorOffset);
+							int16_t *uNormalVector = reinterpret_cast<int16_t*>(binaryChunk->dataU8 + byteOffset + normalVectorOffset);
 				
 							int32_t ux = uXYZ[0];
 							int32_t uy = uXYZ[1];
@@ -698,19 +730,26 @@ namespace LASLoaderThreaded {
 				uint64_t pointsLoaded = 0;
 				uint64_t bytes = header.numPoints * header.pointDataRecordLength;
 
-				ifstream handle(file, ios::binary | ios::ate);
-				streamsize size = handle.tellg();
-				handle.seekg(offset, ios::beg);
+				//ifstream handle(file, ios::binary | ios::ate);
+				//streamsize size = handle.tellg();
+				//handle.seekg(offset, ios::beg);
+				FILE* in = fopen(file.c_str(), "rb");
+				_fseeki64(in, offset, ios::beg);
+				auto size = fs::file_size(file);
 
-				while (handle.good()) {
+				bool done = false;
+				while(!done){
 
 					uint32_t chunkSizePoints = (uint32_t)min(uint64_t(defaultChunkSize), header.numPoints - pointsLoaded);
 					uint32_t chunkSizeBytes = chunkSizePoints * header.pointDataRecordLength;
 
-					vector<char> *chunkBuffer = new vector<char>(chunkSizeBytes);
-					//char* chunkBuffer = reinterpret_cast<char*>(malloc(chunkSizeBytes));
-					handle.read(chunkBuffer->data(), chunkSizeBytes);
-					//handle.read(chunkBuffer, chunkSizeBytes);
+					//vector<char> *chunkBuffer = new vector<char>(chunkSizeBytes);
+					//handle.read(chunkBuffer->data(), chunkSizeBytes);
+
+					BArray* chunkBuffer = new BArray(chunkSizeBytes);
+					auto bytesRead = fread(chunkBuffer->data, 1, chunkSizeBytes, in);
+
+					done = bytesRead == 0;
 
 					mtx_binary_chunks.lock();
 					binaryChunks.emplace_back(chunkBuffer);

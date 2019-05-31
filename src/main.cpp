@@ -127,6 +127,14 @@ void uploadHook(ProgressiveLoader* loader, v8::Persistent<Object, v8::CopyablePe
 	loader->uploadNextAvailableChunk();
 	loader->uploadNextAvailableChunk();
 	loader->uploadNextAvailableChunk();
+	loader->uploadNextAvailableChunk();
+	loader->uploadNextAvailableChunk();
+	loader->uploadNextAvailableChunk();
+	loader->uploadNextAvailableChunk();
+	loader->uploadNextAvailableChunk();
+	loader->uploadNextAvailableChunk();
+	loader->uploadNextAvailableChunk();
+	loader->uploadNextAvailableChunk();
 
 
 	auto isolate = Isolate::GetCurrent();
