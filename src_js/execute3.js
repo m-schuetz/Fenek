@@ -12,9 +12,9 @@ if(true){
 	//let las = loadLASTest("C:/dev/pointclouds/eclepens.las");
 
 	//let las = loadLASProgressive("D:/dev/pointclouds/archpro/heidentor.las");
-	let las = loadLASProgressive("D:/dev/pointclouds/eclepens.las");
+	//let las = loadLASProgressive("D:/dev/pointclouds/eclepens.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/Riegl/Retz_Airborne_Terrestrial_Combined_1cm.las");
-	//let las = loadLASProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v3.las");
+	let las = loadLASProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v3.las");
 	//let las = loadLASProgressive("C:/dev/pointclouds/wienCity.las");
 
 	let handle = las.handle;

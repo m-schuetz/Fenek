@@ -38,9 +38,42 @@ using LASLoaderThreaded::Points;
 
 class ProgressiveLoader {
 
+	// see https://en.wikipedia.org/wiki/Primality_test
+	bool isPrime(uint64_t n) {
+		if (n <= 3) {
+			return n > 1;
+		} else if ((n % 2) == 0 || (n % 3) == 0) {
+			return false;
+		}
+
+		uint64_t i = 5;
+		while ((i * i) <= n) {
+			if ((n % i) == 0 || (n % (i + 2)) == 0) {
+				return false;
+			}
+
+
+			i = i + 6;
+		}
+
+		return true;
+	}
+
+	//
+	// Primes where p = 3 mod 4 allow us to generate random numbers without duplicates in range [0, prime - 1]
+	// https://preshing.com/20121224/how-to-generate-a-sequence-of-unique-random-integers/
+	uint64_t previousPrimeCongruent3mod4(uint64_t start) {
+		for (uint64_t i = start -1; true; i--) {
+			if ((i % 4) == 3 && isPrime(i)) {
+				return i;
+			}
+		}
+	}
+
 public:
 
 	LASLoader* loader = nullptr;
+	uint32_t prime = 0;
 	
 	GLuint ssVertexBuffer = -1;
 	GLuint ssChunk16B = -1;
@@ -54,6 +87,7 @@ public:
 	ProgressiveLoader(string path) {
 
 		loader = new LASLoader(path);
+		prime = previousPrimeCongruent3mod4(loader->header.numPoints);
 
 		glCreateBuffers(1, &ssVertexBuffer);
 		glCreateBuffers(1, &ssChunk16B);
@@ -94,7 +128,7 @@ public:
 
 		{// upload
 			glNamedBufferSubData(ssChunk16B, 0, chunkSize * 16, chunk->xyzrgba.data());
-			glNamedBufferSubData(ssChunkIndices, 0, chunkSize * 4, chunk->shuffledOrder.data());
+			//glNamedBufferSubData(ssChunkIndices, 0, chunkSize * 4, chunk->shuffledOrder.data());
 		}
 
 		{// distribute to shuffled location
@@ -110,8 +144,17 @@ public:
 
 			auto uLocation = csDistribute->uniformLocations["uNumPoints"];
 			glUniform1i(uLocation, chunkSize);
+
+			auto uPrime = csDistribute->uniformLocations["uPrime"];
+			glUniform1d(uPrime, double(prime));
+
+			auto uOffset = csDistribute->uniformLocations["uOffset"];
+			glUniform1i(uOffset, pointsUploaded);
+
 			int groups = ceil(double(chunkSize) / 32.0);
 			glDispatchCompute(groups, 1, 1);
+
+			
 			
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, 0);

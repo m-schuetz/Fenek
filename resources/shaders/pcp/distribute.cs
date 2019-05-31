@@ -1,5 +1,7 @@
 #version 450
 
+#extension GL_ARB_gpu_shader_int64 : enable
+
 layout(local_size_x = 32, local_size_y = 1) in;
 
 struct Vertex{
@@ -16,9 +18,9 @@ layout(std430, binding = 0) buffer ssInputBuffer{
 };
 
 // contains the target location in the main VBO for each point in the new batch
-layout(std430, binding = 1) buffer ssTargetIndices{
-	uint targetIndices[];
-};
+// layout(std430, binding = 1) buffer ssTargetIndices{
+// 	uint targetIndices[];
+// };
 
 // the main VBO. the new batch is distributed over this buffer
 layout(std430, binding = 2) buffer ssTargetBuffer{
@@ -27,6 +29,24 @@ layout(std430, binding = 2) buffer ssTargetBuffer{
 
 // number of points in the new batch / batchSize
 layout(location = 2) uniform int uNumPoints;
+layout(location = 3) uniform double uPrime;
+layout(location = 4) uniform int uOffset;
+
+// see layout(location = 2) uniform int uNumPoints;
+double permute(double number, double prime){
+
+	if(number > prime){
+		return number;
+	}
+
+	double residue = mod(number * number, prime);
+
+	if(number <= prime / 2){
+		return residue;
+	}else{
+		return prime - residue;
+	}
+}
 
 void main(){
 	
@@ -36,7 +56,10 @@ void main(){
 		return;
 	}
 
-	uint targetIndex = targetIndices[inputIndex];
+	//uint targetIndex = targetIndices[inputIndex];
+
+	uint globalInputIndex = inputIndex + uOffset;
+	uint targetIndex = uint(permute(double(globalInputIndex), uPrime));
 
 	Vertex v = inputBuffer[inputIndex];
 

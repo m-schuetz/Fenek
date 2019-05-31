@@ -40,7 +40,7 @@ window.y = 23;
 
 log(view.position);
 
-camera.near = 0.01;
+camera.near = 0.101;
 camera.far = 10000;
 
 CLOD_RANGE = [0.2, 0.2];
