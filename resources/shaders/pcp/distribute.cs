@@ -59,7 +59,11 @@ void main(){
 	//uint targetIndex = targetIndices[inputIndex];
 
 	uint globalInputIndex = inputIndex + uOffset;
-	uint targetIndex = uint(permute(double(globalInputIndex), uPrime));
+
+	double p1 = permute(double(globalInputIndex), uPrime);
+	double p2 = permute(p1, uPrime);
+
+	uint targetIndex = uint(p2);
 
 	Vertex v = inputBuffer[inputIndex];
 
