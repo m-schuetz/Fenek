@@ -14,6 +14,7 @@
 #include <future>
 #include <cstdio>
 #include <filesystem>
+#include <Windows.h>
 
 namespace fs = std::experimental::filesystem;
 
@@ -730,6 +731,17 @@ namespace LASLoaderThreaded {
 				//ifstream handle(file, ios::binary | ios::ate);
 				//streamsize size = handle.tellg();
 				//handle.seekg(offset, ios::beg);
+
+				{ // disable windows file cache for benchmarking
+					LPCTSTR lfile = file.c_str();
+
+					auto hFile = CreateFile(lfile, GENERIC_READ,
+						FILE_SHARE_READ,
+						NULL, OPEN_EXISTING,
+						FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN
+						| FILE_FLAG_NO_BUFFERING, NULL);
+				}
+
 				FILE* in = fopen(file.c_str(), "rb");
 				_fseeki64(in, offset, ios::beg);
 				auto size = fs::file_size(file);
