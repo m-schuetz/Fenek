@@ -58,104 +58,6 @@ namespace LASLoaderThreaded {
 		}
 	};
 
-	//class ShuffleGenerator {
-
-	//	vector<uint32_t> indices;
-
-	//	// max value of uint32_t
-	//	static const uint32_t dval = -1;
-
-	//	uint32_t current = 0;
-
-	//	uint32_t n = 0;
-
-	//	mutex mtx;
-
-	//public:
-
-	//	ShuffleGenerator(uint32_t size) {
-	//		n = size;
-	//		indices = vector<uint32_t>(n, dval);
-	//	}
-
-	//	/// get the next value
-	//	uint32_t getNextValue() {
-
-	//		if (current >= n) {
-	//			return dval;
-	//		}
-
-	//		uint32_t index = xorshf96() % (n - current) + current;
-
-	//		uint32_t a = indices[current];
-	//		uint32_t b = indices[index];
-
-	//		a = a == dval ? current : a;
-	//		b = b == dval ? index : b;
-
-	//		indices[current] = b;
-	//		indices[index] = a;
-
-	//		current++;
-
-	//		return b;
-	//	}
-
-	//	/// get the next few values
-	//	vector<uint32_t> getNextValues(int chunkSize) {
-
-	//		double tStart = llnow();
-
-	//		lock_guard<mutex> guard(mtx);
-
-	//		double tUnlocked = llnow();
-
-	//		int start = current;
-	//		int end = std::min(current + chunkSize, n);
-	//		int size = end - start;
-
-	//		//vector<uint32_t> values(size);
-	//		vector<uint32_t> values;
-	//		values.reserve(size);
-
-	//		for (int i = start; i < end; i++) {
-	//			//values[i - start] = getNextValue();
-	//			values.emplace_back(getNextValue());
-	//		}
-
-	//		double tEnd = llnow();
-
-	//		cout << "duration(unlock): " << (1000.0 * (tUnlocked - tStart)) << "ms" << endl;
-	//		cout << "duration(total): " << (1000.0 * (tEnd - tStart)) << "ms" << endl;
-
-	//		return values;
-	//	}
-
-	//	/// see 
-	//	/// * https://stackoverflow.com/questions/1640258/need-a-fast-random-generator-for-c
-	//	/// * https://github.com/raylee/xorshf96
-	//	///
-	//	/// not recommended according to the latter but will use for now until issues arise
-	//	static uint32_t xorshf96(void) {
-
-	//		static uint32_t x = 123456789, y = 362436069, z = 521288629;
-
-	//		uint32_t t;
-	//		x ^= x << 16;
-	//		x ^= x >> 5;
-	//		x ^= x << 1;
-
-	//		t = x;
-	//		x = y;
-	//		y = z;
-	//		z = t ^ x ^ y;
-
-	//		return z;
-	//	}
-
-	//};
-
-
 	struct LASHeader {
 
 		uint16_t fileSourceID = 0;
@@ -557,8 +459,54 @@ namespace LASLoaderThreaded {
 
 				cout << "==== VLR end ===" << endl;
 			}
-			
+		}
 
+		int getOffsetIntensity() {
+			return 12;
+		}
+
+		int getOffsetReturnNumber() {
+			return 14;
+		}
+
+		int getOffsetClassification() {
+			int format = header.pointDataFormat;
+
+			if (format <= 5) {
+				return 15;
+			} else if(format == 6 || format == 7){
+				return 16;
+			}
+
+			return 0;
+		}
+
+		int getOffsetPointSourceID() {
+			int format = header.pointDataFormat;
+
+			if (format <= 5) {
+				return 18;
+			} else if (format == 6 || format == 7) {
+				return 20;
+			}
+
+			return 0;
+		}
+
+		int getOffsetRGB() {
+			int format = header.pointDataFormat;
+
+			if (format == 2) {
+				return 20;
+			} else if (format == 3) {
+				return 28;
+			} else if (format == 5) {
+				return 28;
+			} else if (format == 7) {
+				return 30;
+			}
+
+			return 0;
 		}
 
 
@@ -609,24 +557,10 @@ namespace LASLoaderThreaded {
 						points->rgba.reserve(4 * n);
 						points->xyzrgba.reserve(n);
 
-						//auto f = &ShuffleGenerator::getNextValues;
-						//auto s = shuffle;
-						//auto order = std::async(std::launch::async, f, s, n);
-						//points->shuffledOrder = order.get();
-
 						int positionOffset = 0;
 
-						int rgbOffset = 20;
-
-						if (header.pointDataFormat == 2) {
-							rgbOffset = 20;
-						} else if (header.pointDataFormat == 3) {
-							rgbOffset = 28;
-						} else if (header.pointDataFormat == 6) {
-							rgbOffset = 0;
-						} else if (header.pointDataFormat == 7) {
-							rgbOffset = 30;
-						}
+						int offsetRGB = getOffsetRGB();
+						int offsetIntensity = getOffsetIntensity();
 
 						int beamVectorOffset = 36 + 2 + 2 + 2 + 4;
 						int normalVectorOffset = beamVectorOffset + 3 * 2;
@@ -637,7 +571,8 @@ namespace LASLoaderThreaded {
 							int byteOffset = i * header.pointDataRecordLength;
 				
 							int32_t *uXYZ = reinterpret_cast<int32_t*>(binaryChunk->dataU8 + byteOffset + positionOffset);
-							uint16_t *uRGB = reinterpret_cast<uint16_t*>(binaryChunk->dataU8 + byteOffset + rgbOffset);
+							uint16_t *uRGB = reinterpret_cast<uint16_t*>(binaryChunk->dataU8 + byteOffset + offsetRGB);
+							uint16_t *uIntensity = reinterpret_cast<uint16_t*>(binaryChunk->dataU8 + byteOffset + offsetIntensity);
 							int16_t *uBeamVector = reinterpret_cast<int16_t*>(binaryChunk->dataU8 + byteOffset + beamVectorOffset);
 							int16_t *uNormalVector = reinterpret_cast<int16_t*>(binaryChunk->dataU8 + byteOffset + normalVectorOffset);
 				

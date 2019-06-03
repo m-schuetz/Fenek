@@ -1,7 +1,5 @@
 #version 450
 
-#extension GL_ARB_gpu_shader_int64 : enable
-
 layout(local_size_x = 32, local_size_y = 1) in;
 
 struct Vertex{
@@ -11,28 +9,19 @@ struct Vertex{
 	uint color;
 };
 
-// This buffer contains points of the newly loaded batch,
-// which are going to be distributed to the main VBO by this shader
 layout(std430, binding = 0) buffer ssInputBuffer{
 	Vertex inputBuffer[];
 };
 
-// contains the target location in the main VBO for each point in the new batch
-// layout(std430, binding = 1) buffer ssTargetIndices{
-// 	uint targetIndices[];
-// };
-
-// the main VBO. the new batch is distributed over this buffer
 layout(std430, binding = 2) buffer ssTargetBuffer{
 	Vertex targetBuffer[];
 };
 
-// number of points in the new batch / batchSize
 layout(location = 2) uniform int uNumPoints;
 layout(location = 3) uniform double uPrime;
 layout(location = 4) uniform int uOffset;
 
-// see layout(location = 2) uniform int uNumPoints;
+// see https://preshing.com/20121224/how-to-generate-a-sequence-of-unique-random-integers/
 double permute(double number, double prime){
 
 	if(number > prime){
@@ -56,8 +45,6 @@ void main(){
 		return;
 	}
 
-	//uint targetIndex = targetIndices[inputIndex];
-
 	uint globalInputIndex = inputIndex + uOffset;
 
 	double p1 = permute(double(globalInputIndex), uPrime);
@@ -67,13 +54,7 @@ void main(){
 
 	Vertex v = inputBuffer[inputIndex];
 
-	//v.color = 0xFF0000FF;
-	//v.uy = 3.0;
-
 	targetBuffer[targetIndex] = v;
-	//targetBuffer[0] = v;
-	
-	
 }
 
 

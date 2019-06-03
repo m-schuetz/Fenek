@@ -20,8 +20,8 @@ reportState(false);
 CLOD_RANGE = [0.4, 1.2];
 CLOD_BATCH_SIZE = 50 * 1000 * 1000;
 
-MSAA_SAMPLES = 2; // MSAA 1 only works if EDL is disable
-EDL_ENABLED = true; // Eye-Dome-Lighting. Only currently available form of illumination
+MSAA_SAMPLES = 1; // MSAA 1 only works if EDL is disable
+EDL_ENABLED = false; // Eye-Dome-Lighting. Only currently available form of illumination
 RENDER_DEFAULT_ENABLED = false;
 desktopMirrorEnabled = false;
 
@@ -138,15 +138,6 @@ desktopMirrorEnabled = false;
 // );
 
 
-// view.set(
-// 	[164.42231627935024, -5.900582339455357, 161.40410448358546],
-// 	[150.21777325461176, -13.570647286902897, 152.53596373947232],
-// );
-
-view.set(
-	[305.1064642682852, 184.50874775922932, 243.39670446762017],
-	[117.4753025533808, 9.854579852929703, 49.53156905880002],
-);
 
 // log(view.position);
 // log(view.getPivot());

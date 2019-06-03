@@ -14,19 +14,16 @@ if(true){
 	//let las = loadLASProgressive("D:/dev/pointclouds/archpro/heidentor.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/eclepens.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/Riegl/Retz_Airborne_Terrestrial_Combined_1cm.las");
-	let las = loadLASProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v3.las");
+	//let las = loadLASProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v3.las");
+	//let las = loadLASProgressive("D:/dev/pointclouds/weiss/pos6_LDHI_module.las");
+	//let las = loadLASProgressive("D:/dev/pointclouds/pix4d/eclepens.las");
+	//let las = loadLASProgressive("D:/dev/pointclouds/weiss/pos7_Subsea_equipment.las");
+	let las = loadLASProgressive("C:/dev/pointclouds/planquadrat/wiener_neustadt_waldschule/HAUS_1.las");
 	//let las = loadLASProgressive("C:/dev/pointclouds/wienCity.las");
 
 	let handle = las.handle;
 
-	log(`handle: ${handle}`);
-
-	//let handle = gl.createBuffer();
-	//let size = 1000 * 1000 * 16;
-	//gl.namedBufferData(handle, size, 0, gl.STREAM_DRAW);
-
 	let pc = new PointCloudProgressive("testcloud", "blabla");
-	//let pc = new PointCloudBasic("testcloud", "blabla");
 
 	let glbuffer = new GLBuffer();
 
@@ -43,27 +40,17 @@ if(true){
 	glbuffer.vbo = handle;
 	gl.bindBuffer(gl.ARRAY_BUFFER, glbuffer.vbo);
 
-	let stride = attributes.reduce( (a, v) => a + v.bytes, 0);
-
 	for(let attribute of attributes){
-		gl.enableVertexAttribArray(attribute.location);
-		gl.vertexAttribPointer(
-			attribute.location, 
-			attribute.count, 
-			attribute.type, 
-			attribute.normalize, 
-			stride, 
-			attribute.offset);	
+
+		let {location, count, type, normalize, offset} = attribute;
+
+		gl.enableVertexAttribArray(location);
+		gl.vertexAttribPointer(location, count, type, normalize, bytesPerPoint, offset);
 	}
 
 	gl.bindVertexArray(0);
 
 	glbuffer.count =  las.numPoints;
-
-	//log("numPoints: " + las.numPoints);
-	//glbuffer.count = 25836417;
-	//glbuffer.count = 1;
-	//glbuffer.count = 10 * 1000 * 1000;
 
 	let s = 0.3;
 	pc.transform.elements.set([
@@ -76,74 +63,36 @@ if(true){
 
 	pc.components.push(glbuffer);
 
-	log("oashfo");
-
 	scene.root.add(pc);
-
 
 	listeners.update.push(() => {
 		glbuffer.count = las.numPoints;
 	});
 
-
-
-	//listeners.update.push(() => {
-
-	//	let t = now();
-	//	let u = 0.5 * (Math.sin(3 * t) + 1);
-	//	u = u * 0.9 + 0.1;
-	//	let n = parseInt(las.numPoints * u);
-
-	//	glbuffer.count = n;
-
-	//	//log(las.numPoints);
-	//	//glbuffer.count = las.numPoints;
-	//	//glbuffer.count = 1000 * 1000;;
-	//});
-
-	//let data = new ArrayBuffer(1000 * 1000 * 16);
-	//let view = new DataView(data);
-	//for(let i = 0; i < 1000 * 1000; i++){
-
-	//	let x = Math.random();
-	//	let y = Math.random();
-	//	let z = Math.random();
-
-	//	let r = Math.random();
-	//	let g = Math.random();
-	//	let b = Math.random();
-	//	let a = 255;
-
-	//	view.setFloat32(16 * i + 0, x, true);
-	//	view.setFloat32(16 * i + 4, y, true);
-	//	view.setFloat32(16 * i + 8, z, true);
-
-	//	view.setUint8(16 * i + 12, r);
-	//	view.setUint8(16 * i + 13, g);
-	//	view.setUint8(16 * i + 14, b);
-	//	view.setUint8(16 * i + 15, a);
-	//}
-
-	// listeners.update.push(() => {
-	// 	//log("adfi");	
-	// 	let buffer = glbuffer.vbo;
-	// 	let offset = 0;
-	// 	let size = data.byteLength;
-
-	// 	for(let i = 0; i < 1000 * 1000; i += 1000){
-			
-	// 		let pi = Math.random() * 1000 * 1000;
-	// 		pi = parseInt(pi);
-	// 		pi = Math.min(1000 * 1000 - 1, pi);
-
-	// 		view.setUint8(16 * pi + 12, 255);
-	// 		view.setUint8(16 * pi + 13, 0);
-	// 		view.setUint8(16 * pi + 14, 0);
-	// 		view.setUint8(16 * pi + 15, 255);
-
-	// 	}
-
-	// 	gl.namedBufferSubData(buffer, offset, size, data);
-
-	// });
 }
+
+
+// view.set(
+// 	[164.42231627935024, -5.900582339455357, 161.40410448358546],
+// 	[150.21777325461176, -13.570647286902897, 152.53596373947232],
+// );
+
+// view.set(
+// 	[305.1064642682852, 184.50874775922932, 243.39670446762017],
+// 	[117.4753025533808, 9.854579852929703, 49.53156905880002],
+// );
+
+view.set(
+	[7.054412950986094, 57.23419229658709, 15.211762493608227],
+	[-3.0606188271204786, 51.43034875981343, 19.9299008744527],
+);
+
+// view.set(
+// 	[34.561273790963696, 5.460729767465222, 27.92798827205126],
+// 	[31.237606651110774, 1.556378880387479, 31.850219804959266],
+// );
+
+// view.set(
+// 	[331.2004960537879, 91.57152257292512, -21.3101997346852],
+// 	[218.1819628747063, -40.3160839205064, 112.92660882547818],
+// );
