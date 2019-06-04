@@ -305,71 +305,120 @@ int main() {
 		double scale = args[1]->NumberValue();
 		double offset = args[2]->NumberValue();
 
-		auto lasloader = loader->loader;
+		static atomic<int> pointsUploaded = 0;
+		static atomic<int> chunkIndex = 0;
+
+		pointsUploaded = 0;
+		chunkIndex = 0;
+	
+
+		// TODO baaad
+		mutex* mtx = new mutex();
 		
-		auto findAttribute = [lasloader](string name, Points* chunk) {
 
-			auto attributes = chunk->attributes;
+		auto setAttributeTask = [name, scale, offset, mtx]() {
+			auto lasloader = loader->loader;
 
-			auto it = std::find_if(attributes.begin(), attributes.end(), [name](Attribute& a) {
-				return a.name == name;
-			});
+			auto findAttribute = [lasloader](string name, Points* chunk) {
 
-			if (it == attributes.end()) {
-				return attributes[0];
-			} else {
-				return *it;
+				auto attributes = chunk->attributes;
+
+				auto it = std::find_if(attributes.begin(), attributes.end(), [name](Attribute& a) {
+					return a.name == name;
+					});
+
+				if (it == attributes.end()) {
+					return attributes[0];
+				}
+				else {
+					return *it;
+				}
+			};
+
+//			for (auto chunk : loader->chunks) {
+
+			
+			//int index = chunkIndex;
+
+			while(true){
+
+				mtx->lock();
+
+				if (chunkIndex >= loader->chunks.size()) {
+					break;
+				}
+
+				auto chunk = loader->chunks[chunkIndex];
+				chunkIndex++;
+				mtx->unlock();
+
+				auto attribute = findAttribute(name, chunk);
+
+				int chunkSize = chunk->size;
+				void* data = malloc(chunkSize * 16);
+				XYZRGBA* target = reinterpret_cast<XYZRGBA*>(data);
+
+				auto source = attribute.data->data;
+
+				for (int i = 0; i < chunkSize; i++) {
+
+					target[i] = chunk->xyzrgba[i];
+
+					if (attribute.bytes == 1) {
+						int val = reinterpret_cast<uint8_t*>(source)[i];
+
+						target[i].r = val * scale + offset;
+						target[i].g = val * scale + offset;
+						target[i].b = val * scale + offset;
+						target[i].a = 255;
+
+					}
+					else if (attribute.bytes == 2) {
+						int val = reinterpret_cast<uint16_t*>(source)[i];
+
+						target[i].r = val * scale + offset;
+						target[i].g = val * scale + offset;
+						target[i].b = val * scale + offset;
+						target[i].a = 255;
+
+
+					}
+					else if (attribute.bytes == 4) {
+						int val = reinterpret_cast<uint32_t*>(source)[i];
+
+						target[i].r = val * scale + offset;
+						target[i].g = val * scale + offset;
+						target[i].b = val * scale + offset;
+						target[i].a = 255;
+					}
+				}
+
+				int offset = pointsUploaded;
+
+				schedule([data, target, offset, chunkSize]() {
+					loader->uploadChunk(target, offset, chunkSize);
+
+					free(data);
+				});
+
+				pointsUploaded += chunkSize;
+
 			}
+
+			//mtx->unlock();
+			//delete mtx;
+
 		};
 
-		int pointsUploaded = 0;
-		for (auto chunk : loader->chunks) {
-			auto attribute = findAttribute(name, chunk);
+		thread t1(setAttributeTask);
+		thread t2(setAttributeTask);
+		//thread t3(setAttributeTask);
+		
+		t1.detach();
+		t2.detach();
+		//t3.detach();
 
-			int chunkSize = chunk->size;
-			void* data = malloc(chunkSize * 16);
-			XYZRGBA* target = reinterpret_cast<XYZRGBA*>(data);
-
-			auto source = attribute.data->data;
-
-			for (int i = 0; i < chunkSize; i++) {
-
-				target[i] = chunk->xyzrgba[i];
-
-				if (attribute.bytes == 1) {
-					int val = reinterpret_cast<uint8_t*>(source)[i];
-
-					target[i].r = val * scale + offset;
-					target[i].g = val * scale + offset;
-					target[i].b = val * scale + offset;
-					target[i].a = 255;
-
-				} else if (attribute.bytes == 2) {
-					int val = reinterpret_cast<uint16_t*>(source)[i];
-
-					target[i].r = val * scale + offset;
-					target[i].g = val * scale + offset;
-					target[i].b = val * scale + offset;
-					target[i].a = 255;
-
-
-				} else if (attribute.bytes == 4) {
-					int val = reinterpret_cast<uint32_t*>(source)[i];
-
-					target[i].r = val * scale + offset;
-					target[i].g = val * scale + offset;
-					target[i].b = val * scale + offset;
-					target[i].a = 255;
-				}
-			}
-
-			loader->uploadChunk(target, pointsUploaded, chunkSize);
-
-			pointsUploaded += chunkSize;
-
-
-			free(data);
-		}
+		
 
 
 	});

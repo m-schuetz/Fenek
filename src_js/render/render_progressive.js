@@ -160,7 +160,6 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 		//gl.depthFunc(gl.LEQUAL);
 
 
-		
 		gl.drawArrays(gl.POINTS, start, localBatchSize);
 
 		GLTimerQueries.mark("render-progressive-add-end");

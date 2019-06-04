@@ -52,6 +52,8 @@ void main(){
 
 	uint targetIndex = uint(p2);
 
+	//uint targetIndex = globalInputIndex;
+
 	Vertex v = inputBuffer[inputIndex];
 
 	targetBuffer[targetIndex] = v;

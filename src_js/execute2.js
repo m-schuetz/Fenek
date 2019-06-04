@@ -157,7 +157,7 @@ var setEchoRatio = () => {
 var setLinearity = () => {
 	let scale = 0.0001 * 200;
 	let offset = 0;
-	setAttribute("Planarity", scale, offset);
+	setAttribute("Linearity", scale, offset);
 };
 
 var setPlanarity = () => {
@@ -180,9 +180,26 @@ var setOmnivariance = () => {
 
 
 if(typeof setAttribute !== "undefined"){
-	let scale = 0.0001 * 300;
-	let offset = -150;
-	setAttribute("Anisotropy", scale, offset);
+	let scale = 1 / 256;
+	let offset = 0;
+	//setAttribute("classification", scale, offset);
+
+	//setEchoRatio();
+	//setOmnivariance();
+	//setRange();
+
+	if(typeof attributeToggle === "undefined"){
+		attributeToggle = 0;
+	}
+
+	if(attributeToggle === 0){
+		setRange();
+	}else if(attributeToggle === 1){
+		setEchoRatio();
+	}
+
+	attributeToggle = (attributeToggle + 1) % 2;
+		
 }
 
 

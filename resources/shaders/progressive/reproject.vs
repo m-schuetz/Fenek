@@ -18,7 +18,6 @@ void main() {
 	gl_PointSize = 2.0;
 
 	vColor = aColor.rgb;
-	//vColor = vec3(1.0, 1.0, 1.0);
 
 	
 	float w = aColor.r;

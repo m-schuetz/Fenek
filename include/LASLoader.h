@@ -943,7 +943,7 @@ namespace LASLoaderThreaded {
 							XYZI32* xyz = reinterpret_cast<XYZI32*>(aXYZ.data->data);
 
 							auto it = std::find_if(attributes.begin(), attributes.end(), [](Attribute& a) {
-								return a.name == "Amplitude";
+								return a.name == "RGB";
 							});
 							Attribute& a2 = *it;
 
@@ -951,16 +951,26 @@ namespace LASLoaderThreaded {
 								XYZRGBA point;
 								XYZI32 pos = xyz[i];
 
+								
+
 								point.x = double(pos.x) * header.scaleX;
 								point.y = double(pos.y) * header.scaleY;
 								point.z = double(pos.z) * header.scaleZ;
 
-								
-
-								point.r = a2.data->dataU16[i] / 256;
-								point.g = a2.data->dataU16[i];
-								point.b = 0;
+								point.r = 200;
+								point.g = 200;
+								point.b = 200;
 								point.a = 255;
+
+								point.r = a2.data->dataU16[3 * i + 0] / 256;
+								point.g = a2.data->dataU16[3 * i + 1] / 256;
+								point.b = a2.data->dataU16[3 * i + 2] / 256;
+								point.a = 255;
+
+								//point.r = a2.data->dataU16[i] / 256;
+								//point.g = a2.data->dataU16[i];
+								//point.b = 0;
+								//point.a = 255;
 
 								points->xyzrgba.emplace_back(point);
 							}

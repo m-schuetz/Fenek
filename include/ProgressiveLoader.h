@@ -94,7 +94,7 @@ public:
 		glCreateBuffers(1, &ssChunkIndices);
 
 		uint32_t size = loader->header.numPoints * bytePerPoint;
-		GLbitfield usage = GL_STREAM_DRAW;
+		GLbitfield usage = GL_DYNAMIC_DRAW;
 		glNamedBufferData(ssVertexBuffer, size, nullptr, usage);
 
 		uint32_t chunkSize = loader->defaultChunkSize * 16;
