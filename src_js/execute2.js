@@ -20,8 +20,8 @@ reportState(false);
 CLOD_RANGE = [0.4, 1.2];
 CLOD_BATCH_SIZE = 50 * 1000 * 1000;
 
-MSAA_SAMPLES = 1; // MSAA 1 only works if EDL is disable
-EDL_ENABLED = false; // Eye-Dome-Lighting. Only currently available form of illumination
+MSAA_SAMPLES = 2; // MSAA 1 only works if EDL is disable
+EDL_ENABLED = true; // Eye-Dome-Lighting. Only currently available form of illumination
 RENDER_DEFAULT_ENABLED = false;
 desktopMirrorEnabled = false;
 
@@ -139,12 +139,51 @@ desktopMirrorEnabled = false;
 
 
 
-// log(view.position);
-// log(view.getPivot());
+log(view.position);
+log(view.getPivot());
+
+var setRange = () => {
+	let scale = 0.001;
+	let offset = 0;
+	setAttribute("Range", scale, offset);
+};
+
+var setEchoRatio = () => {
+	let scale = 0.001 * 20;
+	let offset = 0;
+	setAttribute("EchoRatio", scale, offset);
+};
+
+var setLinearity = () => {
+	let scale = 0.0001 * 200;
+	let offset = 0;
+	setAttribute("Planarity", scale, offset);
+};
+
+var setPlanarity = () => {
+	let scale = 0.0001 * 250;
+	let offset = 0;
+	setAttribute("Planarity", scale, offset);
+};
+
+var setSphericity = () => {
+	let scale = 0.0001 * 500;
+	let offset = 0;
+	setAttribute("Sphericity", scale, offset);
+};
+
+var setOmnivariance = () => {
+	let scale = 0.0001 * 500;
+	let offset = 0;
+	setAttribute("Omnivariance", scale, offset);
+};
 
 
-
-
+if(typeof setAttribute !== "undefined"){
+	let scale = 0.0001 * 300;
+	let offset = -150;
+	setAttribute("Anisotropy", scale, offset);
+}
 
 
 

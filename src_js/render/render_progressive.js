@@ -88,6 +88,10 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 		GLTimerQueries.mark("render-progressive-reproject-start");
 		gl.useProgram(shReproject.program);
 
+		gl.activeTexture(gl.TEXTURE0);
+		gl.bindTexture(gradientTexture.type, gradientTexture.handle);
+		gl.uniform1i(shReproject.uniforms.uGradient, 0);
+
 		gl.uniformMatrix4fv(shReproject.uniforms.uWorldViewProj, 1, gl.FALSE, mat32);
 
 		gl.bindVertexArray(buffer.vao);
@@ -107,6 +111,10 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 	if(doUpdates){ // ADD
 		GLTimerQueries.mark("render-progressive-add-start");
 		gl.useProgram(shAdd.program);
+
+		gl.activeTexture(gl.TEXTURE0);
+		gl.bindTexture(gradientTexture.type, gradientTexture.handle);
+		gl.uniform1i(shAdd.uniforms.uGradient, 0);
 
 		gl.uniformMatrix4fv(shAdd.uniforms.uWorldViewProj, 1, gl.FALSE, mat32);
 

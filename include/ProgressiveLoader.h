@@ -172,5 +172,51 @@ public:
 		return chunk->size;
 	}
 
+	void uploadChunk(void* data, int offset, int size) {
+
+		int targetOffset = offset;
+		int chunkSize = size;
+
+		{// upload
+			glNamedBufferSubData(ssChunk16B, 0, chunkSize * 16, data);
+			//glNamedBufferSubData(ssChunkIndices, 0, chunkSize * 4, chunk->shuffledOrder.data());
+		}
+
+		{// distribute to shuffled location
+			glUseProgram(csDistribute->program);
+
+			GLuint ssInput = ssChunk16B;
+			GLuint ssTarget = ssVertexBuffer;
+			GLuint ssIndices = ssChunkIndices;
+
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssInput);
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssIndices);
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, ssTarget);
+
+			auto uLocation = csDistribute->uniformLocations["uNumPoints"];
+			glUniform1i(uLocation, chunkSize);
+
+			auto uPrime = csDistribute->uniformLocations["uPrime"];
+			glUniform1d(uPrime, double(prime));
+
+			auto uOffset = csDistribute->uniformLocations["uOffset"];
+			glUniform1i(uOffset, targetOffset);
+
+			int groups = ceil(double(chunkSize) / 32.0);
+			glDispatchCompute(groups, 1, 1);
+
+
+
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, 0);
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, 0);
+
+			glUseProgram(0);
+
+			glMemoryBarrier(GL_ALL_BARRIER_BITS);
+		}
+
+	}
+
 };
 
