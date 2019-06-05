@@ -957,15 +957,15 @@ namespace LASLoaderThreaded {
 								point.y = double(pos.y) * header.scaleY;
 								point.z = double(pos.z) * header.scaleZ;
 
-								point.r = 200;
-								point.g = 200;
-								point.b = 200;
-								point.a = 255;
+								//point.r = 200;
+								//point.g = 200;
+								//point.b = 200;
+								//point.a = 255;
 
 								point.r = a2.data->dataU16[3 * i + 0] / 256;
 								point.g = a2.data->dataU16[3 * i + 1] / 256;
 								point.b = a2.data->dataU16[3 * i + 2] / 256;
-								point.a = 255;
+								point.a = 0;
 
 								//point.r = a2.data->dataU16[i] / 256;
 								//point.g = a2.data->dataU16[i];

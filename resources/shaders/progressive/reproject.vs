@@ -21,7 +21,7 @@ void main() {
 
 	
 	float w = aColor.r;
-	vColor = texture(uGradient, vec2(1 - w, 0.0)).rgb;
+	//vColor = texture(uGradient, vec2(1 - w, 0.0)).rgb;
 	
 	vVertexID = vec4(
 		float((gl_VertexID >>  0) & 255) / 255.0,
