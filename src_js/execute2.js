@@ -1,8 +1,8 @@
 
 GLTimerQueries.enabled = false;
 
-//vr.start();
-vr.stop();
+vr.start();
+//vr.stop();
 // allows you to adjust the mirror depending on your VR room setup
 if($("desktop_mirror")){
 	let mirror = $("desktop_mirror");
@@ -15,7 +15,7 @@ if($("desktop_mirror")){
 
 DEBUG_USER_FILTER_CAM = false;
 
-reportState(false);
+reportState(true);
 
 CLOD_RANGE = [0.4, 1.2];
 CLOD_BATCH_SIZE = 50 * 1000 * 1000;
@@ -182,8 +182,9 @@ var setOmnivariance = () => {
 if(typeof setAttribute !== "undefined"){
 	let scale = 1;
 	let offset = 0;
-	setAttribute("BeamVectorX", scale, offset);
-
+	//setAttribute("BeamVectorX", scale, offset);
+	//setAttribute("Range", scale, offset);
+	
 	//setEchoRatio();
 	//setOmnivariance();
 	//setRange();

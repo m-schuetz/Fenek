@@ -13,8 +13,8 @@ if(true){
 
 	//let las = loadLASProgressive("D:/dev/pointclouds/archpro/heidentor.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/eclepens.las");
-	//let las = loadLASProgressive("D:/dev/pointclouds/Riegl/Retz_Airborne_Terrestrial_Combined_1cm.las");
-	let las = loadLASProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v3.las");
+	let las = loadLASProgressive("D:/dev/pointclouds/Riegl/Retz_Airborne_Terrestrial_Combined_1cm.las");
+	//let las = loadLASProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v3.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/weiss/pos6_LDHI_module.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/pix4d/eclepens.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/weiss/pos7_Subsea_equipment.las");
@@ -58,13 +58,24 @@ if(true){
 
 	glbuffer.count =  las.numPoints;
 
-	let s = 0.3;
+	// wien VR
+	//let s = 0.003;
+	//pc.transform.elements.set([
+	////pc.world.elements.set([
+	//	s, 0, 0, 0, 
+	//	0, 0, s, 0, 
+	//	0, s, 0, 0, 
+	//	0, 0.8, 1, 1, 
+	//]);
+
+	// retz VR
+	let s = 0.02;
 	pc.transform.elements.set([
 	//pc.world.elements.set([
 		s, 0, 0, 0, 
 		0, 0, s, 0, 
 		0, s, 0, 0, 
-		0, 0, 1, 1, 
+		-10, 1.4, -11, 1, 
 	]);
 
 	pc.components.push(glbuffer);
@@ -78,16 +89,16 @@ if(true){
 }
 
 // Retz
-// view.set(
-// 	[164.42231627935024, -5.900582339455357, 161.40410448358546],
-// 	[150.21777325461176, -13.570647286902897, 152.53596373947232],
-// );
+view.set(
+	[164.42231627935024, -5.900582339455357, 161.40410448358546],
+	[150.21777325461176, -13.570647286902897, 152.53596373947232],
+);
 
 // Wien v3
-view.set(
-	[-123.64041104361256, 257.16964132726406, 325.6114489431626],
-	[-29.427251694584953, 15.271786917458371, 36.05849198942843],
-);
+// view.set(
+// 	[-123.64041104361256, 257.16964132726406, 325.6114489431626],
+// 	[-29.427251694584953, 15.271786917458371, 36.05849198942843],
+// );
 
 // // Wien v4
 // view.set(

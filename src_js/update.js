@@ -9,7 +9,7 @@ var updateVRControllers = function(){
 		//	let stateRight = vr.getControllerStateRight();
 		//}
 
-		{ // update pose
+		if(false){ // update pose
 			let rightPose = vr.getRightControllerPose();
 			let leftPose = vr.getLeftControllerPose();
 

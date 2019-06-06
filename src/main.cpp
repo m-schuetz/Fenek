@@ -401,11 +401,11 @@ int main() {
 		};
 
 		thread t1(setAttributeTask);
-		thread t2(setAttributeTask);
+		//thread t2(setAttributeTask);
 		//thread t3(setAttributeTask);
 		
 		t1.detach();
-		t2.detach();
+		//t2.detach();
 		//t3.detach();
 
 		
