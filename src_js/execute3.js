@@ -29,7 +29,7 @@ if(true){
 
 	let attributes = [
 		new GLBufferAttribute("position", 0, 3, gl.FLOAT, gl.FALSE, 12, 0),
-		new GLBufferAttribute("value", 1, 4, gl.UNSIGNED_INT, gl.FALSE, 4, 12, 
+		new GLBufferAttribute("value", 1, 4, gl.INT, gl.FALSE, 4, 12, 
 			{targetType: "int"}),
 	];
 

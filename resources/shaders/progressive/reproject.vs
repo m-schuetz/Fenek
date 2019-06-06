@@ -3,7 +3,7 @@
 // RUNTIME GENERATED DEFINES
 
 layout(location = 0) in vec3 aPosition;
-layout(location = 1) in uint aValue;
+layout(location = 1) in int aValue;
 
 uniform mat4 uWorldViewProj;
 
@@ -19,10 +19,23 @@ void main() {
 
 	
 
-	vec4 vecval = unpackUnorm4x8(aValue);
-	vColor = vecval.xyz;
+	//vec4 vecval = unpackUnorm4x8(aValue);
+	//vColor = vecval.xyz;
 
-	vec2 range = vec2(0, 469);
+
+
+	//vec4 rgba = vec4(
+	//	(0x000000FF & aValue) >>  0,
+	//	(0x0000FF00 & aValue) >>  8,
+	//	(0x00FF0000 & aValue) >> 16,
+	//	(0xFF000000 & aValue) >> 24
+	//) / 256.0;
+
+	//vColor = rgba.xyz;
+
+
+
+	vec2 range = vec2(-400, 400);
 	//vec2 range = vec2(10, 10000);
 	//vec2 range = vec2(710619, 1024861);
 	
@@ -30,6 +43,10 @@ void main() {
 	float w = (float(aValue) - range.x) / (range.y - range.x);
 	w = clamp(w, 0, 1);
 	vColor = texture(uGradient, vec2(w, 0.0)).rgb;
+
+	// if(aValue < 0){
+	// 	vColor = vec3(1, 0, 0);
+	// }
 
 	
 

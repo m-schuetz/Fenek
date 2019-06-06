@@ -364,40 +364,22 @@ int main() {
 
 					target[i] = chunk->xyzrgba[i];
 
-					uint32_t* targetu32 = reinterpret_cast<uint32_t*>(&target[i].r);
+					int32_t* targeti32 = reinterpret_cast<int32_t*>(&target[i].r);
 
 					if (attribute.bytes == 1) {
-						int val = reinterpret_cast<uint8_t*>(source)[i];
+						int32_t val = reinterpret_cast<uint8_t*>(source)[i];
 
-						targetu32[0] = val;
-
-						//target[i].r = val * scale + offset;
-						//target[i].g = val * scale + offset;
-						//target[i].b = val * scale + offset;
-						//target[i].a = 255;
-
+						targeti32[0] = val;
 					}
 					else if (attribute.bytes == 2) {
-						int val = reinterpret_cast<uint16_t*>(source)[i];
+						int32_t val = reinterpret_cast<int16_t*>(source)[i];
 
-						targetu32[0] = val;
-
-						//target[i].r = val * scale + offset;
-						//target[i].g = val * scale + offset;
-						//target[i].b = val * scale + offset;
-						//target[i].a = 255;
-
-
+						targeti32[0] = val;
 					}
 					else if (attribute.bytes == 4) {
-						int val = reinterpret_cast<uint32_t*>(source)[i];
+						int32_t val = reinterpret_cast<uint32_t*>(source)[i];
 
-						targetu32[0] = val;
-
-						//target[i].r = val * scale + offset;
-						//target[i].g = val * scale + offset;
-						//target[i].b = val * scale + offset;
-						//target[i].a = 255;
+						targeti32[0] = val;
 					}
 				}
 

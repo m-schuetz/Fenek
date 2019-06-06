@@ -182,7 +182,7 @@ var setOmnivariance = () => {
 if(typeof setAttribute !== "undefined"){
 	let scale = 1;
 	let offset = 0;
-	setAttribute("Deviation", scale, offset);
+	setAttribute("BeamVectorX", scale, offset);
 
 	//setEchoRatio();
 	//setOmnivariance();
