@@ -180,25 +180,26 @@ var setOmnivariance = () => {
 
 
 if(typeof setAttribute !== "undefined"){
-	let scale = 1 / 256;
+	let scale = 1;
 	let offset = 0;
-	//setAttribute("classification", scale, offset);
+	setAttribute("Deviation", scale, offset);
 
 	//setEchoRatio();
 	//setOmnivariance();
 	//setRange();
+	//setPlanarity();
 
 	if(typeof attributeToggle === "undefined"){
 		attributeToggle = 0;
 	}
 
-	if(attributeToggle === 0){
-		setRange();
-	}else if(attributeToggle === 1){
-		setEchoRatio();
-	}
+	//if(attributeToggle === 0){
+	//	setRange();
+	//}else if(attributeToggle === 1){
+	//	setEchoRatio();
+	//}
 
-	attributeToggle = (attributeToggle + 1) % 2;
+	//attributeToggle = (attributeToggle + 1) % 2;
 		
 }
 

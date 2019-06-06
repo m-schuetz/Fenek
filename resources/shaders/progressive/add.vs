@@ -3,7 +3,7 @@
 // RUNTIME GENERATED DEFINES
 
 layout(location = 0) in vec3 aPosition;
-layout(location = 1) in vec4 aColor;
+layout(location = 1) in uint aValue;
 
 uniform mat4 uWorldViewProj;
 
@@ -17,11 +17,8 @@ void main() {
 	gl_Position = uWorldViewProj * vec4(aPosition, 1.0);
 	gl_PointSize = 2.0;
 	
-	vColor = aColor.rgb;
-	//vColor = vec3(1.0, 0.0, 1.0);
-
-	float w = aColor.r;
-	//vColor = texture(uGradient, vec2(1 - w, 0.0)).rgb;
+	vec4 vecval = unpackUnorm4x8(aValue);
+	vColor = vecval.xyz;
 
 	vVertexID = vec4(
 		float((gl_VertexID >>  0) & 255) / 255.0,

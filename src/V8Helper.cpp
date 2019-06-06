@@ -1624,6 +1624,23 @@ void V8Helper::setupGL() {
 		glVertexAttribPointer(index, size, type, normalized, stride, reinterpret_cast<const void*>(pointer));
 	}));
 
+	tpl->Set(String::NewFromUtf8(isolate, "vertexAttribIPointer"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+		if (args.Length() != 5) {
+			V8Helper::_instance->throwException("vertexAttribIPointer requires 5 arguments");
+			return;
+		}
+
+		String::Utf8Value pointerUTF8(args[4]);
+
+		GLuint index = args[0]->IntegerValue();
+		GLint size = args[1]->IntegerValue();
+		GLenum type = args[2]->IntegerValue();
+		GLsizei stride = args[3]->IntegerValue();
+		int pointer = args[4]->IntegerValue();;
+
+		glVertexAttribIPointer(index, size, type, stride, reinterpret_cast<const void*>(pointer));
+	}));
+
 	tpl->Set(String::NewFromUtf8(isolate, "useProgram"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("useProgram requires 1 argument");

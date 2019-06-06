@@ -3,7 +3,7 @@
 
 class GLBufferAttribute{
 
-	constructor(name, location, count, type, normalize, bytes, offset){
+	constructor(name, location, count, type, normalize, bytes, offset, more = {}){
 		this.name = name;
 		this.location = location;
 		this.count = count;
@@ -11,6 +11,8 @@ class GLBufferAttribute{
 		this.normalize = normalize;
 		this.bytes = bytes;
 		this.offset = offset;
+		
+		this.targetType = more.targetType;
 	}
 
 }

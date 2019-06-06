@@ -29,7 +29,8 @@ if(true){
 
 	let attributes = [
 		new GLBufferAttribute("position", 0, 3, gl.FLOAT, gl.FALSE, 12, 0),
-		new GLBufferAttribute("color_orig", 1, 4, gl.UNSIGNED_BYTE, gl.TRUE, 4, 12),
+		new GLBufferAttribute("value", 1, 4, gl.UNSIGNED_INT, gl.FALSE, 4, 12, 
+			{targetType: "int"}),
 	];
 
 	glbuffer.attributes = attributes;
@@ -45,7 +46,12 @@ if(true){
 		let {location, count, type, normalize, offset} = attribute;
 
 		gl.enableVertexAttribArray(location);
-		gl.vertexAttribPointer(location, count, type, normalize, bytesPerPoint, offset);
+
+		if(attribute.targetType === "int"){
+			gl.vertexAttribIPointer(location, count, type, bytesPerPoint, offset);
+		}else{
+			gl.vertexAttribPointer(location, count, type, normalize, bytesPerPoint, offset);
+		}
 	}
 
 	gl.bindVertexArray(0);
