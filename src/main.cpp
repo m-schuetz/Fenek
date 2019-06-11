@@ -432,10 +432,18 @@ int main() {
 		Local<ObjectTemplate> lasTempl = ObjectTemplate::New(isolate);
 		auto objLAS = lasTempl->NewInstance();
 
-		auto lHandle = v8::Integer::New(isolate, loader->ssVertexBuffer);
+		auto lHandle0 = v8::Integer::New(isolate, loader->ssVertexBuffers[0]);
+		auto lHandle1 = v8::Integer::New(isolate, loader->ssVertexBuffers[1]);
 		auto lNumPoints = v8::Integer::New(isolate, 0);
 
-		objLAS->Set(String::NewFromUtf8(isolate, "handle"), lHandle);
+		auto lHandles = Array::New(isolate, loader->ssVertexBuffers.size());
+		for (int i = 0; i < loader->ssVertexBuffers.size(); i++) {
+			auto lHandle = v8::Integer::New(isolate, loader->ssVertexBuffers[i]);
+			lHandles->Set(i, lHandle);
+		}
+		objLAS->Set(String::NewFromUtf8(isolate, "handles"), lHandles);
+		//objLAS->Set(String::NewFromUtf8(isolate, "handle0"), lHandle0);
+		//objLAS->Set(String::NewFromUtf8(isolate, "handle1"), lHandle1);
 		objLAS->Set(String::NewFromUtf8(isolate, "numPoints"), lNumPoints);
 
 		auto pObjLAS = v8::Persistent<Object, v8::CopyablePersistentTraits<v8::Object>>(isolate, objLAS);

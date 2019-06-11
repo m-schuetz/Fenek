@@ -4,6 +4,7 @@
 
 layout(location = 0) in vec3 aPosition;
 layout(location = 1) in int aValue;
+layout(location = 2) in int aIndex;
 
 uniform mat4 uWorldViewProj;
 
@@ -56,12 +57,12 @@ void main() {
 
 	//vColor = vec3(0, 1, 0);
 	
-
+	uint index = uint(aIndex);
 	vVertexID = vec4(
-		float((gl_VertexID >>  0) & 255) / 255.0,
-		float((gl_VertexID >>  8) & 255) / 255.0,
-		float((gl_VertexID >> 16) & 255) / 255.0,
-		float((gl_VertexID >> 24) & 255) / 255.0
+		float((index >>  0) & 0xFF) / 255.0,
+		float((index >>  8) & 0xFF) / 255.0,
+		float((index >> 16) & 0xFF) / 255.0,
+		float((index >> 24) & 0xFF) / 255.0
 	);
 
 }

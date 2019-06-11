@@ -1,7 +1,7 @@
 
 GLTimerQueries.enabled = false;
 
-vr.start();
+//vr.start();
 //vr.stop();
 // allows you to adjust the mirror depending on your VR room setup
 if($("desktop_mirror")){
@@ -15,7 +15,7 @@ if($("desktop_mirror")){
 
 DEBUG_USER_FILTER_CAM = false;
 
-reportState(true);
+reportState(false);
 
 CLOD_RANGE = [0.4, 1.2];
 CLOD_BATCH_SIZE = 50 * 1000 * 1000;
@@ -194,13 +194,13 @@ if(typeof setAttribute !== "undefined"){
 		attributeToggle = 0;
 	}
 
-	//if(attributeToggle === 0){
-	//	setRange();
-	//}else if(attributeToggle === 1){
-	//	setEchoRatio();
-	//}
+	if(attributeToggle === 0){
+		setRange();
+	}else if(attributeToggle === 1){
+		setEchoRatio();
+	}
 
-	//attributeToggle = (attributeToggle + 1) % 2;
+	attributeToggle = (attributeToggle + 1) % 2;
 		
 }
 

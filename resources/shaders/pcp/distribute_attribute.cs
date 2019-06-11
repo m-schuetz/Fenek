@@ -6,11 +6,11 @@ struct Vertex{
 	float ux;
 	float uy;
 	float uz;
-	uint color;
+	uint attribute;
 };
 
 layout(std430, binding = 0) buffer ssInputBuffer{
-	Vertex inputBuffer[];
+	uint inputBuffer[];
 };
 
 layout(std430, binding = 2) buffer ssTargetBuffer0{
@@ -66,18 +66,36 @@ void main(){
 
 	//uint targetIndex = globalInputIndex;
 
-	Vertex v = inputBuffer[inputIndex];
 
 	if(targetIndex < 134000000){
+		uint attribute = inputBuffer[inputIndex];
+		Vertex v = targetBuffer0[targetIndex];
+		v.attribute = attribute;
+
 		targetBuffer0[targetIndex] = v;
 	}else if(targetIndex < 2 * 134000000){
 		targetIndex = targetIndex - 134000000;
+
+		uint attribute = inputBuffer[inputIndex];
+		Vertex v = targetBuffer0[targetIndex];
+		v.attribute = attribute;
+
 		targetBuffer1[targetIndex] = v;
 	}else if(targetIndex < 3 * 134000000){
 		targetIndex = targetIndex - 2 * 134000000;
+
+		uint attribute = inputBuffer[inputIndex];
+		Vertex v = targetBuffer0[targetIndex];
+		v.attribute = attribute;
+
 		targetBuffer2[targetIndex] = v;
 	}else if(targetIndex < 4 * 134000000){
 		targetIndex = targetIndex - 3 * 134000000;
+
+		uint attribute = inputBuffer[inputIndex];
+		Vertex v = targetBuffer0[targetIndex];
+		v.attribute = attribute;
+
 		targetBuffer3[targetIndex] = v;
 	}
 }

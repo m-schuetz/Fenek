@@ -6,6 +6,7 @@ layout(location = 0) in vec3 aPosition;
 layout(location = 1) in int aValue;
 
 uniform mat4 uWorldViewProj;
+uniform int uOffset;
 
 layout(binding = 0) uniform sampler2D uGradient;
 
@@ -28,14 +29,19 @@ void main() {
 	) / 256.0;
 
 	vColor = rgba.xyz;
+	//vColor = vec3(0, 1, 0);
 
+	int vertexID = gl_VertexID + uOffset;
 	vVertexID = vec4(
-		float((gl_VertexID >>  0) & 255) / 255.0,
-		float((gl_VertexID >>  8) & 255) / 255.0,
-		float((gl_VertexID >> 16) & 255) / 255.0,
-		float((gl_VertexID >> 24) & 255) / 255.0
+		float((vertexID >>  0) & 0xFF) / 255.0,
+		float((vertexID >>  8) & 0xFF) / 255.0,
+		float((vertexID >> 16) & 0xFF) / 255.0,
+		float((vertexID >> 24) & 0xFF) / 255.0
 	);
-
+	
+	// if(vertexID >= 2 * 134000000 + 10000000){
+	// 	vColor = vec3(1, 0, 0);
+	// }
 }
 
 

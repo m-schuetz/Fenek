@@ -40,13 +40,24 @@ class GLBuffer{
 
 		for(let attribute of attributes){
 			gl.enableVertexAttribArray(attribute.location);
-			gl.vertexAttribPointer(
-				attribute.location, 
-				attribute.count, 
-				attribute.type, 
-				attribute.normalize, 
-				stride, 
-				attribute.offset);	
+
+			if(attribute.targetType === "int"){
+				gl.vertexAttribIPointer(
+					attribute.location, 
+					attribute.count, 
+					attribute.type, 
+					stride, 
+					attribute.offset);
+			}else{
+				gl.vertexAttribPointer(
+					attribute.location, 
+					attribute.count, 
+					attribute.type, 
+					attribute.normalize, 
+					stride, 
+					attribute.offset);
+			}
+
 		}
 
 		gl.bindVertexArray(0);

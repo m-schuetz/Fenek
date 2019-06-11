@@ -29,16 +29,25 @@ getRenderProgressiveState = function(target){
 		let icBytes = 5 * 4;
 		gl.namedBufferData(ssIndirectCommand, icBytes, new ArrayBuffer(icBytes), gl.DYNAMIC_DRAW);
 
-		let ssIBO = gl.createBuffer();
-		let indexCapacity = 30 * 1000 * 1000;
-		let iboBytes = indexCapacity * 4;
-		gl.namedBufferData(ssIBO, iboBytes, new ArrayBuffer(iboBytes), gl.DYNAMIC_DRAW);
+		let reprojectBuffer = new GLBuffer();
+
+		let vboCapacity = 30 * 1000 * 1000;
+		let vboBytes = vboCapacity * 16;
+
+		let buffer = new ArrayBuffer(vboBytes);
+		let attributes = [
+			new GLBufferAttribute("position", 0, 3, gl.FLOAT, gl.FALSE, 12, 0),
+			new GLBufferAttribute("value", 1, 4, gl.INT, gl.FALSE, 4, 12, {targetType: "int"}),
+			new GLBufferAttribute("index", 2, 4, gl.INT, gl.FALSE, 4, 16, {targetType: "int"}),
+		];
+		let count = 0;
+		reprojectBuffer.setInterleaved(buffer, attributes, count);
 
 		let fboPrev = new Framebuffer();
 
 		let state = {
 			ssIndirectCommand: ssIndirectCommand,
-			ssIBO: ssIBO,
+			reprojectBuffer: reprojectBuffer,
 			round: 0, 
 			fboPrev: fboPrev,
 		};
@@ -57,15 +66,7 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 	let state = getRenderProgressiveState(target);
 
 	
-	let {ssIndirectCommand, ssIBO, fboPrev} = state;
-
-	let buffer = pointcloud.getComponent(GLBuffer);
-
-	if(buffer === null){
-		return;
-	}
-
-	let numPoints = buffer.count;
+	let {ssIndirectCommand, reprojectBuffer, fboPrev} = state;
 
 	let mat32 = new Float32Array(16);
 	let transform = new Matrix4();
@@ -79,12 +80,32 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 	//doUpdates = false;
 	//doUpdates = true;
 
-	let batchSize = 1 * 1000 * 1000;;
+	let batchSize = 5 * 1000 * 1000;;
 
 	//batchSize = 0.003 * 1000 * 1000;
 	//batchSize = 3 * 1000 * 1000;
 
-	{ // REPROJECT
+	// if(true){
+	// 	gl.memoryBarrier(gl.ALL_BARRIER_BITS);
+	// 	// taken from https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
+	// 	const numberWithCommas = (x) => {
+	// 		return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+	// 	}
+
+	// 	let resultBuffer = new ArrayBuffer(4 * 4);
+	// 	gl.getNamedBufferSubData(ssIndirectCommand, 0, resultBuffer.byteLength, resultBuffer);
+	
+	// 	let acceptedCount = new DataView(resultBuffer).getInt32(0, true);
+	// 	//log("=====");
+	// 	//log("accepted: " + numberWithCommas(acceptedCount));
+
+	// 	let key = `accepted (${pointcloud.name})`;
+	// 	log(key + ": " + numberWithCommas(acceptedCount));
+	// 	//setDebugValue("accepted", numberWithCommas(acceptedCount));
+	// 	//log(numberWithCommas(acceptedCount));
+	// }
+
+	if(true){ // REPROJECT
 		GLTimerQueries.mark("render-progressive-reproject-start");
 		gl.useProgram(shReproject.program);
 
@@ -94,21 +115,17 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 
 		gl.uniformMatrix4fv(shReproject.uniforms.uWorldViewProj, 1, gl.FALSE, mat32);
 
-		gl.bindVertexArray(buffer.vao);
-
-		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ssIBO);
+		gl.bindVertexArray(reprojectBuffer.vao);
 		gl.bindBuffer(gl.DRAW_INDIRECT_BUFFER, ssIndirectCommand);
 
-		//gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 2, buffer.vbo);
+		gl.drawArraysIndirect(gl.POINTS, 0);
 
-		gl.drawElementsIndirect(gl.POINTS, gl.UNSIGNED_INT, 0);
+		gl.bindVertexArray(0);
 
-		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, 0);
-		gl.bindBuffer(gl.DRAW_INDIRECT_BUFFER, 0);
 		GLTimerQueries.mark("render-progressive-reproject-end");
 	}
 
-	if(doUpdates){ // ADD
+	if(true){ // ADD
 		GLTimerQueries.mark("render-progressive-add-start");
 		gl.useProgram(shAdd.program);
 
@@ -118,34 +135,21 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 
 		gl.uniformMatrix4fv(shAdd.uniforms.uWorldViewProj, 1, gl.FALSE, mat32);
 
-		//gl.memoryBarrier(gl.ALL_BARRIER_BITS);
-
-		//
-		//gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 2, buffer.vbo);
-
-		//gl.activeTexture(gl.TEXTURE0);
-		//gl.bindTexture(gl.TEXTURE_2D, fboPrev.textures[0]);
-		//gl.uniform1i(shader.uniforms.uPreviousFrame, 0);
-
-		//gl.activeTexture(gl.TEXTURE0 + 1);
-		//gl.bindTexture(gl.TEXTURE_2D, fboPrev.textures[1]);
-		//gl.uniform1i(shader.uniforms.uPreviousFrameIndices, 1);
-
-		//gl.bindImageTexture(2, fboPrev.textures[1], 0, gl.FALSE, 0, gl.READ_WRITE, gl.RGBA8);
-
-		//log(shader.uniforms.uPreviousFrame);
-
 		let buffers = new Uint32Array([
 			gl.COLOR_ATTACHMENT0, 
 			gl.COLOR_ATTACHMENT1,
 		]);
 		gl.drawBuffers(buffers.length, buffers);
 
+		let numPoints = pointcloud.numPoints;
 		let numRounds = parseInt(numPoints / batchSize);
 		numRounds += (numPoints % batchSize) > 0 ? 1 : 0;
 
 		let localRound = state.round % numRounds;
-		//localRound = 1;
+		//localRound = state.round % 140;
+		//localRound = 268 + state.round % 30;
+
+		//pointcloud.numPoints = 260 * 1000 * 1000;
 
 		let start = localRound * batchSize;
 		let localBatchSize;
@@ -155,17 +159,36 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 			localBatchSize = batchSize;
 		}
 
+		// log(localRound)
+
+		let offset = start - (start % 134000000);
+		//log((start % 134000000))
+		//let offset = (start > 134000000) ? 134000000 : 0;
+		//log(offset)
+		gl.uniform1i(shAdd.uniforms.uOffset, offset);
+
+		let bufferIndex = 0;
+		while(start > 134 * 1000 * 1000){
+			bufferIndex++;
+			start -= 134 * 1000 * 1000;
+		}
+
+		let buffer = pointcloud.glBuffers[bufferIndex];
+
 		gl.bindVertexArray(buffer.vao);
 
-		//gl.depthFunc(gl.LEQUAL);
-
-
+		//if(bufferIndex > 0){
+		//start = 1;
+		//log(start)
 		gl.drawArrays(gl.POINTS, start, localBatchSize);
+		//}
+
+		gl.bindVertexArray(0);
 
 		GLTimerQueries.mark("render-progressive-add-end");
 	}
 
-	if(doUpdates){ // CREATE IBO
+	{ // CREATE VBO
 		GLTimerQueries.mark("render-progressive-ibo-start");
 
 		gl.useProgram(csCreateIBO.program);
@@ -176,7 +199,13 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 		gl.bindImageTexture(0, target.textures[1], 0, gl.FALSE, 0, gl.READ_WRITE, gl.RGBA8);
 
 		gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 1, ssIndirectCommand);
-		gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 3, ssIBO);
+
+		gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 2, reprojectBuffer.vbo);
+
+		pointcloud.glBuffers.forEach( (buffer, i) => {
+			gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 3 + i, buffer.vbo);
+		});
+
 
 		let localSize = {
 			x: 16,
@@ -204,13 +233,37 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 
 		//log(groups);
 
+		gl.memoryBarrier(gl.ALL_BARRIER_BITS);
 		gl.dispatchCompute(...groups);
+		gl.memoryBarrier(gl.ALL_BARRIER_BITS);
 
 		gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 1, 0);
+		gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 2, 0);
 		gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 3, 0);
+		gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 4, 0);
 
 		GLTimerQueries.mark("render-progressive-ibo-end");
 
+	}
+
+	if(false){
+		gl.memoryBarrier(gl.ALL_BARRIER_BITS);
+		// taken from https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
+		const numberWithCommas = (x) => {
+			return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+		}
+
+		let resultBuffer = new ArrayBuffer(4 * 4);
+		gl.getNamedBufferSubData(ssIndirectCommand, 0, resultBuffer.byteLength, resultBuffer);
+	
+		let acceptedCount = new DataView(resultBuffer).getInt32(0, true);
+		//log("=====");
+		//log("accepted: " + numberWithCommas(acceptedCount));
+
+		let key = `accepted (${pointcloud.name})`;
+		log(key + ": " + numberWithCommas(acceptedCount));
+		//setDebugValue("accepted", numberWithCommas(acceptedCount));
+		//log(numberWithCommas(acceptedCount));
 	}
 	
 	gl.useProgram(0);

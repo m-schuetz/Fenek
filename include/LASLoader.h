@@ -81,8 +81,12 @@ namespace LASLoaderThreaded {
 			this->dataD = reinterpret_cast<double*>(this->data);
 
 			this->size = size;
-
 		}
+
+		~BArray() {
+			free(this->data);
+		}
+
 	};
 
 	struct LASHeader {
@@ -536,7 +540,7 @@ namespace LASLoaderThreaded {
 				header.numPoints = reinterpret_cast<uint64_t*>(headerBuffer.data() + 247)[0];
 			}
 
-			int maxPoints = 134'000'000;
+			int maxPoints = 3 * 134'000'000;
 			if (header.numPoints > maxPoints) {
 				cout << "#points limited to " << maxPoints << ", was " << header.numPoints << endl;
 				header.numPoints = maxPoints;

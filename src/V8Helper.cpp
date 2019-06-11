@@ -1689,6 +1689,30 @@ void V8Helper::setupGL() {
 		glDrawArrays(mode, first, count);
 	}));
 
+	tpl->Set(String::NewFromUtf8(isolate, "getProgramInfoLogString"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+		if (args.Length() != 1) {
+			V8Helper::_instance->throwException("drawArrays requires 1 arguments");
+			return;
+		}
+
+		int program = args[0]->NumberValue();
+
+		GLint maxLength = 0;
+		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &maxLength);
+
+		// The maxLength includes the NULL character
+		std::vector<GLchar> infoLog(maxLength);
+		glGetProgramInfoLog(program, maxLength, &maxLength, &infoLog[0]);
+
+		string str(infoLog.begin(), infoLog.end());
+
+		//Local<String> v8String = String::NewFromUtf8(isolate, cppStr.c_str(), v8::String::kNormalString);
+		Local<String> v8String = String::NewFromUtf8(v8::Isolate::GetCurrent(), str.c_str(), v8::String::kNormalString);
+
+		args.GetReturnValue().Set(v8String);
+		
+	}));
+
 	tpl->Set(String::NewFromUtf8(isolate, "createQuery"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 0) {
 			V8Helper::_instance->throwException("createQuery requires 0 arguments");

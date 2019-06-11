@@ -44,7 +44,7 @@ if(typeof PointCloudProgressive === "undefined"){
 			}
 
 			{ // create IBO shader
-				let path = "../../resources/shaders/progressive/create_ibo.cs";
+				let path = "../../resources/shaders/pcp/create_vbo.cs";
 				let shader = new Shader([{type: gl.COMPUTE_SHADER, path: path}]);
 				shader.watch();
 				this.csCreateIBO = shader;
