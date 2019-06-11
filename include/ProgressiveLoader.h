@@ -77,11 +77,14 @@ public:
 	
 	vector<GLuint> ssVertexBuffers;
 	GLuint ssChunk16B = -1;
+	GLuint ssChunk4B = -1;
+	GLuint ssDebug = -1;
 
 	uint32_t pointsUploaded;
 	int bytePerPoint = 16;
 	vector<Points*> chunks;
 	ComputeShader* csDistribute = nullptr;
+	ComputeShader* csDistributeAttributes = nullptr;
 
 	int maxPointsPerBuffer = 134'000'000;
 
@@ -94,8 +97,6 @@ public:
 		if ((loader->header.numPoints % maxPointsPerBuffer) == 0) {
 			numBuffers = numBuffers - 1;
 		}
-
-		glCreateBuffers(1, &ssChunk16B);
 
 		GLbitfield usage = GL_DYNAMIC_DRAW;
 
@@ -115,12 +116,34 @@ public:
 			pointsLeft = pointsLeft - numPointsInBuffer;
 		}
 		
+		{
+			uint32_t chunkSize = loader->defaultChunkSize * 16;
+			glCreateBuffers(1, &ssChunk16B);
+			glNamedBufferData(ssChunk16B, chunkSize, nullptr, usage);
+		}
 
-		uint32_t chunkSize = loader->defaultChunkSize * 16;
-		glNamedBufferData(ssChunk16B, chunkSize, nullptr, usage);
+		{
+			uint32_t chunkSize = loader->defaultChunkSize * 4;
+			glCreateBuffers(1, &ssChunk4B);
+			glNamedBufferData(ssChunk4B, chunkSize, nullptr, usage);
+		}
+
+		{
+			glCreateBuffers(1, &ssDebug);
+			glNamedBufferData(ssDebug, loader->header.numPoints * 4, nullptr, usage);
+		}
 
 		string csPath = "../../resources/shaders/pcp/distribute.cs";
 		csDistribute = new ComputeShader(csPath);
+		monitorFile(csPath, [=]() {
+			csDistribute = new ComputeShader(csPath);
+		});
+
+		string csDAPath = "../../resources/shaders/pcp/distribute_attribute.cs";
+		csDistributeAttributes = new ComputeShader(csDAPath);
+		monitorFile(csDAPath, [=]() {
+			csDistributeAttributes = new ComputeShader(csDAPath);
+		});
 
 	}
 
@@ -160,6 +183,10 @@ public:
 
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssInput);
 
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 15, ssDebug);
+
+			//cout << "ssDebug: " << ssDebug << endl;
+
 			for(int i = 0; i < ssVertexBuffers.size(); i++){
 				glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2 + i, ssVertexBuffers[i]);
 			}
@@ -173,8 +200,13 @@ public:
 			auto uPrime = csDistribute->uniformLocations["uPrime"];
 			glUniform1d(uPrime, double(prime));
 
+			//cout << "offset: " << pointsUploaded << endl;
 			auto uOffset = csDistribute->uniformLocations["uOffset"];
 			glUniform1i(uOffset, pointsUploaded);
+
+			if (pointsUploaded > 50'000'000) {
+				int a = 10;
+			}
 
 			int groups = ceil(double(chunkSize) / 32.0);
 			glDispatchCompute(groups, 1, 1);
@@ -215,6 +247,52 @@ public:
 			int bufferIndex = pointsUploaded / maxPointsPerBuffer;
 
 			GLuint ssInput = ssChunk16B;
+			GLuint ssTarget = ssVertexBuffers[bufferIndex];
+
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssInput);
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, ssTarget);
+
+			auto uLocation = csDistribute->uniformLocations["uNumPoints"];
+			glUniform1i(uLocation, chunkSize);
+
+			auto uPrime = csDistribute->uniformLocations["uPrime"];
+			glUniform1d(uPrime, double(prime));
+
+			//cout << "offset: " << targetOffset << endl;
+			auto uOffset = csDistribute->uniformLocations["uOffset"];
+			glUniform1i(uOffset, targetOffset);
+
+			int groups = ceil(double(chunkSize) / 32.0);
+			glMemoryBarrier(GL_ALL_BARRIER_BITS);
+			glDispatchCompute(groups, 1, 1);
+			glMemoryBarrier(GL_ALL_BARRIER_BITS);
+
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, 0);
+
+			glUseProgram(0);
+
+			glMemoryBarrier(GL_ALL_BARRIER_BITS);
+		}
+
+	}
+
+	void uploadChunkAttribute(void* data, int offset, int size) {
+
+		int targetOffset = offset;
+		int chunkSize = size;
+
+		{// upload
+			glNamedBufferSubData(ssChunk4B, 0, chunkSize * 4, data);
+			//glNamedBufferSubData(ssChunkIndices, 0, chunkSize * 4, chunk->shuffledOrder.data());
+		}
+
+		{// distribute to shuffled location
+			glUseProgram(csDistributeAttributes->program);
+
+			int bufferIndex = pointsUploaded / maxPointsPerBuffer;
+
+			GLuint ssInput = ssChunk4B;
 			GLuint ssTarget = ssVertexBuffers[bufferIndex];
 
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssInput);

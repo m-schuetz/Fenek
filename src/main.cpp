@@ -129,16 +129,16 @@ void uploadHook(ProgressiveLoader* loader, v8::Persistent<Object, v8::CopyablePe
 	//cout << "chunks.size(): " << loader->loader->chunks.size() << endl;
 
 	loader->uploadNextAvailableChunk();
-	loader->uploadNextAvailableChunk();
-	loader->uploadNextAvailableChunk();
-	loader->uploadNextAvailableChunk();
-	loader->uploadNextAvailableChunk();
-	loader->uploadNextAvailableChunk();
-	loader->uploadNextAvailableChunk();
-	loader->uploadNextAvailableChunk();
-	loader->uploadNextAvailableChunk();
-	loader->uploadNextAvailableChunk();
-	loader->uploadNextAvailableChunk();
+	//loader->uploadNextAvailableChunk();
+	//loader->uploadNextAvailableChunk();
+	//loader->uploadNextAvailableChunk();
+	//loader->uploadNextAvailableChunk();
+	//loader->uploadNextAvailableChunk();
+	//loader->uploadNextAvailableChunk();
+	//loader->uploadNextAvailableChunk();
+	//loader->uploadNextAvailableChunk();
+	//loader->uploadNextAvailableChunk();
+	//loader->uploadNextAvailableChunk();
 
 
 	auto isolate = Isolate::GetCurrent();
@@ -355,38 +355,37 @@ int main() {
 				auto attribute = findAttribute(name, chunk);
 
 				int chunkSize = chunk->size;
-				void* data = malloc(chunkSize * 16);
-				XYZRGBA* target = reinterpret_cast<XYZRGBA*>(data);
+				void* data = malloc(chunkSize * 4);
+				//XYZRGBA* target = reinterpret_cast<XYZRGBA*>(data);
+				uint32_t* target = reinterpret_cast<uint32_t*>(data);
 
 				auto source = attribute.data->data;
 
-				for (int i = 0; i < chunkSize; i++) {
+				if (attribute.bytes == 1) {
+					uint8_t* sourceArray = reinterpret_cast<uint8_t*>(source);
 
-					target[i] = chunk->xyzrgba[i];
-
-					int32_t* targeti32 = reinterpret_cast<int32_t*>(&target[i].r);
-
-					if (attribute.bytes == 1) {
-						int32_t val = reinterpret_cast<uint8_t*>(source)[i];
-
-						targeti32[0] = val;
+					for (int i = 0; i < chunkSize; i++) {
+						target[i] = sourceArray[i];
 					}
-					else if (attribute.bytes == 2) {
-						int32_t val = reinterpret_cast<int16_t*>(source)[i];
+				}else if (attribute.bytes == 2) {
+					int16_t* sourceArray = reinterpret_cast<int16_t*>(source);
 
-						targeti32[0] = val;
+					for (int i = 0; i < chunkSize; i++) {
+						target[i] = sourceArray[i];
 					}
-					else if (attribute.bytes == 4) {
-						int32_t val = reinterpret_cast<uint32_t*>(source)[i];
+				}else if (attribute.bytes == 4) {
+					int32_t* sourceArray = reinterpret_cast<int32_t*>(source);
 
-						targeti32[0] = val;
+					for (int i = 0; i < chunkSize; i++) {
+						target[i] = sourceArray[i];
 					}
 				}
+				
 
 				int offset = pointsUploaded;
 
 				schedule([data, target, offset, chunkSize]() {
-					loader->uploadChunk(target, offset, chunkSize);
+					loader->uploadChunkAttribute(target, offset, chunkSize);
 
 					free(data);
 				});
@@ -432,8 +431,8 @@ int main() {
 		Local<ObjectTemplate> lasTempl = ObjectTemplate::New(isolate);
 		auto objLAS = lasTempl->NewInstance();
 
-		auto lHandle0 = v8::Integer::New(isolate, loader->ssVertexBuffers[0]);
-		auto lHandle1 = v8::Integer::New(isolate, loader->ssVertexBuffers[1]);
+		//auto lHandle0 = v8::Integer::New(isolate, loader->ssVertexBuffers[0]);
+		//auto lHandle1 = v8::Integer::New(isolate, loader->ssVertexBuffers[1]);
 		auto lNumPoints = v8::Integer::New(isolate, 0);
 
 		auto lHandles = Array::New(isolate, loader->ssVertexBuffers.size());

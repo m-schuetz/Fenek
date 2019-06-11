@@ -55,7 +55,7 @@ void main() {
 	// 	vColor = vec3(1, 0, 0);
 	// }
 
-	//vColor = vec3(0, 1, 0);
+	//vColor = vec3(1, 1, 1);
 	
 	uint index = uint(aIndex);
 	vVertexID = vec4(

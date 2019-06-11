@@ -179,7 +179,7 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 
 		//if(bufferIndex > 0){
 		//start = 1;
-		//log(start)
+		//log(localBatchSize)
 		gl.drawArrays(gl.POINTS, start, localBatchSize);
 		//}
 
@@ -262,6 +262,39 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 
 		let key = `accepted (${pointcloud.name})`;
 		log(key + ": " + numberWithCommas(acceptedCount));
+		//setDebugValue("accepted", numberWithCommas(acceptedCount));
+		//log(numberWithCommas(acceptedCount));
+	}
+
+	if(false){
+		gl.memoryBarrier(gl.ALL_BARRIER_BITS);
+		// taken from https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
+		const numberWithCommas = (x) => {
+			return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+		}
+
+		let resultBuffer = new ArrayBuffer(10000 * 4);
+		let resI32 = new Uint32Array(resultBuffer);
+		gl.getNamedBufferSubData(22, 0, resultBuffer.byteLength, resultBuffer);
+
+		//log(resI32);
+		let a = Array.from(resI32);
+
+		let max = Math.max(...a);
+		let min = Math.min(...a);
+
+		//log(a)
+
+		//log(new Array(resI32));
+
+		log(`targetCounts - max: ${max}, min: ${min}`);
+	
+		let acceptedCount = new DataView(resultBuffer).getInt32(0, true);
+		//log("=====");
+		//log("accepted: " + numberWithCommas(acceptedCount));
+
+		let key = `accepted (${pointcloud.name})`;
+		//log(key + ": " + numberWithCommas(acceptedCount));
 		//setDebugValue("accepted", numberWithCommas(acceptedCount));
 		//log(numberWithCommas(acceptedCount));
 	}

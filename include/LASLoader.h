@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <queue>
 #include <fstream>
 #include <chrono>
 #include <thread>
@@ -42,6 +43,7 @@ namespace LASLoaderThreaded {
 	using std::min;
 	using std::stringstream;
 	using std::function;
+	using std::queue;
 
 	static long long ll_start_time = std::chrono::high_resolution_clock::now().time_since_epoch().count();
 
@@ -393,7 +395,7 @@ namespace LASLoaderThreaded {
 		vector<VariableLengthRecord> variableLengthRecords;
 
 		vector<char> headerBuffer;
-		vector<BArray*> binaryChunks;
+		queue<BArray*> binaryChunks;
 		vector<Points*> chunks;
 
 		mutex mtx_processing_chunk;
@@ -532,15 +534,25 @@ namespace LASLoaderThreaded {
 			header.pointDataFormat = reinterpret_cast<uint8_t*>(headerBuffer.data() + 104)[0];
 			header.pointDataRecordLength = reinterpret_cast<uint16_t*>(headerBuffer.data() + 105)[0];
 			header.numPoints = reinterpret_cast<uint32_t*>(headerBuffer.data() + 107)[0];
+			
 			header.scaleX = reinterpret_cast<double*>(headerBuffer.data() + 131)[0];
 			header.scaleY = reinterpret_cast<double*>(headerBuffer.data() + 139)[0];
 			header.scaleZ = reinterpret_cast<double*>(headerBuffer.data() + 147)[0];
+
+			header.offsetX = reinterpret_cast<double*>(headerBuffer.data() + 155)[0];
+			header.offsetY = reinterpret_cast<double*>(headerBuffer.data() + 163)[0];
+			header.offsetZ = reinterpret_cast<double*>(headerBuffer.data() + 171)[0];
+
+			header.minX = reinterpret_cast<double*>(headerBuffer.data() + 187)[0];
+			header.minY = reinterpret_cast<double*>(headerBuffer.data() + 203)[0];
+			header.minZ = reinterpret_cast<double*>(headerBuffer.data() + 219)[0];
 
 			if (header.versionMajor >= 1 && header.versionMinor >= 4) {
 				header.numPoints = reinterpret_cast<uint64_t*>(headerBuffer.data() + 247)[0];
 			}
 
-			int maxPoints = 3 * 134'000'000;
+			int maxPoints = 4 * 134'000'000;
+			//int maxPoints = 100'000'000;;
 			if (header.numPoints > maxPoints) {
 				cout << "#points limited to " << maxPoints << ", was " << header.numPoints << endl;
 				header.numPoints = maxPoints;
@@ -898,8 +910,8 @@ namespace LASLoaderThreaded {
 					//	cout << ss.str();
 					//}
 
-					auto binaryChunk = binaryChunks.back();
-					binaryChunks.pop_back();
+					auto binaryChunk = binaryChunks.front();
+					binaryChunks.pop();
 					mtx_binary_chunks.unlock();
 
 					i++;
@@ -955,11 +967,9 @@ namespace LASLoaderThreaded {
 								XYZRGBA point;
 								XYZI32 pos = xyz[i];
 
-								
-
-								point.x = double(pos.x) * header.scaleX;
-								point.y = double(pos.y) * header.scaleY;
-								point.z = double(pos.z) * header.scaleZ;
+								point.x = double(pos.x) * header.scaleX + header.offsetX - header.minX;
+								point.y = double(pos.y) * header.scaleY + header.offsetY - header.minY;
+								point.z = double(pos.z) * header.scaleZ + header.offsetZ - header.minZ;
 
 								//point.r = 200;
 								//point.g = 200;
@@ -1049,7 +1059,8 @@ namespace LASLoaderThreaded {
 					done = bytesRead == 0;
 
 					mtx_binary_chunks.lock();
-					binaryChunks.emplace_back(chunkBuffer);
+					//binaryChunks.emplace_back(chunkBuffer);
+					binaryChunks.emplace(chunkBuffer);
 					mtx_binary_chunks.unlock();
 
 					offset += chunkSizeBytes;
