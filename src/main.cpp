@@ -129,8 +129,8 @@ void uploadHook(ProgressiveLoader* loader, v8::Persistent<Object, v8::CopyablePe
 	//cout << "chunks.size(): " << loader->loader->chunks.size() << endl;
 
 	loader->uploadNextAvailableChunk();
-	//loader->uploadNextAvailableChunk();
-	//loader->uploadNextAvailableChunk();
+	loader->uploadNextAvailableChunk();
+	loader->uploadNextAvailableChunk();
 	//loader->uploadNextAvailableChunk();
 	//loader->uploadNextAvailableChunk();
 	//loader->uploadNextAvailableChunk();

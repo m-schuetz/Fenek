@@ -13,10 +13,10 @@ if(true){
 
 	//let las = loadLASProgressive("D:/dev/pointclouds/archpro/heidentor.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/eclepens.las");
-	//let las = loadLASProgressive("D:/dev/pointclouds/Riegl/Retz_Airborne_Terrestrial_Combined_1cm.las");
+	let las = loadLASProgressive("D:/dev/pointclouds/Riegl/Retz_Airborne_Terrestrial_Combined_1cm.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/tuwien_baugeschichte/Candi Sari_las export/candi_sari.las");
 	
-	let las = loadLASProgressive("D:/dev/pointclouds/riegl/niederweiden.las");
+	//let las = loadLASProgressive("D:/dev/pointclouds/riegl/niederweiden.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/open_topography/ca13/morro_bay.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v3.las");
 	
@@ -116,10 +116,10 @@ if(true){
 }
 
 // Retz
-// view.set(
-// 	[164.42231627935024, -5.900582339455357, 161.40410448358546],
-// 	[150.21777325461176, -13.570647286902897, 152.53596373947232],
-// );
+view.set(
+	[172.9393946662685, 22.215277930505863, 254.53787017275238],
+	[158.7633997583482, 14.629036187845566, 245.55271777061438],
+);
 
 // Wien v3
 // view.set(
