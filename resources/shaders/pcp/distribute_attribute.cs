@@ -52,18 +52,18 @@ layout(location = 4) uniform int uOffset;
 // }
 
 // see https://preshing.com/20121224/how-to-generate-a-sequence-of-unique-random-integers/
+// maps numbers in range [0, prime) to different numbers in the same range without collision
+// prime must be fullfill: prime % 4 = 3
 int64_t permuteI(int64_t number, int64_t prime){
 
 	if(number > prime){
 		return number;
 	}
 
+	// an int64 workaround of: residue = (number * number) % prime
 	int64_t q = number * number;
-
 	int64_t d = q / prime;
-	q = q - d * prime;
-
-	int64_t residue = q;
+	int64_t residue = q - d * prime;
 
 	if(number <= prime / 2){
 		return residue;

@@ -16,7 +16,8 @@ if(true){
 	//let las = loadLASProgressive("D:/dev/pointclouds/Riegl/Retz_Airborne_Terrestrial_Combined_1cm.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/tuwien_baugeschichte/Candi Sari_las export/candi_sari.las");
 	
-	let las = loadLASProgressive("D:/dev/pointclouds/open_topography/ca13/morro_bay.las");
+	let las = loadLASProgressive("D:/dev/pointclouds/riegl/niederweiden.las");
+	//let las = loadLASProgressive("D:/dev/pointclouds/open_topography/ca13/morro_bay.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v3.las");
 	
 	//let las = loadLASProgressive("D:/dev/pointclouds/weiss/pos6_LDHI_module.las");
@@ -153,7 +154,7 @@ if(true){
 // 	[207670.3893571181, 358.8726908716229, 1174647.2048510776],
 // 	[208722.5983242525, -366.6060016749077, 1175058.2303216192],
 // );
-view.set(
-	[-18.110248752681798, 315.3072958569582, 207.44662796617877],
-	[343.50616022013264, -10.638824399022553, 502.69411451436576],
-);
+// view.set(
+// 	[-18.110248752681798, 315.3072958569582, 207.44662796617877],
+// 	[343.50616022013264, -10.638824399022553, 502.69411451436576],
+// );
