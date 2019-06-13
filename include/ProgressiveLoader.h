@@ -106,10 +106,17 @@ public:
 
 			GLuint ssVertexBuffer;
 
+
 			glCreateBuffers(1, &ssVertexBuffer);
 			uint32_t size = numPointsInBuffer * bytePerPoint;
 			
-			glNamedBufferData(ssVertexBuffer, size, nullptr, usage);
+			auto flags = GL_MAP_WRITE_BIT;
+			//auto flags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
+			glNamedBufferStorage(ssVertexBuffer, size, 0, flags);
+
+			//auto myPointer = glMapBufferRange(GL_ARRAY_BUFFER, 0, MY_BUFFER_SIZE, flags);
+
+			//glNamedBufferData(ssVertexBuffer, size, nullptr, usage);
 
 			ssVertexBuffers.emplace_back(ssVertexBuffer);
 
@@ -316,6 +323,23 @@ public:
 			glUseProgram(0);
 
 			glMemoryBarrier(GL_ALL_BARRIER_BITS);
+		}
+
+	}
+
+	template<typename SourceType, typename TargetType>
+	static void transformAttribute(void* sourceBuffer, void *targetBuffer, int numPoints, double scale, double offset, int targetByteOffset) {
+
+		SourceType* source = reinterpret_cast<SourceType*>(sourceBuffer);
+		int32_t* target = reinterpret_cast<int32_t*>(targetBuffer);
+
+		for (int i = 0; i < numPoints; i++) {
+			TargetType value = double(source[i]) * scale + offset;
+
+			//target[i] = *reinterpret_cast<int32_t*>(&value);
+
+			auto ptr = &reinterpret_cast<uint8_t*>(targetBuffer)[4 * i + targetByteOffset];
+			reinterpret_cast<TargetType*>(ptr)[0] = value;
 		}
 
 	}

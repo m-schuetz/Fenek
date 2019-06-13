@@ -13,49 +13,47 @@ layout(binding = 0) uniform sampler2D uGradient;
 out vec3 vColor;
 out vec4 vVertexID;
 
+
+
+vec3 getColorFromV1(){
+	//vec2 range = vec2(10, 10000);
+
+	//float w = (float(aValue) - range.x) / (range.y - range.x);
+	//w = clamp(w, 0, 1);
+	//vec3 c = texture(uGradient, vec2(w, 0.0)).rgb;
+
+	//float w = float(aValue) * uScale.x + uOffset.x;
+	//vec3 c = texture(uGradient, vec2(w, 0.0)).rgb;
+
+	float w = intBitsToFloat(aValue);
+	vec3 v = texture(uGradient, vec2(w, 0.0)).rgb;
+
+	return v;
+}
+
+vec3 getColorFromV3(){
+	vec3 v = vec3(
+		(aValue >>   0) & 0xFF,
+		(aValue >>   8) & 0xFF,
+		(aValue >>  16) & 0xFF
+	);
+
+
+
+	v = v / 255.0;
+
+	return v;
+}
+
 void main() {
 	
 	gl_Position = uWorldViewProj * vec4(aPosition, 1.0);
 	gl_PointSize = 2.0;
 
-	
 
-	//vec4 vecval = unpackUnorm4x8(aValue);
-	//vColor = vecval.xyz;
+	vColor = getColorFromV3();
+	vColor = getColorFromV1();
 
-
-
-	vec4 rgba = vec4(
-		(0x000000FF & aValue) >>  0,
-		(0x0000FF00 & aValue) >>  8,
-		(0x00FF0000 & aValue) >> 16,
-		(0xFF000000 & aValue) >> 24
-	) / 256.0;
-
-	vColor = rgba.xyz;
-
-
-
-	//vec2 range = vec2(-400, 400);
-	//vec2 range = vec2(700000, 100000);
-
-	// Range
-	//vec2 range = vec2(750619, 1004861);
-
-
-	// Echo Ratio
-	vec2 range = vec2(10, 10000);
-	
-	//vColor = aColor.rgb;
-	float w = (float(aValue) - range.x) / (range.y - range.x);
-	w = clamp(w, 0, 1);
-	//vColor = texture(uGradient, vec2(w, 0.0)).rgb;
-
-	// if(aValue < 0){
-	// 	vColor = vec3(1, 0, 0);
-	// }
-
-	//vColor = vec3(1, 1, 1);
 	
 	uint index = uint(aIndex);
 	vVertexID = vec4(

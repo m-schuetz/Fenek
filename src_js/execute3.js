@@ -13,12 +13,12 @@ if(true){
 
 	//let las = loadLASProgressive("D:/dev/pointclouds/archpro/heidentor.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/eclepens.las");
-	let las = loadLASProgressive("D:/dev/pointclouds/Riegl/Retz_Airborne_Terrestrial_Combined_1cm.las");
+	//let las = loadLASProgressive("D:/dev/pointclouds/Riegl/Retz_Airborne_Terrestrial_Combined_1cm.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/tuwien_baugeschichte/Candi Sari_las export/candi_sari.las");
 	
 	//let las = loadLASProgressive("D:/dev/pointclouds/riegl/niederweiden.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/open_topography/ca13/morro_bay.las");
-	//let las = loadLASProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v3.las");
+	let las = loadLASProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v3.las");
 	
 	//let las = loadLASProgressive("D:/dev/pointclouds/weiss/pos6_LDHI_module.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/pix4d/eclepens.las");
@@ -33,8 +33,8 @@ if(true){
 
 	let attributes = [
 		new GLBufferAttribute("position", 0, 3, gl.FLOAT, gl.FALSE, 12, 0),
-		new GLBufferAttribute("value", 1, 4, gl.INT, gl.FALSE, 4, 12, 
-			{targetType: "int"}),
+		new GLBufferAttribute("value", 1, 4, gl.INT, gl.FALSE, 4, 12, {targetType: "int"}),
+		// new GLBufferAttribute("filler", 2, 4, gl.INT, gl.FALSE, 4, 16, {targetType: "int"}),
 	];
 	let bytesPerPoint = attributes.reduce( (p, c) => p + c.bytes, 0);
 
@@ -116,16 +116,16 @@ if(true){
 }
 
 // Retz
-view.set(
-	[172.9393946662685, 22.215277930505863, 254.53787017275238],
-	[158.7633997583482, 14.629036187845566, 245.55271777061438],
-);
+// view.set(
+// 	[172.9393946662685, 22.215277930505863, 254.53787017275238],
+// 	[158.7633997583482, 14.629036187845566, 245.55271777061438],
+// );
 
 // Wien v3
-// view.set(
-// 	[-123.64041104361256, 257.16964132726406, 325.6114489431626],
-// 	[-29.427251694584953, 15.271786917458371, 36.05849198942843],
-// );
+view.set(
+	[18.46650304254115, 228.64183737787695, 432.00370632043985],
+	[171.67065843439786, 31.600854059974807, 133.78408270886922],
+);
 // debug
 // view.set(
 // 	[-44.606838623590704, 15.64767041353231, 16.081424471806084],

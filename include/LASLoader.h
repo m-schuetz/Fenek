@@ -831,16 +831,54 @@ namespace LASLoaderThreaded {
 			}
 
 			// RGB
+			//if (getOffsetRGB() > 0) {
+			//	Attribute a;
+			//
+			//	a.name = "RGB";
+			//	a.bytes = 6;
+			//	a.byteOffset = getOffsetRGB();
+			//	a.elements = 3;
+			//	a.elementSize = 2;
+			//
+			//	attributes.push_back(a);
+			//}
+
 			if (getOffsetRGB() > 0) {
-				Attribute a;
+				{
+					Attribute a;
 
-				a.name = "RGB";
-				a.bytes = 6;
-				a.byteOffset = getOffsetRGB();
-				a.elements = 3;
-				a.elementSize = 2;
+					a.name = "Red";
+					a.bytes = 2;
+					a.byteOffset = getOffsetRGB();
+					a.elements = 1;
+					a.elementSize = 2;
 
-				attributes.push_back(a);
+					attributes.push_back(a);
+				}
+
+				{
+					Attribute a;
+
+					a.name = "Green";
+					a.bytes = 2;
+					a.byteOffset = getOffsetRGB() + 2;
+					a.elements = 1;
+					a.elementSize = 2;
+
+					attributes.push_back(a);
+				}
+
+				{
+					Attribute a;
+
+					a.name = "Blue";
+					a.bytes = 2;
+					a.byteOffset = getOffsetRGB() + 4;
+					a.elements = 1;
+					a.elementSize = 2;
+
+					attributes.push_back(a);
+				}
 			}
 
 			// GPS Time
@@ -959,10 +997,19 @@ namespace LASLoaderThreaded {
 							Attribute& aXYZ = attributes[0];
 							XYZI32* xyz = reinterpret_cast<XYZI32*>(aXYZ.data->data);
 
-							auto it = std::find_if(attributes.begin(), attributes.end(), [](Attribute& a) {
-								return a.name == "RGB";
+							auto itRed = std::find_if(attributes.begin(), attributes.end(), [](Attribute& a) {
+								return a.name == "Red";
 							});
-							Attribute& a2 = *it;
+							auto itGreen= std::find_if(attributes.begin(), attributes.end(), [](Attribute& a) {
+								return a.name == "Green";
+							});
+							auto itBlue = std::find_if(attributes.begin(), attributes.end(), [](Attribute& a) {
+								return a.name == "Blue";
+							});
+
+							Attribute& aRed = *itRed;
+							Attribute& aGreen = *itGreen;
+							Attribute& aBlue = *itBlue;
 
 							for (int i = 0; i < n; i++) {
 								XYZRGBA point;
@@ -977,9 +1024,9 @@ namespace LASLoaderThreaded {
 								//point.b = 200;
 								//point.a = 255;
 
-								point.r = a2.data->dataU16[3 * i + 0] / 256;
-								point.g = a2.data->dataU16[3 * i + 1] / 256;
-								point.b = a2.data->dataU16[3 * i + 2] / 256;
+								point.r = aRed.data->dataU16[i] / 256;
+								point.g = aGreen.data->dataU16[i] / 256;
+								point.b = aBlue.data->dataU16[i] / 256;
 								point.a = 0;
 
 								//point.r = a2.data->dataU16[i] / 256;

@@ -290,7 +290,7 @@ int main() {
 	}
 
 	V8Helper::_instance->registerFunction("setAttribute", [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
+		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("setAttribute requires 1 arguments");
 			return;
 		}
@@ -298,6 +298,8 @@ int main() {
 		if (loader == nullptr) {
 			return;
 		}
+
+		Isolate* isolate = Isolate::GetCurrent();
 
 		String::Utf8Value nameUTF8(args[0]);
 		string name = *nameUTF8;
@@ -310,13 +312,44 @@ int main() {
 
 		pointsUploaded = 0;
 		chunkIndex = 0;
-	
+
+		struct RequestedAttribute {
+			string name;
+			double scale;
+			double offset;
+		};
+
+		auto obj = args[0]->ToObject(isolate);
+		auto length = obj->Get(String::NewFromUtf8(isolate, "length"))->Uint32Value();
+		auto array = Local<Array>::Cast(args[0]);
+
+		vector<RequestedAttribute> requestedAttributes;
+
+		for (int i = 0; i < length; i++) {
+			auto obji = array->Get(i)->ToObject(isolate);
+			auto strName = String::NewFromUtf8(isolate, "name", NewStringType::kNormal).ToLocalChecked();
+			auto strScale = String::NewFromUtf8(isolate, "scale", NewStringType::kNormal).ToLocalChecked();
+			auto strOffset = String::NewFromUtf8(isolate, "offset", NewStringType::kNormal).ToLocalChecked();
+
+			Local<Value> bla = obji->Get(strName);
+			String::Utf8Value utf8Name(isolate, bla);
+
+			string name = *utf8Name;
+			double scale = obji->Get(strScale)->NumberValue();
+			double offset = obji->Get(strOffset)->NumberValue();
+
+			int asd = 10;
+
+			RequestedAttribute a{ name, scale, offset };
+			requestedAttributes.emplace_back(a);
+		}
+
 
 		// TODO baaad
 		mutex* mtx = new mutex();
 		
 
-		auto setAttributeTask = [name, scale, offset, mtx]() {
+		auto setAttributeTask = [requestedAttributes, mtx]() {
 			auto lasloader = loader->loader;
 
 			auto findAttribute = [lasloader](string name, Points* chunk) {
@@ -352,35 +385,64 @@ int main() {
 				chunkIndex++;
 				mtx->unlock();
 
-				auto attribute = findAttribute(name, chunk);
-
 				int chunkSize = chunk->size;
 				void* data = malloc(chunkSize * 4);
-				//XYZRGBA* target = reinterpret_cast<XYZRGBA*>(data);
 				uint32_t* target = reinterpret_cast<uint32_t*>(data);
+				uint8_t* tu8 = reinterpret_cast<uint8_t*>(target);
+				uint16_t* tu16 = reinterpret_cast<uint16_t*>(target);
 
-				auto source = attribute.data->data;
-
-				if (attribute.bytes == 1) {
-					uint8_t* sourceArray = reinterpret_cast<uint8_t*>(source);
-
-					for (int i = 0; i < chunkSize; i++) {
-						target[i] = sourceArray[i];
-					}
-				}else if (attribute.bytes == 2) {
-					int16_t* sourceArray = reinterpret_cast<int16_t*>(source);
-
-					for (int i = 0; i < chunkSize; i++) {
-						target[i] = sourceArray[i];
-					}
-				}else if (attribute.bytes == 4) {
-					int32_t* sourceArray = reinterpret_cast<int32_t*>(source);
-
-					for (int i = 0; i < chunkSize; i++) {
-						target[i] = sourceArray[i];
-					}
+				int targetByteOffset = 0;
+				int packing = 4;
+				if (requestedAttributes.size() == 2) {
+					packing = 2;
+				}if (requestedAttributes.size() > 2) {
+					packing = 1;
 				}
-				
+
+				for(RequestedAttribute requestedAttribute : requestedAttributes){
+
+					string name = requestedAttribute.name;
+					double scale = requestedAttribute.scale;
+					double offset = requestedAttribute.offset;
+
+					auto attribute = findAttribute(requestedAttribute.name, chunk);
+
+					auto source = attribute.data->data;
+
+					if(requestedAttributes.size() == 1){
+						if (attribute.elementSize == 1) {
+							ProgressiveLoader::transformAttribute<uint8_t, float>(source, target, chunkSize, scale, offset, targetByteOffset);
+						}else if (attribute.elementSize == 2) {
+							ProgressiveLoader::transformAttribute<uint16_t, float>(source, target, chunkSize, scale, offset, targetByteOffset);
+						}else if (attribute.elementSize == 4) {
+							ProgressiveLoader::transformAttribute<uint32_t, float>(source, target, chunkSize, scale, offset, targetByteOffset);
+						}
+					} else if (requestedAttributes.size() == 2) {
+						if (attribute.elementSize == 1) {
+							ProgressiveLoader::transformAttribute<uint8_t, uint16_t>(source, target, chunkSize, scale, offset, targetByteOffset);
+						} else if (attribute.elementSize == 2) {
+							ProgressiveLoader::transformAttribute<uint16_t, uint16_t>(source, target, chunkSize, scale, offset, targetByteOffset);
+						} else if (attribute.elementSize == 4) {
+							ProgressiveLoader::transformAttribute<uint32_t, uint16_t>(source, target, chunkSize, scale, offset, targetByteOffset);
+						}
+					} else if (requestedAttributes.size() > 2) {
+						if (attribute.elementSize == 1) {
+							ProgressiveLoader::transformAttribute<uint8_t, uint8_t>(source, target, chunkSize, scale, offset, targetByteOffset);
+						} else if (attribute.elementSize == 2) {
+							ProgressiveLoader::transformAttribute<uint16_t, uint8_t>(source, target, chunkSize, scale, offset, targetByteOffset);
+						} else if (attribute.elementSize == 4) {
+							ProgressiveLoader::transformAttribute<uint32_t, uint8_t>(source, target, chunkSize, scale, offset, targetByteOffset);
+						}
+					}
+
+					vector<int> values;
+					for (int abc = 0; abc < 100; abc++) {
+						values.push_back(tu8[abc]);
+					}
+
+
+					targetByteOffset += packing;
+				}
 
 				int offset = pointsUploaded;
 
