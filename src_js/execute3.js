@@ -13,12 +13,12 @@ if(true){
 
 	//let las = loadLASProgressive("D:/dev/pointclouds/archpro/heidentor.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/eclepens.las");
-	//let las = loadLASProgressive("D:/dev/pointclouds/Riegl/Retz_Airborne_Terrestrial_Combined_1cm.las");
+	let las = loadLASProgressive("D:/dev/pointclouds/Riegl/Retz_Airborne_Terrestrial_Combined_1cm.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/tuwien_baugeschichte/Candi Sari_las export/candi_sari.las");
 	
 	//let las = loadLASProgressive("D:/dev/pointclouds/riegl/niederweiden.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/open_topography/ca13/morro_bay.las");
-	let las = loadLASProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v3.las");
+	//let las = loadLASProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v3.las");
 	
 	//let las = loadLASProgressive("D:/dev/pointclouds/weiss/pos6_LDHI_module.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/pix4d/eclepens.las");
@@ -116,16 +116,16 @@ if(true){
 }
 
 // Retz
-// view.set(
-// 	[172.9393946662685, 22.215277930505863, 254.53787017275238],
-// 	[158.7633997583482, 14.629036187845566, 245.55271777061438],
-// );
+view.set(
+	[172.9393946662685, 22.215277930505863, 254.53787017275238],
+	[158.7633997583482, 14.629036187845566, 245.55271777061438],
+);
 
 // Wien v3
-view.set(
-	[18.46650304254115, 228.64183737787695, 432.00370632043985],
-	[171.67065843439786, 31.600854059974807, 133.78408270886922],
-);
+// view.set(
+// 	[18.46650304254115, 228.64183737787695, 432.00370632043985],
+// 	[171.67065843439786, 31.600854059974807, 133.78408270886922],
+// );
 // debug
 // view.set(
 // 	[-44.606838623590704, 15.64767041353231, 16.081424471806084],
@@ -158,3 +158,11 @@ view.set(
 // 	[-18.110248752681798, 315.3072958569582, 207.44662796617877],
 // 	[343.50616022013264, -10.638824399022553, 502.69411451436576],
 // );
+
+
+// Niederweiden
+// view.set(
+// 	[19.819479140378164, 9.173117905897247, 20.279376631153855],
+// 	[5.526429289048693, 2.4016546381872192, 14.781921727720867],
+// );
+

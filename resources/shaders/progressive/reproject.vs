@@ -52,7 +52,7 @@ void main() {
 
 
 	vColor = getColorFromV3();
-	vColor = getColorFromV1();
+	//vColor = getColorFromV1();
 
 	
 	uint index = uint(aIndex);

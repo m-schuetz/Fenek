@@ -18,7 +18,7 @@
 #include <functional>
 
 // for benchmarking cold start performance
-//#define DISABLE_FILE_CACHE
+#define DISABLE_FILE_CACHE
 
 #ifdef DISABLE_FILE_CACHE
 #include <Windows.h>

@@ -15,7 +15,7 @@ if($("desktop_mirror")){
 
 DEBUG_USER_FILTER_CAM = false;
 
-reportState(true);
+reportState(false);
 
 CLOD_RANGE = [0.4, 1.2];
 CLOD_BATCH_SIZE = 50 * 1000 * 1000;
@@ -221,13 +221,13 @@ if(typeof setAttribute !== "undefined"){
 	// 	setAttribute([{name: "EchoRatio", scale: scale, offset: offset}]);
 	// }
 
-	{
-		let range = [0, 10000];
-		let width = range[1] - range[0];
-		let scale = 1 / width;
-		let offset = range[0] / width;
-		setAttribute([{name: "vRank", scale: scale, offset: offset}]);
-	}
+	//{
+	//	let range = [0, 10000];
+	//	let width = range[1] - range[0];
+	//	let scale = 1 / width;
+	//	let offset = range[0] / width;
+	//	setAttribute([{name: "vRank", scale: scale, offset: offset}]);
+	//}
 
 
 	//710619, max: 1024861
