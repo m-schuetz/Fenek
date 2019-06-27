@@ -1,5 +1,5 @@
 
-GLTimerQueries.enabled = false;
+GLTimerQueries.enabled = true;
 
 //vr.start();
 //vr.stop();
@@ -15,12 +15,12 @@ if($("desktop_mirror")){
 
 DEBUG_USER_FILTER_CAM = false;
 
-reportState(false);
+reportState(true);
 
 CLOD_RANGE = [0.4, 1.2];
 CLOD_BATCH_SIZE = 50 * 1000 * 1000;
 
-MSAA_SAMPLES = 2; // MSAA 1 only works if EDL is disable
+MSAA_SAMPLES = 1; 
 EDL_ENABLED = true; // Eye-Dome-Lighting. Only currently available form of illumination
 RENDER_DEFAULT_ENABLED = false;
 desktopMirrorEnabled = false;
@@ -142,121 +142,35 @@ desktopMirrorEnabled = false;
 log(view.position);
 log(view.getPivot());
 
-var setRange = () => {
-	let scale = 0.001;
-	let offset = 0;
-	setAttribute("Range", scale, offset);
-};
-
-var setEchoRatio = () => {
-	let scale = 0.001 * 20;
-	let offset = 0;
-	setAttribute("EchoRatio", scale, offset);
-};
-
-var setLinearity = () => {
-	let scale = 0.0001 * 200;
-	let offset = 0;
-	setAttribute("Linearity", scale, offset);
-};
-
-var setPlanarity = () => {
-	let scale = 0.0001 * 250;
-	let offset = 0;
-	setAttribute("Planarity", scale, offset);
-};
-
-var setSphericity = () => {
-	let scale = 0.0001 * 500;
-	let offset = 0;
-	setAttribute("Sphericity", scale, offset);
-};
-
-var setOmnivariance = () => {
-	let scale = 0.0001 * 500;
-	let offset = 0;
-	setAttribute("Omnivariance", scale, offset);
-};
-
 
 if(typeof setAttribute !== "undefined"){
-	//let scale = 1;
-	//let offset = 0;
-	//setAttribute("BeamVectorX", scale, offset);
-	//setAttribute("Range", scale, offset);
-	
-	//setEchoRatio();
-	//setOmnivariance();
-	//setRange();
-	//setPlanarity();
 
 	if(typeof attributeToggle === "undefined"){
 		attributeToggle = 0;
 	}
 
-	//if(attributeToggle === 0){
-	//	setRange();
-	//}else if(attributeToggle === 1){
-	//	setEchoRatio();
-	//}
 
-	//setEchoRatio();
+	let toggles = [
+		() => {
+			let range = [0, 10000];
+			let width = range[1] - range[0];
+			let scale = 1 / width;
+			let offset = range[0] / width;
+			setAttribute([{name: "vRank", scale: scale, offset: offset}]);
+		},
+		() => {
+			let range = [10, 10000];
+			let width = range[1] - range[0];
+			let scale = 1 / width;
+			let offset = range[0] / width;
+			setAttribute([{name: "EchoRatio", scale: scale, offset: offset}]);
+		}
+	];
 
-	//setAttribute([{name: "EchoRatio", scale: 0.01, offset: 0}]);
-	
-	// {
-	// 	//let range = [710619, 1024861];
-	// 	let range = [810619, 1024861];
-	// 	let width = range[1] - range[0];
-	// 	let scale = 1 / width;
-	// 	let offset = range[0] / width;
-	// 	setAttribute([{name: "Range", scale: scale, offset: offset}]);
-	// }
+	let ai = (attributeToggle % toggles.length)
+	//toggles[ai]();
 
-	// {
-	// 	let range = [10, 10000];
-	// 	let width = range[1] - range[0];
-	// 	let scale = 1 / width;
-	// 	let offset = range[0] / width;
-	// 	setAttribute([{name: "EchoRatio", scale: scale, offset: offset}]);
-	// }
-
-	//{
-	//	let range = [0, 10000];
-	//	let width = range[1] - range[0];
-	//	let scale = 1 / width;
-	//	let offset = range[0] / width;
-	//	setAttribute([{name: "vRank", scale: scale, offset: offset}]);
-	//}
-
-
-	//710619, max: 1024861
-
-	//setAttribute([
-	//	{name: "Red", scale: 1 / 256, offset: 0},
-	//	{name: "Green", scale: 1 / 256, offset: 0},
-	//	{name: "Blue", scale: 1 / 256, offset: 0},
-	//]);
-
-	// setAttribute([
-	// 	{name: "BeamVectorX", scale: 255 / 4000, offset: 0},
-	// 	{name: "BeamVectorY", scale: 255 / 4000, offset: 0},
-	// 	{name: "BeamVectorZ", scale: 255 / 4000, offset: 0},
-	// ]);
-
-	// setAttribute([
-	// 	{name: "NormalX", scale: 255 / 10000, offset: 0},
-	// 	{name: "NormalY", scale: 255 / 10000, offset: 0},
-	// 	{name: "NormalZ", scale: 255 / 10000, offset: 0},
-	// ]);
-
-	// setAttribute([
-	// 	{name: "NormalEv1", scale: 255 / 5000, offset: 00},
-	// 	{name: "NormalEv2", scale: 255 / 5000, offset: 00},
-	// 	{name: "NormalEv3", scale: 255 / 5000, offset: 00},
-	// ]);
-
-	attributeToggle = (attributeToggle + 1) % 2;
+	attributeToggle++;
 		
 }
 

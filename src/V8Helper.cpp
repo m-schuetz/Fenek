@@ -1745,7 +1745,8 @@ void V8Helper::setupGL() {
 		int query = args[0]->Int32Value();
 		GLenum pname = args[1]->Uint32Value();
 
-		unsigned long long params;
+		unsigned long long params = 123;
+		//glBindBuffer(GL_QUERY_BUFFER, 0);
 		glGetQueryObjectui64v(query, pname, &params);
 
 		double val = (double)params;

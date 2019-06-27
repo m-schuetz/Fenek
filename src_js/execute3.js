@@ -13,12 +13,12 @@ if(true){
 
 	//let las = loadLASProgressive("D:/dev/pointclouds/archpro/heidentor.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/eclepens.las");
-	let las = loadLASProgressive("D:/dev/pointclouds/Riegl/Retz_Airborne_Terrestrial_Combined_1cm.las");
+	//let las = loadLASProgressive("D:/dev/pointclouds/Riegl/Retz_Airborne_Terrestrial_Combined_1cm.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/tuwien_baugeschichte/Candi Sari_las export/candi_sari.las");
 	
 	//let las = loadLASProgressive("D:/dev/pointclouds/riegl/niederweiden.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/open_topography/ca13/morro_bay.las");
-	//let las = loadLASProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v3.las");
+	let las = loadLASProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v3.las");
 	
 	//let las = loadLASProgressive("D:/dev/pointclouds/weiss/pos6_LDHI_module.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/pix4d/eclepens.las");
@@ -85,15 +85,16 @@ if(true){
 	]);
 
 
-	// wien VR
-	//let s = 0.003;
-	//pc.transform.elements.set([
-	////pc.world.elements.set([
-	//	s, 0, 0, 0, 
-	//	0, 0, s, 0, 
-	//	0, s, 0, 0, 
-	//	0, 0.8, 1, 1, 
-	//]);
+	// {// wien VR
+	// 	let s = 0.003;
+	// 	pc.transform.elements.set([
+	// 	//pc.world.elements.set([
+	// 		s, 0, 0, 0, 
+	// 		0, 0, s, 0, 
+	// 		0, s, 0, 0, 
+	// 		-3, 0.8, -1, 1, 
+	// 	]);
+	// }
 
 	// retz VR
 	// let s = 0.02;
@@ -116,25 +117,21 @@ if(true){
 }
 
 // Retz
-view.set(
-	[172.9393946662685, 22.215277930505863, 254.53787017275238],
-	[158.7633997583482, 14.629036187845566, 245.55271777061438],
-);
+// view.set(
+// 	[172.9393946662685, 22.215277930505863, 254.53787017275238],
+// 	[158.7633997583482, 14.629036187845566, 245.55271777061438],
+// );
 
 // Wien v3
-// view.set(
-// 	[18.46650304254115, 228.64183737787695, 432.00370632043985],
-// 	[171.67065843439786, 31.600854059974807, 133.78408270886922],
-// );
-// debug
-// view.set(
-// 	[-44.606838623590704, 15.64767041353231, 16.081424471806084],
-// 	[-50.174042035595804, 8.035433544859078, 15.454253342850787],
-// );
+view.set(
+	[99.84371780116061, 257.89267492625004, 499.648918453759],
+	[239.06963175530288, -68.43297286478906, 190.54390203032722],
+);
 
+// Wien v3 permutes
 // view.set(
-// 	[-264.64801992309486, 39.44561537379605, -181.21156500238834],
-// 	[-266.56910214837404, 18.46805479946822, -198.0474965794385],
+// 	[245.61471773758868, 40.6343265402732, 319.5790152456486],
+// 	[248.38411882796083, 27.02616359615839, 307.4797930398953],
 // );
 
 // // Wien v4
@@ -166,3 +163,13 @@ view.set(
 // 	[5.526429289048693, 2.4016546381872192, 14.781921727720867],
 // );
 
+// Heidentor
+// view.set(
+// 	[-12.969935350118323, 5.284788162823062, -5.833470159350096],
+// 	[-8.397718202711367, 2.8675777530107895, -8.607232645025867],
+// );
+
+// view.set(
+// 	[-4.870924392952716, 4.87083748499702, -5.880010074273333],
+// 	[-8.598512369167397, 3.0739831347414635, -8.409958387065902],
+// );

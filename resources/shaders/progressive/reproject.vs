@@ -63,6 +63,36 @@ void main() {
 		float((index >> 24) & 0xFF) / 255.0
 	);
 
+	//{
+	//	int low = 20 * 1000 * 1000;
+	//	int hig = 100 * 1000 * 1000;
+
+	//	//low = 62 * 1000 * 1000;
+	//	//hig = 64 * 1000 * 1000;
+
+	//	//low = 62880000;
+	//	//hig = 62959000;
+
+	//	float w = float(max(aIndex - low, 0));
+	//	w = w / float(hig - low);
+
+	//	//float w = vVertexID.a + vVertexID.z * 256 + vVertexID.y * 256 * 256;
+	//	//w = w * 10;
+
+	//	//float w = intBitsToFloat(aValue);
+
+
+	//	vec3 v = texture(uGradient, vec2(w, 0.0)).rgb;
+
+	//	vColor = v;
+
+	//	if(w < 0){
+	//		vColor = vec3(1, 0, 0);
+	//	}else if(w > 1){
+	//		vColor = vec3(0, 1, 0);
+	//	}
+	//}
+
 }
 
 

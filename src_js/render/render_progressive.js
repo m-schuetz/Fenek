@@ -80,7 +80,7 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 	//doUpdates = false;
 	//doUpdates = true;
 
-	let batchSize = 1 * 1000 * 1000;;
+	let batchSize = 5 * 1000 * 1000;;
 
 	//batchSize = 0.003 * 1000 * 1000;
 	//batchSize = 3 * 1000 * 1000;
@@ -123,6 +123,10 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 		gl.bindVertexArray(0);
 
 		GLTimerQueries.mark("render-progressive-reproject-end");
+		GLTimerQueries.measure("render.progressive.reproject", "render-progressive-reproject-start", "render-progressive-reproject-end", (duration) => {
+			let ms = (duration * 1000).toFixed(3);
+			setDebugValue("gl.render.progressive.reproject", `${ms}ms`);
+		});
 	}
 
 	if(true){ // ADD
@@ -186,9 +190,13 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 		gl.bindVertexArray(0);
 
 		GLTimerQueries.mark("render-progressive-add-end");
+		GLTimerQueries.measure("render.progressive.add", "render-progressive-add-start", "render-progressive-add-end", (duration) => {
+			let ms = (duration * 1000).toFixed(3);
+			setDebugValue("gl.render.progressive.add", `${ms}ms`);
+		});
 	}
 
-	{ // CREATE VBO
+	if(true){ // CREATE VBO
 		GLTimerQueries.mark("render-progressive-ibo-start");
 
 		gl.useProgram(csCreateIBO.program);
@@ -243,6 +251,10 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 		gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 4, 0);
 
 		GLTimerQueries.mark("render-progressive-ibo-end");
+		GLTimerQueries.measure("render.progressive.ibo", "render-progressive-ibo-start", "render-progressive-ibo-end", (duration) => {
+			let ms = (duration * 1000).toFixed(3);
+			setDebugValue("gl.render.progressive.ibo", `${ms}ms`);
+		});
 
 	}
 
@@ -317,6 +329,10 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 	// 	gl.COLOR_BUFFER_BIT, gl.NEAREST);
 
 	GLTimerQueries.mark("render-progressive-end");
+	GLTimerQueries.measure("render.progressive", "render-progressive-start", "render-progressive-end", (duration) => {
+		let ms = (duration * 1000).toFixed(3);
+		setDebugValue("gl.render.progressive", `${ms}ms`);
+	});
 
 	state.round++;
 

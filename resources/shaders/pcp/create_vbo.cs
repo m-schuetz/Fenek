@@ -54,10 +54,6 @@ layout(std430, binding = 6) buffer ssSource3{
 void main() {
 	
 	uvec2 id = gl_LocalInvocationID.xy + gl_WorkGroupSize.xy * gl_WorkGroupID.xy;
-	uint workGroupSize = gl_WorkGroupSize.x * gl_WorkGroupSize.y;
-	uint inputIndex = gl_WorkGroupID.x * workGroupSize 
-		+ gl_WorkGroupID.y * gl_NumWorkGroups.x * workGroupSize
-		+ gl_LocalInvocationIndex;
 	ivec2 pixelCoords = ivec2(id);
 	
 	uvec4 vVertexID = imageLoad(uIndices, pixelCoords);
