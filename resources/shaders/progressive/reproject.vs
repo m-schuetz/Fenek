@@ -54,6 +54,8 @@ void main() {
 	vColor = getColorFromV3();
 	//vColor = getColorFromV1();
 
+	//vColor = vec3(0, 1, 0);
+
 	
 	uint index = uint(aIndex);
 	vVertexID = vec4(

@@ -13,6 +13,7 @@
 
 #include "LASLoader.h"
 #include "ProgressiveLoader.h"
+#include "ProgressiveBINLoader.h"
 
 
 using std::unordered_map;
@@ -32,6 +33,7 @@ static long long start_time = std::chrono::high_resolution_clock::now().time_sin
 int numPointsUploaded = 0;
 
 ProgressiveLoader* loader = nullptr;
+ProgressiveBINLoader* binLoader = nullptr;
 
 double now() {
 	auto now = std::chrono::high_resolution_clock::now();
@@ -133,12 +135,6 @@ void uploadHook(ProgressiveLoader* loader, v8::Persistent<Object, v8::CopyablePe
 	loader->uploadNextAvailableChunk();
 	//loader->uploadNextAvailableChunk();
 	//loader->uploadNextAvailableChunk();
-	//loader->uploadNextAvailableChunk();
-	//loader->uploadNextAvailableChunk();
-	//loader->uploadNextAvailableChunk();
-	//loader->uploadNextAvailableChunk();
-	//loader->uploadNextAvailableChunk();
-	//loader->uploadNextAvailableChunk();
 
 
 	auto isolate = Isolate::GetCurrent();
@@ -157,6 +153,36 @@ void uploadHook(ProgressiveLoader* loader, v8::Persistent<Object, v8::CopyablePe
 			cout << "upload duration: " << duration << "s" << endl;
 		}
 	});
+};
+
+void binaryUploadHook(ProgressiveBINLoader* loader, v8::Persistent<Object, v8::CopyablePersistentTraits<v8::Object>> pObjLAS) {
+
+
+	//cout << "chunks.size(): " << loader->loader->chunks.size() << endl;
+
+	loader->uploadNextAvailableChunk();
+	loader->uploadNextAvailableChunk();
+	loader->uploadNextAvailableChunk();
+	//loader->uploadNextAvailableChunk();
+	//loader->uploadNextAvailableChunk();
+
+
+	auto isolate = Isolate::GetCurrent();
+	Local<Object> objLAS = Local<Object>::New(isolate, pObjLAS);
+
+	auto lNumPoints = v8::Integer::New(isolate, loader->pointsUploaded);
+	objLAS->Set(String::NewFromUtf8(isolate, "numPoints"), lNumPoints);
+
+	schedule([loader, pObjLAS]() {
+
+		if (!loader->isDone()) {
+			binaryUploadHook(loader, pObjLAS);
+		} else {
+			endUpload = now();
+			double duration = endUpload - startUpload;
+			cout << "upload duration: " << duration << "s" << endl;
+		}
+		});
 };
 
 
@@ -513,6 +539,42 @@ int main() {
 
 		args.GetReturnValue().Set(objLAS);
 	});
+
+	V8Helper::_instance->registerFunction("loadBINProgressive", [](const FunctionCallbackInfo<Value>& args) {
+		if (args.Length() != 1) {
+			V8Helper::_instance->throwException("loadLBINProgressive requires 1 arguments");
+			return;
+		}
+
+		String::Utf8Value fileUTF8(args[0]);
+		string file = *fileUTF8;
+
+		startUpload = now();
+
+		auto* loader = new ProgressiveBINLoader(file);
+
+		auto isolate = Isolate::GetCurrent();
+		Local<ObjectTemplate> lasTempl = ObjectTemplate::New(isolate);
+		auto objLAS = lasTempl->NewInstance();
+
+		//auto lHandle0 = v8::Integer::New(isolate, loader->ssVertexBuffers[0]);
+		//auto lHandle1 = v8::Integer::New(isolate, loader->ssVertexBuffers[1]);
+		auto lNumPoints = v8::Integer::New(isolate, 0);
+
+		auto lHandles = Array::New(isolate, loader->ssVertexBuffers.size());
+		for (int i = 0; i < loader->ssVertexBuffers.size(); i++) {
+			auto lHandle = v8::Integer::New(isolate, loader->ssVertexBuffers[i]);
+			lHandles->Set(i, lHandle);
+		}
+		objLAS->Set(String::NewFromUtf8(isolate, "handles"), lHandles);
+		objLAS->Set(String::NewFromUtf8(isolate, "numPoints"), lNumPoints);
+
+		auto pObjLAS = v8::Persistent<Object, v8::CopyablePersistentTraits<v8::Object>>(isolate, objLAS);
+
+		binaryUploadHook(loader, pObjLAS);
+
+		args.GetReturnValue().Set(objLAS);
+		});
 
 	cout << "<entering first render loop> " << "(" << now() << ")" << endl;
 

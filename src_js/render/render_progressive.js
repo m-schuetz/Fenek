@@ -80,7 +80,7 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 	//doUpdates = false;
 	//doUpdates = true;
 
-	let batchSize = 5 * 1000 * 1000;;
+	let batchSize = 1 * 1000 * 1000;;
 
 	//batchSize = 0.003 * 1000 * 1000;
 	//batchSize = 3 * 1000 * 1000;
