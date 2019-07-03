@@ -86,7 +86,8 @@ var renderVR = function(){
 	{ // LEFT
 		gl.bindFramebuffer(gl.FRAMEBUFFER, fboLeft.handle);
 		gl.viewport(0, 0, fboLeft.width, fboLeft.height);
-		gl.clearColor(1, 1, 1, 1);
+		//gl.clearColor(1, 1, 1, 1);
+		gl.clearColor(0, 0, 0, 0);
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
 

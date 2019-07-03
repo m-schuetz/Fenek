@@ -31,6 +31,7 @@ namespace fs = std::experimental::filesystem;
 static long long start_time = std::chrono::high_resolution_clock::now().time_since_epoch().count();
 
 int numPointsUploaded = 0;
+bool loadingLAS = false;
 
 ProgressiveLoader* loader = nullptr;
 ProgressiveBINLoader* binLoader = nullptr;
@@ -127,14 +128,14 @@ double endUpload = 0.0;
 
 void uploadHook(ProgressiveLoader* loader, v8::Persistent<Object, v8::CopyablePersistentTraits<v8::Object>> pObjLAS) {
 
-	
+	auto start = now();
 	//cout << "chunks.size(): " << loader->loader->chunks.size() << endl;
 
 	loader->uploadNextAvailableChunk();
 	loader->uploadNextAvailableChunk();
 	loader->uploadNextAvailableChunk();
-	//loader->uploadNextAvailableChunk();
-	//loader->uploadNextAvailableChunk();
+	loader->uploadNextAvailableChunk();
+	loader->uploadNextAvailableChunk();
 
 
 	auto isolate = Isolate::GetCurrent();
@@ -151,8 +152,13 @@ void uploadHook(ProgressiveLoader* loader, v8::Persistent<Object, v8::CopyablePe
 			endUpload = now();
 			double duration = endUpload - startUpload;
 			cout << "upload duration: " << duration << "s" << endl;
+
+			loadingLAS = false;
 		}
 	});
+
+	auto duration = now() - start;
+	//cout << "uploadHook(): " << duration << "s" << endl;
 };
 
 void binaryUploadHook(ProgressiveBINLoader* loader, v8::Persistent<Object, v8::CopyablePersistentTraits<v8::Object>> pObjLAS) {
@@ -163,8 +169,10 @@ void binaryUploadHook(ProgressiveBINLoader* loader, v8::Persistent<Object, v8::C
 	loader->uploadNextAvailableChunk();
 	loader->uploadNextAvailableChunk();
 	loader->uploadNextAvailableChunk();
-	//loader->uploadNextAvailableChunk();
-	//loader->uploadNextAvailableChunk();
+	loader->uploadNextAvailableChunk();
+	loader->uploadNextAvailableChunk();
+
+	long int abc;
 
 
 	auto isolate = Isolate::GetCurrent();
@@ -511,16 +519,17 @@ int main() {
 		string file = *fileUTF8;
 
 		startUpload = now();
+		loadingLAS = true;
+
 
 		loader = new ProgressiveLoader(file);
-		//ProgressiveLoader* loader = new ProgressiveLoader(file);
-
+		auto duration = now() - startUpload;
+		cout << "loader created after " << duration << "s" << endl;
+	
 		auto isolate = Isolate::GetCurrent();
 		Local<ObjectTemplate> lasTempl = ObjectTemplate::New(isolate);
 		auto objLAS = lasTempl->NewInstance();
 
-		//auto lHandle0 = v8::Integer::New(isolate, loader->ssVertexBuffers[0]);
-		//auto lHandle1 = v8::Integer::New(isolate, loader->ssVertexBuffers[1]);
 		auto lNumPoints = v8::Integer::New(isolate, 0);
 
 		auto lHandles = Array::New(isolate, loader->ssVertexBuffers.size());
@@ -529,13 +538,17 @@ int main() {
 			lHandles->Set(i, lHandle);
 		}
 		objLAS->Set(String::NewFromUtf8(isolate, "handles"), lHandles);
-		//objLAS->Set(String::NewFromUtf8(isolate, "handle0"), lHandle0);
-		//objLAS->Set(String::NewFromUtf8(isolate, "handle1"), lHandle1);
 		objLAS->Set(String::NewFromUtf8(isolate, "numPoints"), lNumPoints);
 
 		auto pObjLAS = v8::Persistent<Object, v8::CopyablePersistentTraits<v8::Object>>(isolate, objLAS);
 
+		duration = now() - startUpload;
+		//cout << "uploadHook after " << duration << "s" << endl;
+
 		uploadHook(loader, pObjLAS);
+
+		duration = now() - startUpload;
+		//cout << "returning value after " << duration << "s" << endl;
 
 		args.GetReturnValue().Set(objLAS);
 	});
@@ -552,13 +565,13 @@ int main() {
 		startUpload = now();
 
 		auto* loader = new ProgressiveBINLoader(file);
+		auto duration = now() - startUpload;
+		cout << "loader created after " << duration << "s" << endl;
 
 		auto isolate = Isolate::GetCurrent();
 		Local<ObjectTemplate> lasTempl = ObjectTemplate::New(isolate);
 		auto objLAS = lasTempl->NewInstance();
 
-		//auto lHandle0 = v8::Integer::New(isolate, loader->ssVertexBuffers[0]);
-		//auto lHandle1 = v8::Integer::New(isolate, loader->ssVertexBuffers[1]);
 		auto lNumPoints = v8::Integer::New(isolate, 0);
 
 		auto lHandles = Array::New(isolate, loader->ssVertexBuffers.size());
@@ -620,6 +633,10 @@ int main() {
 		// ----------------
 
 		EventQueue::instance->process();
+
+		//if (loadingLAS) {
+		//	cout << "tslf: " << timeSinceLastFrame << endl;
+		//}
 
 		if (timeSinceLastFrame > 0.016) {
 			cout << "too slow! time since last frame: " << int(timeSinceLastFrame * 1000.0) << "ms" << endl;

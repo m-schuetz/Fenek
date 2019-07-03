@@ -28,6 +28,43 @@ class GLBuffer{
 		this.attributes = [];
 	}
 
+	setEmptyInterleaved(attributes, size){
+		this.buffer = null;
+		this.attributes = attributes;
+
+		gl.bindVertexArray(this.vao);
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+		gl.bufferData(gl.ARRAY_BUFFER, size, 0, gl.DYNAMIC_DRAW);
+
+		let stride = attributes.reduce( (a, v) => a + v.bytes, 0);
+
+		for(let attribute of attributes){
+			gl.enableVertexAttribArray(attribute.location);
+
+			if(attribute.targetType === "int"){
+				gl.vertexAttribIPointer(
+					attribute.location, 
+					attribute.count, 
+					attribute.type, 
+					stride, 
+					attribute.offset);
+			}else{
+				gl.vertexAttribPointer(
+					attribute.location, 
+					attribute.count, 
+					attribute.type, 
+					attribute.normalize, 
+					stride, 
+					attribute.offset);
+			}
+
+		}
+
+		gl.bindVertexArray(0);
+
+		this.count = 0;
+	}
+
 	setInterleaved(buffer, attributes, count){
 		this.buffer = buffer;
 		this.attributes = attributes;

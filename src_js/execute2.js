@@ -1,7 +1,7 @@
 
 GLTimerQueries.enabled = true;
 
-//vr.start();
+vr.start();
 //vr.stop();
 // allows you to adjust the mirror depending on your VR room setup
 if($("desktop_mirror")){
@@ -21,7 +21,7 @@ CLOD_RANGE = [0.4, 1.2];
 CLOD_BATCH_SIZE = 50 * 1000 * 1000;
 
 MSAA_SAMPLES = 1; 
-EDL_ENABLED = true; // Eye-Dome-Lighting. Only currently available form of illumination
+EDL_ENABLED = false; // Eye-Dome-Lighting. Only currently available form of illumination
 RENDER_DEFAULT_ENABLED = false;
 desktopMirrorEnabled = false;
 

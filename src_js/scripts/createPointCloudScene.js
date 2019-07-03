@@ -877,3 +877,5 @@ loadOctreePlane = function(){
 //loadOctreeEndeavor();
 
 // undefined;
+
+"createPointCloudScene.js"

@@ -20,9 +20,12 @@
 
 getRenderProgressiveState = function(target){
 
+
 	if(typeof renderProgressiveMap === "undefined"){
 		renderProgressiveMap = new Map();
 	}
+
+	//let start = now()
 
 	if(!renderProgressiveMap.has(target)){
 		let ssIndirectCommand = gl.createBuffer();
@@ -40,8 +43,8 @@ getRenderProgressiveState = function(target){
 			new GLBufferAttribute("value", 1, 4, gl.INT, gl.FALSE, 4, 12, {targetType: "int"}),
 			new GLBufferAttribute("index", 2, 4, gl.INT, gl.FALSE, 4, 16, {targetType: "int"}),
 		];
-		let count = 0;
-		reprojectBuffer.setInterleaved(buffer, attributes, count);
+		
+		reprojectBuffer.setEmptyInterleaved(attributes, vboBytes);
 
 		let fboPrev = new Framebuffer();
 
@@ -54,6 +57,10 @@ getRenderProgressiveState = function(target){
 
 		renderProgressiveMap.set(target, state);
 	}
+
+	//let end = now();
+	//let duration = end - start;
+	//log(`getRenderProgressiveState(): ${duration}s`);
 
 	return renderProgressiveMap.get(target);
 };
@@ -80,7 +87,7 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 	//doUpdates = false;
 	//doUpdates = true;
 
-	let batchSize = 1 * 1000 * 1000;;
+	let batchSize = 5 * 1000 * 1000;;
 
 	//batchSize = 0.003 * 1000 * 1000;
 	//batchSize = 3 * 1000 * 1000;
@@ -111,7 +118,9 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 
 		gl.activeTexture(gl.TEXTURE0);
 		gl.bindTexture(gradientTexture.type, gradientTexture.handle);
-		gl.uniform1i(shReproject.uniforms.uGradient, 0);
+		if(shReproject.uniforms.uGradient){
+			gl.uniform1i(shReproject.uniforms.uGradient, 0);
+		}
 
 		gl.uniformMatrix4fv(shReproject.uniforms.uWorldViewProj, 1, gl.FALSE, mat32);
 
@@ -135,7 +144,9 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 
 		gl.activeTexture(gl.TEXTURE0);
 		gl.bindTexture(gradientTexture.type, gradientTexture.handle);
-		gl.uniform1i(shAdd.uniforms.uGradient, 0);
+		if(shAdd.uniforms.uGradient){
+			gl.uniform1i(shAdd.uniforms.uGradient, 0);
+		}
 
 		gl.uniformMatrix4fv(shAdd.uniforms.uWorldViewProj, 1, gl.FALSE, mat32);
 

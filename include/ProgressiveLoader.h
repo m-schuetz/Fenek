@@ -98,7 +98,8 @@ public:
 			numBuffers = numBuffers - 1;
 		}
 
-		GLbitfield usage = GL_DYNAMIC_DRAW;
+		//GLbitfield usage = GL_DYNAMIC_DRAW;
+		GLbitfield usage = GL_STATIC_DRAW;
 
 		int pointsLeft = loader->header.numPoints;
 		for (int i = 0; i < numBuffers; i++) {
@@ -112,11 +113,11 @@ public:
 			
 			auto flags = GL_MAP_WRITE_BIT;
 			//auto flags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
-			glNamedBufferStorage(ssVertexBuffer, size, 0, flags);
+			//glNamedBufferStorage(ssVertexBuffer, size, 0, flags);
 
 			//auto myPointer = glMapBufferRange(GL_ARRAY_BUFFER, 0, MY_BUFFER_SIZE, flags);
 
-			//glNamedBufferData(ssVertexBuffer, size, nullptr, usage);
+			glNamedBufferData(ssVertexBuffer, size, nullptr, usage);
 
 			ssVertexBuffers.emplace_back(ssVertexBuffer);
 
@@ -135,10 +136,10 @@ public:
 			glNamedBufferData(ssChunk4B, chunkSize, nullptr, usage);
 		}
 
-		{
-			glCreateBuffers(1, &ssDebug);
-			glNamedBufferData(ssDebug, loader->header.numPoints * 4, nullptr, usage);
-		}
+		//{
+		//	glCreateBuffers(1, &ssDebug);
+		//	glNamedBufferData(ssDebug, loader->header.numPoints * 4, nullptr, usage);
+		//}
 
 		string csPath = "../../resources/shaders/pcp/distribute.cs";
 		csDistribute = new ComputeShader(csPath);
@@ -163,6 +164,9 @@ public:
 	/// returns 0, if no chunk was uploaded.
 	///
 	uint32_t uploadNextAvailableChunk() {
+
+		auto start = now();
+
 		Points* chunk = loader->getNextChunk();
 
 		if (chunk == nullptr) {
@@ -190,7 +194,7 @@ public:
 
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssInput);
 
-			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 15, ssDebug);
+			//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 15, ssDebug);
 
 			//cout << "ssDebug: " << ssDebug << endl;
 
@@ -234,6 +238,9 @@ public:
 		chunks.emplace_back(chunk);
 
 		pointsUploaded += chunk->size;
+
+		auto duration = now() - start;
+		//cout << "uploadNextAvailableChunk(): " << duration << "s" << endl;
 
 		return chunk->size;
 	}

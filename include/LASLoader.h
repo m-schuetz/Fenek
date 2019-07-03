@@ -523,6 +523,7 @@ namespace LASLoaderThreaded {
 			//int maxPoints = 500'000'000;
 			int maxPoints = 400'000'000;
 			//int maxPoints = 100'000'000;;
+			//int maxPoints = 1'000'000;
 			if (header.numPoints > maxPoints) {
 				cout << "#points limited to " << maxPoints << ", was " << header.numPoints << endl;
 				header.numPoints = maxPoints;
@@ -993,9 +994,9 @@ namespace LASLoaderThreaded {
 								//point.b = 200;
 								//point.a = 255;
 
-								point.r = aRed.data->dataU16[i] / 256;
-								point.g = aGreen.data->dataU16[i] / 256;
-								point.b = aBlue.data->dataU16[i] / 256;
+								point.r = aRed.data->dataU16[i] ;
+								point.g = aGreen.data->dataU16[i] ;
+								point.b = aBlue.data->dataU16[i] ;
 								point.a = 0;
 
 								//point.r = a2.data->dataU16[i] / 256;

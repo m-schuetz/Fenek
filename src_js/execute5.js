@@ -1,10 +1,8 @@
 
-
-if(typeof e4called === "undefined"){
-	e4called = true;
+if(true){
 	
-	let las = loadBINProgressive("D:/dev/pointclouds/riegl/niederweiden_200m.bin");
-
+	let las = loadLASProgressive("D:/dev/pointclouds/matterhorn.las");
+	
 	let pc = new PointCloudProgressive("testcloud", "blabla");
 
 	let handles = las.handles;
@@ -13,7 +11,6 @@ if(typeof e4called === "undefined"){
 		new GLBufferAttribute("position", 0, 3, gl.FLOAT, gl.FALSE, 12, 0),
 		new GLBufferAttribute("value", 1, 4, gl.INT, gl.FALSE, 4, 12, {targetType: "int"}),
 	];
-
 	let bytesPerPoint = attributes.reduce( (p, c) => p + c.bytes, 0);
 
 	let maxPointsPerBuffer = 134 * 1000 * 1000;
@@ -55,49 +52,42 @@ if(typeof e4called === "undefined"){
 
 	let s = 0.3;
 	pc.transform.elements.set([
+	//pc.world.elements.set([
 		s, 0, 0, 0, 
 		0, 0, s, 0, 
 		0, s, 0, 0, 
 		-10, 1.4, -11, 1, 
 	]);
 
+
+	// {// Matterhorn VR
+	// 	let s = 0.003;
+	// 	pc.transform.elements.set([
+	// 	//pc.world.elements.set([
+	// 		s, 0, 0, 0, 
+	// 		0, 0, s, 0, 
+	// 		0, s, 0, 0, 
+	// 		-3, 0.8, -1, 1, 
+	// 	]);
+	// }
+
 	scene.root.add(pc);
 
 	listeners.update.push(() => {
-
-		if(pc.numPoints !== las.numPoints){
-			//log(las.numPoints);
-		}
 		pc.numPoints = las.numPoints;
-		
 	});
 
 }
 
-// Niederweiden
-view.set(
-	[11.859564250720245, 7.22595953573232, -23.071864520081228],
-	[-2.9628644577436702, -2.4220795771249986, -28.215191026963357],
-);
+// if($("testcloud")){
+// 	let pc = $("testcloud");
+// 	let s = 0.0005;
+// 	pc.transform.elements.set([
+// 		s, 0, 0, 0, 
+// 		0, 0, s, 0, 
+// 		0, s, 0, 0, 
+// 		-2.5, -1.5, -2, 1, 
+// 	]);
 
-view.set(
-	[-13.517644436226734, 7.727134067740751, -20.095312208539994],
-	[-2.577821320940421, -2.019933609584122, -28.1996901090152],
-);
-
-
-log($("testcloud"));
-
-if($("testcloud")){
-	let pc = $("testcloud");
-	let s = 0.03;
-	pc.transform.elements.set([
-		s, 0, 0, 0, 
-		0, 0, s, 0, 
-		0, s, 0, 0, 
-		-0.5, 0.7, 1, 1, 
-	]);
-
-	log("lala");
-
-}
+// 	log("lala");
+// }

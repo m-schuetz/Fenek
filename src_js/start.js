@@ -89,6 +89,7 @@ watchJS(`${jsDir}/execute2.js`);
 watchJS(`${jsDir}/execute_drawperf.js`);
 monitorJS(`${jsDir}/execute3.js`);
 monitorJS(`${jsDir}/execute4.js`);
+monitorJS(`${jsDir}/execute5.js`);
 
 
 

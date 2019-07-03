@@ -8,14 +8,16 @@ if(typeof PointCloudProgressive === "undefined"){
 		constructor(name, path){
 			super(name);
 
+			let start = now();
+
 			this.path = path;
 
-			{ // distribution shader
-				let path = "../../resources/shaders/progressive/distribute.cs";
-				let shader = new Shader([{type: gl.COMPUTE_SHADER, path: path}]);
-				shader.watch();
-				this.csDistribute = shader;
-			}
+			// { // distribution shader
+			// 	let path = "../../resources/shaders/progressive/distribute.cs";
+			// 	let shader = new Shader([{type: gl.COMPUTE_SHADER, path: path}]);
+			// 	shader.watch();
+			// 	this.csDistribute = shader;
+			// }
 
 			{ // reprojection shader
 				let vsPath = "../../resources/shaders/progressive/reproject.vs";
@@ -50,22 +52,27 @@ if(typeof PointCloudProgressive === "undefined"){
 				this.csCreateIBO = shader;
 			}
 
-			{ // normal point cloud material 
-				let vsPath = "../../resources/shaders/pointcloud_basic.vs";
-				let fsPath = "../../resources/shaders/pointcloud.fs";
+			// { // normal point cloud material 
+			// 	let vsPath = "../../resources/shaders/pointcloud_basic.vs";
+			// 	let fsPath = "../../resources/shaders/pointcloud.fs";
 				
-				let shader = new Shader([
-					{type: gl.VERTEX_SHADER, path: vsPath},
-					{type: gl.FRAGMENT_SHADER, path: fsPath},
-				]);
-				shader.watch();
+			// 	let shader = new Shader([
+			// 		{type: gl.VERTEX_SHADER, path: vsPath},
+			// 		{type: gl.FRAGMENT_SHADER, path: fsPath},
+			// 	]);
+			// 	shader.watch();
 
-				let material = new GLMaterial();
-				material.shader = shader;
-				this.components.push(material);
-			}
+			// 	let material = new GLMaterial();
+			// 	material.shader = shader;
+			// 	this.components.push(material);
+			// }
+
+			let duration = now() - start;
+			log(`PointCloudProgressive(): ${duration}s`);
 
 			this.load();
+
+
 		}
 
 		async load(){

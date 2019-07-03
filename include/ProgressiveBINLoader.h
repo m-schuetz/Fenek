@@ -66,7 +66,7 @@ public:
 
 	bool allChunksServed() {
 		lock_guard<mutex> lock(mtc_access_chunk);
-		bool result = binaryChunks.size() == 0;
+		bool result = binaryChunks.size() == 0 && numLoaded >= numPoints;
 
 		return result;
 	}
@@ -87,6 +87,8 @@ public:
 	void createBinaryLoaderThread() {
 
 		thread t([this]() {
+
+			auto start = now();
 			
 
 #ifdef DISABLE_FILE_CACHE
@@ -134,6 +136,10 @@ public:
 				}
 
 			}
+
+			auto end = now();
+			auto duration = end - start;
+			cout << "finished loading file: " << duration << "s" << endl;
 
 
 		});
@@ -218,13 +224,13 @@ public:
 			glCreateBuffers(1, &ssVertexBuffer);
 			uint32_t size = numPointsInBuffer * bytePerPoint;
 			
-			auto flags = GL_MAP_WRITE_BIT;
+			//auto flags = GL_MAP_WRITE_BIT;
 			//auto flags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
-			glNamedBufferStorage(ssVertexBuffer, size, 0, flags);
+			//glNamedBufferStorage(ssVertexBuffer, size, 0, flags);
 
 			//auto myPointer = glMapBufferRange(GL_ARRAY_BUFFER, 0, MY_BUFFER_SIZE, flags);
 
-			//glNamedBufferData(ssVertexBuffer, size, nullptr, usage);
+			glNamedBufferData(ssVertexBuffer, size, nullptr, usage);
 
 			ssVertexBuffers.emplace_back(ssVertexBuffer);
 
