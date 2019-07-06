@@ -1,7 +1,8 @@
 
 if(true){
 	
-	let las = loadLASProgressive("D:/dev/pointclouds/matterhorn.las");
+	//let las = loadLASProgressive("D:/dev/pointclouds/matterhorn.las");
+	let las = loadBINProgressive("D:/dev/pointclouds/matterhorn.bin");
 	
 	let pc = new PointCloudProgressive("testcloud", "blabla");
 
@@ -54,7 +55,7 @@ if(true){
 	pc.transform.elements.set([
 	//pc.world.elements.set([
 		s, 0, 0, 0, 
-		0, 0, s, 0, 
+		0, 0, -s, 0, 
 		0, s, 0, 0, 
 		-10, 1.4, -11, 1, 
 	]);
@@ -91,3 +92,8 @@ if(true){
 
 // 	log("lala");
 // }
+
+view.set(
+	[2000.7909622594154, 525.8917110248294, -1997.2030892146176],
+	[938.3377850197146, -290.5660484028639, -814.9762309913633],
+);

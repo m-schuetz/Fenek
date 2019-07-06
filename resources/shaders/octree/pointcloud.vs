@@ -11,16 +11,15 @@ layout(location = 0) uniform int uNodeIndex;
 //layout(location = 2) uniform mat4 uProj;
 //layout(location = 3) uniform vec2 uScreenSize;
 
-layout(location = 1) uniform mat4 uTransform;
-layout(location = 2) uniform mat4 uWorld;
-layout(location = 3) uniform mat4 uView;
+//layout(location = 1) uniform mat4 uTransform;
+//layout(location = 2) uniform mat4 uWorld;
+//layout(location = 3) uniform mat4 uView;
 layout(location = 4) uniform mat4 uProj;
 
 layout(location = 6) uniform vec2 uScreenSize;
 
 
 layout(location = 20) uniform float uSpacing;
-
 layout(location = 33) uniform float uScale;
 
 layout(location = 60) uniform float uMinMilimeters;
@@ -137,8 +136,7 @@ void main() {
 			worldSpaceSize = uScale * max(0.38 * worldSpaceSize, uMinMilimeters / 1000.0);
 			//float worldSpaceSize = 0.1347329020500183 / pow(2, lod);
 
-			vec4 v1 = uView * uWorld * vec4(aPosition, 1.0);
-			//vec4 v2 = uView * uWorld * vec4(aPosition.x, aPosition.y + worldSpaceSize, aPosition.z, 1.0);
+			vec4 v1 = node.worldView * vec4(aPosition, 1.0);
 			vec4 v2 = vec4(v1.x, v1.y + 2 * worldSpaceSize, v1.z, 1.0);
 
 			vec4 vp1 = uProj * v1;
@@ -151,10 +149,10 @@ void main() {
 			float dp = ds * uScreenSize.y;
 
 			// desktop
-			//gl_PointSize = (dp / 1) * 0.2 + octreeSize * 0.00001;
+			gl_PointSize = (dp / 1) * 0.2 + ssOctree.size * 0.00001;
 
 			// VR
-			gl_PointSize = (dp / 1);
+			//gl_PointSize = (dp / 1);
 
 		}
 	}else{
@@ -172,8 +170,21 @@ void main() {
 		u = -pow(u, 2.0);
 		vec4 gColor = texture(uGradient, vec2(u, 0));
 
-		vColor = gColor.xyz;
+		//vColor = gColor.xyz;
 	}
 
+	{
+		float a = 0.3;
+		vColor = vec3(
+			pow(vColor.r, a),
+			pow(vColor.g, a),
+			pow(vColor.b, a)
+		);
 
+		vColor = vec3(1, 1, 1);
+
+	}
+
+	gl_PointSize = min(10.0, gl_PointSize);
+	gl_PointSize = 1.0;
 }

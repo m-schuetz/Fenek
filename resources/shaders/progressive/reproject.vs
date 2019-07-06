@@ -26,6 +26,7 @@ vec3 getColorFromV1(){
 	//vec3 c = texture(uGradient, vec2(w, 0.0)).rgb;
 
 	float w = intBitsToFloat(aValue);
+	w = clamp(w, 0, 1);
 	vec3 v = texture(uGradient, vec2(w, 0.0)).rgb;
 
 	return v;
@@ -48,13 +49,20 @@ vec3 getColorFromV3(){
 void main() {
 	
 	gl_Position = uWorldViewProj * vec4(aPosition, 1.0);
-	gl_PointSize = 2.0;
+	gl_PointSize = 1.0;
 
 
 	vColor = getColorFromV3();
 	//vColor = getColorFromV1();
 
-	//vColor = vec3(0, 1, 0);
+	//vColor = vec3(1, 1, 1);
+
+	float a = 0.3;
+	vColor = vec3(
+		pow(vColor.r, a),
+		pow(vColor.g, a),
+		pow(vColor.b, a)
+	) + 1.0;
 
 	
 	uint index = uint(aIndex);

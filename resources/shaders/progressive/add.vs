@@ -16,7 +16,7 @@ out vec4 vVertexID;
 void main() {
 	
 	gl_Position = uWorldViewProj * vec4(aPosition, 1.0);
-	gl_PointSize = 2.0;
+	gl_PointSize = 1.0;
 	
 	//vec4 vecval = unpackUnorm4x8(aValue);
 	//vColor = vecval.xyz;

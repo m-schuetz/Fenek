@@ -35,6 +35,7 @@ ivec2 sampleLocations[4] = ivec2[](
 // http://stackoverflow.com/questions/6652253/getting-the-true-z-value-from-the-depth-buffer
 float linearize(float depth){
 	// that doesn't seem to be right...
+	//return 1 / pow(depth, 5.5);
 	return 1 / depth;
 }
 
@@ -47,7 +48,7 @@ float response(ivec2 pos, int msaaSampleNr){
 	float sum = 0.0;
 	
 	for(int i = 0; i < numSamples; i++){
-		ivec2 samplePos = pos + sampleLocations[i];
+		ivec2 samplePos = pos + sampleLocations[i] * 1;
 		float neighborDepth = texelFetch(uDepth, samplePos, msaaSampleNr).r;
 		neighborDepth = log2(linearize(neighborDepth));
 		sum += max(0.0, depth - neighborDepth);
@@ -63,7 +64,7 @@ void main() {
 	float sumShade = 0.0;
 	for(int msaaSampleNr = 0; msaaSampleNr < ssArgs.msaaSampleCount; msaaSampleNr++){
 		float res = response(pos, msaaSampleNr);
-		float shade = exp(-res * 300.0 * ssArgs.edlStrength * 2.0);
+		float shade = exp(-res * 300.0 * ssArgs.edlStrength * 1.3);
 
 		sumShade += shade;
 		col += texelFetch(uColor, pos, msaaSampleNr);

@@ -79,6 +79,24 @@ function debugSphere(parent, position, scale){
 	return sphere;
 }
 
+/**
+ * add separators to large numbers
+ *
+ * @param nStr
+ * @returns
+ */
+addCommas = function(nStr) {
+	nStr += '';
+	let x = nStr.split('.');
+	let x1 = x[0];
+	let x2 = x.length > 1 ? '.' + x[1] : '';
+	let rgx = /(\d+)(\d{3})/;
+	while (rgx.test(x1)) {
+		x1 = x1.replace(rgx, '$1' + ',' + '$2');
+	}
+	return x1 + x2;
+};
+
 class GLTimerQueries{
 
 	constructor(){
@@ -174,9 +192,29 @@ class GLTimerQueries{
 				let seconds = nanos / (1000000000);
 
 				measure.callback(seconds);
+
+				if(!GLTimerQueries.history.has(measure.name)){
+					GLTimerQueries.history.set(measure.name, []);
+				}
+
+				let history = GLTimerQueries.history.get(measure.name);
+				history.push(seconds);
+
+				if(history.length > 100){
+					history.shift();
+				}
+
 			}else{
 				unresolvedMeasures.push(measure);
 			}
+		}
+
+		for(let [name, history] of GLTimerQueries.history){
+			let sum = history.reduce( (a, i) => a + i, 0);
+			let avg = sum / history.length;
+			let ms = (avg * 1000).toFixed(3);
+
+			setDebugValue(`test.${name}`, `${ms}ms`);
 		}
 
 		GLTimerQueries.measures = unresolvedMeasures;
@@ -184,7 +222,7 @@ class GLTimerQueries{
 
 };
 
-
+GLTimerQueries.history = new Map();
 GLTimerQueries.marks = new Map();
 GLTimerQueries.marksToResolve = [];
 GLTimerQueries.measures = [];

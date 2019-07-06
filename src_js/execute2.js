@@ -1,7 +1,7 @@
 
 GLTimerQueries.enabled = true;
 
-vr.start();
+//vr.start();
 //vr.stop();
 // allows you to adjust the mirror depending on your VR room setup
 if($("desktop_mirror")){
@@ -15,13 +15,16 @@ if($("desktop_mirror")){
 
 DEBUG_USER_FILTER_CAM = false;
 
-reportState(false);
+reportState(true);
 
 CLOD_RANGE = [0.4, 1.2];
 CLOD_BATCH_SIZE = 50 * 1000 * 1000;
 
-MSAA_SAMPLES = 1; 
-EDL_ENABLED = false; // Eye-Dome-Lighting. Only currently available form of illumination
+POINT_BUDGET = 20 * 1000 * 1000;
+POINT_BUDGET_RANGE = [POINT_BUDGET, POINT_BUDGET];
+
+MSAA_SAMPLES = 4; 
+EDL_ENABLED = true; 
 RENDER_DEFAULT_ENABLED = false;
 desktopMirrorEnabled = false;
 
@@ -170,6 +173,32 @@ if(typeof setAttribute !== "undefined"){
 	let ai = (attributeToggle % toggles.length)
 	//toggles[ai]();
 
+	// {
+	// 	let range = [700000, 1000000];
+	// 		let width = range[1] - range[0];
+	// 		let scale = 1 / width;
+	// 		let offset = range[0] / width;
+	// 		setAttribute([{name: "Range", scale: scale, offset: offset}]);
+	// }
+
+	// {
+	// 	setAttribute([
+	// 		{name: "BeamVectorX", scale: 1 / 500, offset: 100},
+	// 		{name: "BeamVectorY", scale: 1 / 500, offset: 100},
+	// 		{name: "BeamVectorZ", scale: 1 / 500, offset: 100},
+	// 	]);
+	// }
+
+	// {
+	// 	setAttribute([
+	// 		{name: "Red",   scale: 1 / 256, offset: 0},
+	// 		{name: "Green", scale: 1 / 256, offset: 0},
+	// 		{name: "Blue",  scale: 1 / 256, offset: 0},
+	// 	]);
+	// }
+
+	//setAttribute([{name: "intensity", scale: 1 / 10000, offset: 0}]);
+	
 	attributeToggle++;
 		
 }

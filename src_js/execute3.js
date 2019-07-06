@@ -18,7 +18,7 @@ if(true){
 	
 	//let las = loadLASProgressive("D:/dev/pointclouds/riegl/niederweiden.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/open_topography/ca13/morro_bay.las");
-	let las = loadLASProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v3.las");
+	let las = loadLASProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v4.las");
 	
 	//let las = loadLASProgressive("D:/dev/pointclouds/weiss/pos6_LDHI_module.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/pix4d/eclepens.las");
@@ -79,22 +79,22 @@ if(true){
 	pc.transform.elements.set([
 	//pc.world.elements.set([
 		s, 0, 0, 0, 
-		0, 0, s, 0, 
+		0, 0, -s, 0, 
 		0, s, 0, 0, 
 		-10, 1.4, -11, 1, 
 	]);
 
 
-	{// wien VR
-		let s = 0.003;
-		pc.transform.elements.set([
-		//pc.world.elements.set([
-			s, 0, 0, 0, 
-			0, 0, s, 0, 
-			0, s, 0, 0, 
-			-3, 0.8, -1, 1, 
-		]);
-	}
+	// {// wien VR
+	// 	let s = 0.003;
+	// 	pc.transform.elements.set([
+	// 	//pc.world.elements.set([
+	// 		s, 0, 0, 0, 
+	// 		0, 0, s, 0, 
+	// 		0, s, 0, 0, 
+	// 		-3, 0.8, -1, 1, 
+	// 	]);
+	// }
 
 	// retz VR
 	// let s = 0.02;
@@ -124,8 +124,8 @@ if(true){
 
 // Wien v3
 view.set(
-	[99.84371780116061, 257.89267492625004, 499.648918453759],
-	[239.06963175530288, -68.43297286478906, 190.54390203032722],
+	[101.46099360021597, 257.97146740013216, 110.26394291240894],
+	[235.62959888500956, 31.59431545316471, -176.06414979866412],
 );
 
 // Wien v3 permutes
@@ -164,10 +164,10 @@ view.set(
 // );
 
 // Heidentor
-view.set(
-	[-12.969935350118323, 5.284788162823062, -5.833470159350096],
-	[-8.397718202711367, 2.8675777530107895, -8.607232645025867],
-);
+// view.set(
+// 	[-12.969935350118323, 5.284788162823062, -5.833470159350096],
+// 	[-8.397718202711367, 2.8675777530107895, -8.607232645025867],
+// );
 
 // view.set(
 // 	[-4.870924392952716, 4.87083748499702, -5.880010074273333],

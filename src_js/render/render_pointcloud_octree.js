@@ -126,7 +126,7 @@ renderPointCloudOctree = function(pointcloud, view, proj){
 
 	let worldViewProj = new Float32Array(16);
 	let worldView = new Float32Array(16);
-	let world = pointcloud.world;
+	let world = pointcloud.transform;
 	//log(pointcloud.transform.elements);
 	//log(pointcloud.world.elements);
 
@@ -162,6 +162,7 @@ renderPointCloudOctree = function(pointcloud, view, proj){
 
 		// world
 		ndView.set(world.elements, ssNodeDataOffset / 4 + 32);
+		//log(world.elements);
 
 		// offset
 		let bb = node.boundingBox;
@@ -200,25 +201,25 @@ renderPointCloudOctree = function(pointcloud, view, proj){
 
 	{
 
-		let world = pointcloud.world;
-
+		let world = pointcloud.transform;
 
 		let transform = new Matrix4();
 
+		//log(world.elements);
 		transform.copy(Matrix4.IDENTITY);
 		transform.multiply(proj).multiply(view).multiply(world);
 
 		let mat32 = new Float32Array(16);
 
-		mat32.set(transform.elements);
-		mat32.set(transform.elements);
-		gl.uniformMatrix4fv(/*shader.uniforms.uTransform*/ 1, 1, gl.FALSE, mat32);
+		//mat32.set(Matrix4.IDENTITY.elements);
+		//mat32.set(transform.elements);
+		//gl.uniformMatrix4fv(/*shader.uniforms.uTransform*/ 1, 1, gl.FALSE, mat32);
 
-		mat32.set(world.elements);
-		gl.uniformMatrix4fv(/*shader.uniforms.uWorld*/ 2, 1, gl.FALSE, mat32);
+		//mat32.set(world.elements);
+		//gl.uniformMatrix4fv(/*shader.uniforms.uWorld*/ 2, 1, gl.FALSE, mat32);
 
-		mat32.set(view.elements);
-		gl.uniformMatrix4fv(/*shader.uniforms.uView*/ 3, 1, gl.FALSE, mat32);
+		//mat32.set(view.elements);
+		//gl.uniformMatrix4fv(/*shader.uniforms.uView*/ 3, 1, gl.FALSE, mat32);
 
 		mat32.set(proj.elements);
 		gl.uniformMatrix4fv(/*shader.uniforms.uProj*/ 4, 1, gl.FALSE, mat32);
@@ -279,16 +280,7 @@ renderPointCloudOctree = function(pointcloud, view, proj){
 
 		gl.bindVertexArray(buffer.vao);
 
-		//let I = [0, 40];
-		//if(i > I[0] && i < I[1]){
-		//if([62, 67, 69, 50].includes(i)){
 		gl.drawArrays(material.glDrawMode, 0, buffer.count);
-
-		//}
-
-		if(i === 10){
-			//gl.flush();
-		}
 
 		pointsRendered += buffer.count;
 		nodesRendered++;
@@ -306,8 +298,8 @@ renderPointCloudOctree = function(pointcloud, view, proj){
 	//log(count);
 	//gl.bindBuffer(gl.SHADER_STORAGE_BUFFER, 0);
 
-	setDebugValue("#nodes rendered", nodesRendered);
-	setDebugValue("#points rendered", pointsRendered);
+	setDebugValue("#nodes rendered", addCommas(nodesRendered));
+	setDebugValue("#points rendered", addCommas(pointsRendered));
 
 	//drawBoxes(pointcloud.visibleNodes);
 

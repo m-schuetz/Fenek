@@ -91,6 +91,9 @@ monitorJS(`${jsDir}/execute3.js`);
 monitorJS(`${jsDir}/execute4.js`);
 monitorJS(`${jsDir}/execute5.js`);
 
+monitorJS(`${jsDir}/pcp/benchmark_heidentor_progressive.js`);
+monitorJS(`${jsDir}/pcp/benchmark_hierarchical.js`);
+
 
 
 

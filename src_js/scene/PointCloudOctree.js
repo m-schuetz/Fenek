@@ -162,7 +162,7 @@ PointCloudOctree.prototype.update = function(){
 		let camdir = camera.getDirectionWorld();
 		let box = node.boundingBox;
 
-		let boxcenter = box.getCenter().applyMatrix4(this.world);
+		let boxcenter = box.getCenter().applyMatrix4(this.transform);
 
 		let camToBox = new Vector3().subVectors(boxcenter, campos);
 		let camToBoxDir = camToBox.clone().normalize();
@@ -211,7 +211,7 @@ PointCloudOctree.prototype.update = function(){
 
 		let center = node.boundingBox.getCenter();
 		let max = node.boundingBox.max.clone();
-		let world = pointcloud.world;
+		let world = pointcloud.transform;
 
 		let centerWorld = center.applyMatrix4(world);
 		let maxWorld = max.applyMatrix4(world);
