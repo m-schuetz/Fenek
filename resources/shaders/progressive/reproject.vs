@@ -57,12 +57,12 @@ void main() {
 
 	//vColor = vec3(1, 1, 1);
 
-	float a = 0.3;
-	vColor = vec3(
-		pow(vColor.r, a),
-		pow(vColor.g, a),
-		pow(vColor.b, a)
-	) + 1.0;
+	//float a = 0.3;
+	//vColor = vec3(
+	//	pow(vColor.r, a),
+	//	pow(vColor.g, a),
+	//	pow(vColor.b, a)
+	//) + 1.0;
 
 	
 	uint index = uint(aIndex);

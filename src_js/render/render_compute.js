@@ -4,8 +4,8 @@ function renderComputeBasic(node, view, proj, target){
 	GLTimerQueries.mark("render-compute-start");
 
 	// TODO support resizing
-	let width = 6000;
-	let height = 6000;
+	let width = 3000;
+	let height = 2000;
 
 	if(typeof computeState === "undefined"){
 
@@ -43,9 +43,12 @@ function renderComputeBasic(node, view, proj, target){
 	//fbo.setSize(target.width * 2, target.height * 2);
 	fbo.setSize(target.width, target.height);
 
-	let buffer = node.getComponent(GLBuffer);
+	//let buffer = node.getComponent(GLBuffer);
+	//let buffer = node.glBuffers[0];
 	//let buffer = node.buffer;
-	let numPoints = buffer.count;
+	//let numPoints = Math.min(node.numPoints, 134 * 1000 * 1000);
+
+	//log(node.numPoints)
 
 	let mat32 = new Float32Array(16);
 	let transform = new Matrix4();
@@ -56,7 +59,7 @@ function renderComputeBasic(node, view, proj, target){
 
 
 
-	{ // RENDER
+	if(true){ // RENDER
 
 		GLTimerQueries.mark("render-compute-renderpass-start");
 
@@ -66,16 +69,25 @@ function renderComputeBasic(node, view, proj, target){
 
 		//log(transform32);
 		gl.uniformMatrix4fv(csRender.uniforms.uTransform, 1, gl.FALSE, mat32);
-		gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 0, buffer.vbo);
 		gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 1, ssboFramebuffer);
 		//gl.bindImageTexture(0, target.textures[0], 0, gl.FALSE, 0, gl.READ_WRITE, gl.RGBA8UI);
 
-		let {width, height} = fbo;
-		gl.uniform2i(csRender.uniforms.uImageSize, width, height);
+		let pointsLeft = node.numPoints;
+		let batchSize = 134 * 1000 * 1000;
 
-		let groups = parseInt(numPoints / 128);
-		//groups = 30000;
-		gl.dispatchCompute(groups, 1, 1);
+		for(let buffer of node.glBuffers){
+			gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 0, buffer.vbo);
+
+			let {width, height} = fbo;
+			gl.uniform2i(csRender.uniforms.uImageSize, width, height);
+
+			let numPoints = Math.max(Math.min(pointsLeft, batchSize), 0);
+			let groups = parseInt(numPoints / 128);
+			//groups = 30000;
+			gl.dispatchCompute(groups, 1, 1);
+
+			pointsLeft = pointsLeft - batchSize;
+		}
 
 		gl.useProgram(0);
 		GLTimerQueries.mark("render-compute-renderpass-end");
@@ -85,7 +97,7 @@ function renderComputeBasic(node, view, proj, target){
 		GLTimerQueries.mark("render-compute-resolvepass-start");
 		gl.useProgram(csResolve.program);
 
-		gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 0, buffer.vbo);
+		//gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 0, buffer.vbo);
 		gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 1, ssboFramebuffer);
 		gl.bindImageTexture(0, fbo.textures[0], 0, gl.FALSE, 0, gl.READ_WRITE, gl.RGBA8UI);
 

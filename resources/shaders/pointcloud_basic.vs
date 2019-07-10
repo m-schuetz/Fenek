@@ -33,7 +33,7 @@
 
 layout(location = 0) in vec3 aPosition;
 layout(location = 1) in vec4 aColor;
-layout(location = 2) in float aRandom;
+//layout(location = 2) in float aRandom;
 
 //layout(location = 0) uniform int uNodeIndex;
 //layout(location = 1) uniform mat4 uTransform;
@@ -58,6 +58,7 @@ void main() {
 
 	gl_Position = pos;
 
+
 	vColor = aColor.rgb;
 
 	// MOSTLY RED
@@ -68,4 +69,5 @@ void main() {
 	//vColor = vec3(w, 0, 0);
 
 	gl_PointSize = 1.0;
+
 }

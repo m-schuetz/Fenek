@@ -276,11 +276,12 @@ var renderDefault = function(node, view, proj, target){
 	//log("lala");
 	//return;
 
-
 	let buffers = node.getComponents(GLBuffer);
 	let material = node.getComponent(GLMaterial, {or: GLMaterial.DEFAULT});
 	let shader = material.shader;
 	let shader_data = shader.uniformBlocks.shader_data;
+
+	//log(shader.program);
 
 	let transform = new Matrix4();
 
@@ -332,6 +333,8 @@ var renderDefault = function(node, view, proj, target){
 
 		// FIXME shouldn't need to bind/unbind vbo from vao. trying bc. of compute shader
 		gl.bindBuffer(gl.ARRAY_BUFFER, buffer.vbo);
+
+		
 		
 		if(buffer.indirect){
 
@@ -354,6 +357,8 @@ var renderDefault = function(node, view, proj, target){
 				//gl.blendColor(0, 1, 1, 1);
 				//gl.blendFunc(gl.CONSTANT_COLOR, gl.ONE);
 				//gl.blendEquation(gl.FUNC_REVERSE_SUBTRACT);
+
+				
 
 				gl.drawArrays(material.glDrawMode, 0, buffer.count);
 			}
@@ -434,6 +439,7 @@ var renderBuffers = function(view, proj, target){
 		else if(node instanceof PointCloudProgressive){
 			//renderPointCloudCompute(node, view, proj, target);
 			renderPointCloudProgressive(node, view, proj, target);
+			//renderPointCloudBasic(node, view, proj, target);
 			//renderDefault(node, view, proj, target);
 		}
 		else if(node instanceof PointCloudBasic){

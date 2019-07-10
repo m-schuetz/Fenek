@@ -31,6 +31,7 @@ watchJS(`${jsDir}/scene/BrushNode.js`);
 watchJS(`${jsDir}/render/render.js`);
 watchJS(`${jsDir}/render/render_vr.js`);
 watchJS(`${jsDir}/render/render_regular.js`);
+watchJS(`${jsDir}/render/render_pointcloud_basic.js`);
 watchJS(`${jsDir}/render/render_pointcloud_octree.js`);
 watchJS(`${jsDir}/render/render_progressive.js`);
 watchJS(`${jsDir}/render/render_compute.js`);
@@ -90,6 +91,7 @@ watchJS(`${jsDir}/execute_drawperf.js`);
 monitorJS(`${jsDir}/execute3.js`);
 monitorJS(`${jsDir}/execute4.js`);
 monitorJS(`${jsDir}/execute5.js`);
+monitorJS(`${jsDir}/execute6.js`);
 
 monitorJS(`${jsDir}/pcp/benchmark_heidentor_progressive.js`);
 monitorJS(`${jsDir}/pcp/benchmark_hierarchical.js`);

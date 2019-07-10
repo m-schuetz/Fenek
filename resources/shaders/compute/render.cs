@@ -11,10 +11,6 @@ struct Vertex{
 	float y;
 	float z;
 	uint colors;
-	//float ar;
-	//float ag;
-	//float ab;
-	//float aw;
 };
 
 layout(location = 0) uniform mat4 uTransform;
@@ -24,7 +20,6 @@ layout (std430, binding = 0) buffer point_data {
 };
 
 layout (std430, binding = 1) buffer framebuffer_data {
-	//uint ssFramebuffer[];
 	uint64_t ssFramebuffer[];
 };
 
@@ -33,12 +28,8 @@ uniform ivec2 uImageSize;
 
 void main(){
 
-	uint workGroupSize = gl_WorkGroupSize.x * gl_WorkGroupSize.y;
-	uint globalID = gl_WorkGroupID.x * workGroupSize
-		+ gl_WorkGroupID.y * gl_NumWorkGroups.x * workGroupSize
-		+ gl_LocalInvocationIndex;
-
-	//globalID += 110 * 1000 * 1000;
+	uint globalID = gl_GlobalInvocationID.x;
+	//globalID += 1000000;
 
 	Vertex v = vertices[globalID];
 

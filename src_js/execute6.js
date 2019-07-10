@@ -3,12 +3,16 @@
 if(typeof e4called === "undefined"){
 	e4called = true;
 	
-	//let las = loadBINProgressive("D:/dev/pointclouds/riegl/niederweiden_400m.bin");
+	let las = loadBINProgressive("D:/dev/pointclouds/riegl/niederweiden_400m.bin");
 	//let las = loadLASProgressive("D:/dev/pointclouds/tuwien_baugeschichte/Museum Affandi_las export/batch_1.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/NVIDIA/laserscans/merged.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/hofbibliothek/HB_64.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/tuwien_baugeschichte/Candi Sari_las export/candi_sari.las");
-	let las = loadBINProgressive("D:/dev/pointclouds/test.bin");
+	//let las = loadBINProgressive("D:/dev/pointclouds/test.bin");
+
+	//let las = loadLASProgressive("D:/dev/pointclouds/archpro/heidentor.las");
+	//let las = loadLASProgressive("D:/dev/pointclouds/mschuetz/lion.las");
+	//let las = loadLASProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v3.las");
 
 
 	let pc = new PointCloudProgressive("testcloud", "blabla");
@@ -17,7 +21,8 @@ if(typeof e4called === "undefined"){
 
 	let attributes = [
 		new GLBufferAttribute("position", 0, 3, gl.FLOAT, gl.FALSE, 12, 0),
-		new GLBufferAttribute("value", 1, 4, gl.INT, gl.FALSE, 4, 12, {targetType: "int"}),
+		new GLBufferAttribute("color",    1, 4, gl.UNSIGNED_BYTE, gl.TRUE, 4, 12),
+		//new GLBufferAttribute("value", 1, 4, gl.INT, gl.FALSE, 4, 12, {targetType: "int"}),
 	];
 
 	let bytesPerPoint = attributes.reduce( (p, c) => p + c.bytes, 0);
@@ -80,38 +85,9 @@ if(typeof e4called === "undefined"){
 
 }
 
-// Niederweiden
-// view.set(
-// 	[11.859564250720245, 7.22595953573232, -23.071864520081228],
-// 	[-2.9628644577436702, -2.4220795771249986, -28.215191026963357],
-// );
-
-// view.set(
-// 	[-13.517644436226734, 7.727134067740751, -20.095312208539994],
-// 	[-2.577821320940421, -2.019933609584122, -28.1996901090152],
-// );
-
-// // affandi
-// view.set(
-// 	[125.22401257568242, 44.40866270039364, 176.94497074343428],
-// 	[113.43495574025215, 32.450565105907245, 165.6089264439775],
-// );
-
-// affandi
-// view.set(
-// 	[114.956609221704, 19.922502874545994, 105.35076237787068],
-// 	[117.98850240507511, 19.101296779083743, 102.86065914999514],
-// );
-
-// // arbegen
-// view.set(
-// 	[12.713368935730871, 8.706469023429722, 0.884167816734989],
-// 	[5.398363445056037, 4.205587572729591, 0.6353886246271072],
-// );
-
 view.set(
-	[-9.619991956336769, 1.769517431458914, -10.659795935797932],
-	[-9.884130540436988, 1.5546140882305126, -10.88264324899804],
+	[-11.34062835354112, 4.054401647775217, -7.931739384765451],
+	[-8.015805951564435, 2.834597543000753, -8.789907181758469],
 );
 
 camera.fov = 100;
