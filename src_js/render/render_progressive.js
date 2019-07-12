@@ -64,12 +64,12 @@ getRenderProgressiveState = function(target){
 			csFillFixed = shader;
 		}
 
-		let csEstimateRemaing = null;
+		let csFillRemaining = null;
 		{ // create time estimation shader
-			let path = "../../resources/shaders/pcp/compute_remaining_time.cs";
+			let path = "../../resources/shaders/pcp/compute_fill_remaining.cs";
 			let shader = new Shader([{type: gl.COMPUTE_SHADER, path: path}]);
 			shader.watch();
-			csEstimateRemaing = shader;
+			csFillRemaining = shader;
 		}
 
 
@@ -80,7 +80,7 @@ getRenderProgressiveState = function(target){
 			ssFillFixed: ssFillFixed,
 			ssFillCommands: ssFillCommands,
 			csFillFixed: csFillFixed,
-			csEstimateRemaing: csEstimateRemaing,
+			csFillRemaining: csFillRemaining,
 			reprojectBuffer: reprojectBuffer,
 			round: 0, 
 			fboPrev: fboPrev,
@@ -105,14 +105,14 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 	let state = getRenderProgressiveState(target);
 	let {ssIndirectCommand, ssTimestamps, reprojectBuffer, fboPrev} = state;
 
-	//{ // start timestamp to ssTimestamps
-	//	let qtStart = gl.createQuery();
-	//	gl.queryCounter(qtStart, gl.TIMESTAMP);
-	//	gl.bindBuffer(gl.QUERRY_BUFFER, ssTimestamps);
-	//	gl.getQueryObjectui64Indirect(qtStart, gl.QUERY_RESULT, 0);
-	//	gl.bindBuffer(gl.QUERRY_BUFFER, 0);
-	//	gl.deleteQuery(qtStart);
-	//}
+	{ // start timestamp to ssTimestamps
+		let qtStart = gl.createQuery();
+		gl.queryCounter(qtStart, gl.TIMESTAMP);
+		gl.bindBuffer(gl.QUERRY_BUFFER, ssTimestamps);
+		gl.getQueryObjectui64Indirect(qtStart, gl.QUERY_RESULT, 0);
+		gl.bindBuffer(gl.QUERRY_BUFFER, 0);
+		gl.deleteQuery(qtStart);
+	}
 
 	
 
@@ -153,6 +153,14 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 	// 	//log(numberWithCommas(acceptedCount));
 	// }
 
+	//{
+	//	let buffers = new Uint32Array([
+	//		gl.COLOR_ATTACHMENT0, 
+	//		gl.COLOR_ATTACHMENT1,
+	//	]);
+	//	gl.drawBuffers(buffers.length, buffers);
+	//}
+
 	if(true){ // REPROJECT
 		GLTimerQueries.mark("render-progressive-reproject-start");
 		gl.useProgram(shReproject.program);
@@ -182,7 +190,7 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 
 	{ // FILL PASS
 
-		{ // Let compute shader decide which points to draw
+		if(true){ // Let compute shader decide which points to draw
 			GLTimerQueries.mark("render-progressive-fill-compute-fixed-start");
 			let csFillFixed = state.csFillFixed;
 			let ssFillFixed = state.ssFillFixed;
@@ -232,6 +240,84 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 			GLTimerQueries.mark("render-progressive-add-start");
 			gl.useProgram(shAdd.program);
 
+			{ // start add timestamp to ssTimestamps
+				let qtStart = gl.createQuery();
+				gl.queryCounter(qtStart, gl.TIMESTAMP);
+				gl.bindBuffer(gl.QUERRY_BUFFER, ssTimestamps);
+				gl.getQueryObjectui64Indirect(qtStart, gl.QUERY_RESULT, 8);
+				gl.bindBuffer(gl.QUERRY_BUFFER, 0);
+				gl.deleteQuery(qtStart);
+			}
+
+			gl.activeTexture(gl.TEXTURE0);
+			gl.bindTexture(gradientTexture.type, gradientTexture.handle);
+			if(shAdd.uniforms.uGradient){
+				gl.uniform1i(shAdd.uniforms.uGradient, 0);
+			}
+
+			gl.uniformMatrix4fv(shAdd.uniforms.uWorldViewProj, 1, gl.FALSE, mat32);
+
+			let buffers = pointcloud.glBuffers;
+
+			for(let i = 0; i < buffers.length; i++){
+				let buffer = buffers[i];
+
+				gl.uniform1i(shAdd.uniforms.uOffset, i * 134 * 1000 * 1000);
+
+				gl.bindVertexArray(buffer.vao);
+				gl.bindBuffer(gl.DRAW_INDIRECT_BUFFER, state.ssFillCommands);
+
+				gl.drawArraysIndirect(gl.POINTS, i * 4 * 4);
+			}
+			
+
+			gl.bindVertexArray(0);
+
+			{ // start timestamp to ssTimestamps
+				let qtStart = gl.createQuery();
+				gl.queryCounter(qtStart, gl.TIMESTAMP);
+				gl.bindBuffer(gl.QUERRY_BUFFER, ssTimestamps);
+				gl.getQueryObjectui64Indirect(qtStart, gl.QUERY_RESULT, 16);
+				gl.bindBuffer(gl.QUERRY_BUFFER, 0);
+				gl.deleteQuery(qtStart);
+			}
+
+			GLTimerQueries.mark("render-progressive-add-end");
+			GLTimerQueries.measure("render.progressive.add", "render-progressive-add-start", "render-progressive-add-end", (duration) => {
+				let ms = (duration * 1000).toFixed(3);
+				setDebugValue("gl.render.progressive.add", `${ms}ms`);
+			});
+		}
+
+		{ // TODO decide how much more points we can draw with the remaining time
+			GLTimerQueries.mark("render-progressive-fill-compute-remaining-start");
+			let csFillRemaining = state.csFillRemaining;
+			let ssFillFixed = state.ssFillFixed;
+			let ssFillCommands = state.ssFillCommands;
+
+			gl.useProgram(csFillRemaining.program);
+
+			gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 0, ssFillFixed);
+			gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 1, ssFillCommands);
+			gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 2, state.ssTimestamps);
+
+			gl.memoryBarrier(gl.ALL_BARRIER_BITS);
+			gl.dispatchCompute(1, 1, 1);
+			gl.memoryBarrier(gl.ALL_BARRIER_BITS);
+
+			gl.useProgram(0);
+
+			GLTimerQueries.mark("render-progressive-fill-compute-remaining-end");
+			GLTimerQueries.measure("render.progressive.compute_remaining", "render-progressive-fill-compute-remaining-start", "render-progressive-fill-compute-remaining-end", (duration) => {
+				let ms = (duration * 1000).toFixed(3);
+				setDebugValue("gl.render.progressive.compute_remaining", `${ms}ms`);
+			});
+		}
+
+		{ // TODO draw some more points to take advantage of remaining time
+			GLTimerQueries.mark("render-progressive-add-remaining-start");
+			gl.useProgram(shAdd.program);
+
 			gl.activeTexture(gl.TEXTURE0);
 			gl.bindTexture(gradientTexture.type, gradientTexture.handle);
 			if(shAdd.uniforms.uGradient){
@@ -264,19 +350,11 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 
 			gl.bindVertexArray(0);
 
-			GLTimerQueries.mark("render-progressive-add-end");
-			GLTimerQueries.measure("render.progressive.add", "render-progressive-add-start", "render-progressive-add-end", (duration) => {
+			GLTimerQueries.mark("render-progressive-add-remaining-end");
+			GLTimerQueries.measure("render.progressive.add_remaining", "render-progressive-add-remaining-start", "render-progressive-add-remaining-end", (duration) => {
 				let ms = (duration * 1000).toFixed(3);
-				setDebugValue("gl.render.progressive.add", `${ms}ms`);
+				setDebugValue("gl.render.progressive.add_remaining", `${ms}ms`);
 			});
-		}
-
-		{ // TODO decide how much more points we can draw with the remaining time
-
-		}
-
-		{ // TODO draw some more points to take advantage of remaining time
-
 		}
 	}
 
@@ -376,19 +454,58 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 		let view = new DataView(resultBuffer);
 
 		//log("====");
+
+		let estimate = view.getUint32(4 * 16, true);
+		log(numberWithCommas(estimate));
 	
 
-		for(let i = 0; i < pointcloud.glBuffers.length; i++){
+		//for(let i = 0; i < pointcloud.glBuffers.length; i++){
 
-			let count =      view.getInt32(i * 4 * 4 + 0, true);
-			let primCount =  view.getInt32(i * 4 * 4 + 4, true);
-			let first =      view.getInt32(i * 4 * 4 + 8, true);
+		//	let count =      view.getInt32(i * 4 * 4 + 0, true);
+		//	let primCount =  view.getInt32(i * 4 * 4 + 4, true);
+		//	let first =      view.getInt32(i * 4 * 4 + 8, true);
 
-			//if(count > 0){
-				log(`${i}: ${numberWithCommas(count)}, ${primCount}, ${numberWithCommas(first)}`);
-			//}
+		//	//if(count > 0){
+		//		log(`${i}: ${numberWithCommas(count)}, ${primCount}, ${numberWithCommas(first)}`);
+		//	//}
 
+		//}
+
+		// let acceptedCount = new DataView(resultBuffer).getUint32(2 * 4, true);
+	
+
+		// let key = `accepted (${pointcloud.name})`;
+		// log(key + ": " + numberWithCommas(acceptedCount));
+	}
+
+	if(false){
+		gl.memoryBarrier(gl.ALL_BARRIER_BITS);
+		// taken from https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
+		const numberWithCommas = (x) => {
+			return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 		}
+
+		let resultBuffer = new ArrayBuffer(16);
+		gl.getNamedBufferSubData(state.ssTimestamps, 0, resultBuffer.byteLength, resultBuffer);
+		let view = new DataView(resultBuffer);
+
+		//log("====");
+
+		let estimate = view.getUint32(4, true);
+		log(estimate);
+	
+
+		//for(let i = 0; i < pointcloud.glBuffers.length; i++){
+
+		//	let count =      view.getInt32(i * 4 * 4 + 0, true);
+		//	let primCount =  view.getInt32(i * 4 * 4 + 4, true);
+		//	let first =      view.getInt32(i * 4 * 4 + 8, true);
+
+		//	//if(count > 0){
+		//		log(`${i}: ${numberWithCommas(count)}, ${primCount}, ${numberWithCommas(first)}`);
+		//	//}
+
+		//}
 
 		// let acceptedCount = new DataView(resultBuffer).getUint32(2 * 4, true);
 	

@@ -4,10 +4,11 @@ if(typeof e4called === "undefined"){
 	e4called = true;
 	
 	//let las = loadBINProgressive("D:/dev/pointclouds/riegl/niederweiden_400m.bin");
+	let las = loadLASProgressive("D:/dev/pointclouds/NVIDIA/photogrammetry/test.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/tuwien_baugeschichte/Museum Affandi_las export/batch_1.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/NVIDIA/laserscans/merged.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/hofbibliothek/HB_64.las");
-	let las = loadLASProgressive("D:/dev/pointclouds/tuwien_baugeschichte/Candi Sari_las export/candi_sari.las");
+	//let las = loadLASProgressive("D:/dev/pointclouds/ludwig_boltzmann/heidentor.las");
 	//let las = loadBINProgressive("D:/dev/pointclouds/test.bin");
 
 	//let las = loadLASProgressive("D:/dev/pointclouds/archpro/heidentor.las");
@@ -90,8 +91,8 @@ if(typeof e4called === "undefined"){
 }
 
 view.set(
-	[230.13768672641308, 232.68237814619096, -42.7020015586547 ],
-	[235.8914409252224, 31.297050778225838, -175.80788110667288],
+	[-12.362381738151846, 4.05480067990359, -15.238182318876296 ],
+	[-8.091633605894913, 1.9830766937417055, -14.241735502512483],
 );
 
 camera.fov = 100;

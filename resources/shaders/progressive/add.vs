@@ -3,7 +3,7 @@
 // RUNTIME GENERATED DEFINES
 
 layout(location = 0) in vec3 aPosition;
-layout(location = 1) in int aValue;
+layout(location = 1) in vec4 aValue;
 
 uniform mat4 uWorldViewProj;
 uniform int uOffset;
@@ -13,23 +13,26 @@ layout(binding = 0) uniform sampler2D uGradient;
 out vec3 vColor;
 out vec4 vVertexID;
 
+// vec3 getColorFromV3(){
+// 	vec3 v = vec3(
+// 		(aValue >>   0) & 0xFF,
+// 		(aValue >>   8) & 0xFF,
+// 		(aValue >>  16) & 0xFF
+// 	);
+
+// 	v = v / 255.0;
+
+// 	return v;
+// }
+
 void main() {
 	
 	gl_Position = uWorldViewProj * vec4(aPosition, 1.0);
-	gl_PointSize = 1.0;
+	gl_PointSize = 2.0;
 	
-	//vec4 vecval = unpackUnorm4x8(aValue);
-	//vColor = vecval.xyz;
+	//vColor = getColorFromV3();
 
-	vec4 rgba = vec4(
-		(0x000000FF & aValue) >>  0,
-		(0x0000FF00 & aValue) >>  8,
-		(0x00FF0000 & aValue) >> 16,
-		(0xFF000000 & aValue) >> 24
-	) / 256.0;
-
-	vColor = rgba.xyz;
-	//vColor = vec3(0, 1, 0);
+	vColor = aValue.xyz;
 
 	int vertexID = gl_VertexID + uOffset;
 	vVertexID = vec4(
@@ -38,10 +41,7 @@ void main() {
 		float((vertexID >> 16) & 0xFF) / 255.0,
 		float((vertexID >> 24) & 0xFF) / 255.0
 	);
-	
-	// if(vertexID >= 2 * 134000000 + 10000000){
-	// 	vColor = vec3(1, 0, 0);
-	// }
+
 }
 
 

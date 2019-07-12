@@ -1,7 +1,6 @@
 #version 450
 
 #extension GL_ARB_gpu_shader_int64 : enable
-#extension GL_EXT_gpu_shader4 : enable
 
 layout(local_size_x = 1, local_size_y = 1) in;
 
@@ -24,6 +23,14 @@ layout(std430, binding = 1) buffer ssIndirectFillCommands{
 	IndirectCommand commands[];
 };
 
+layout(std430, binding = 2) buffer ssTimestamps{
+	uint64_t tStart;
+	uint64_t tStartAdd;
+	uint64_t tEndAdd;
+};
+
+
+
 int[10] getCummulativeBatchSizes(){
 	int cum = 0;
 	int cummulative[10];
@@ -35,8 +42,26 @@ int[10] getCummulativeBatchSizes(){
 	return cummulative;
 }
 
+#define NUM_FIXED 1000000
+#define uBudgetMillies 7.0
+
 void main() {
 	
+	uint64_t nanos = tEndAdd - tStartAdd;
+	//uint64_t nanos = 1000000ul;
+
+	double milliesConsumed = double(nanos) / double(1000000.0);
+	double milliesRemaining = max(uBudgetMillies - milliesConsumed, 0);
+
+	double pointsPerMillies = double(NUM_FIXED) / milliesConsumed;
+
+	double estimatedRemainingBudget = pointsPerMillies * milliesRemaining;
+	estimatedRemainingBudget = 0.6 * estimatedRemainingBudget;
+
+
+
+
+
 	// reset commands
 	for(int i = 0; i < uNumBatches; i++){
 		IndirectCommand c;
@@ -59,8 +84,11 @@ void main() {
 		}
 	}
 
+	//estimatedRemainingBudget = 800000;
+	//estimatedRemainingBudget = 10 * 1000 * 1000;
+
 	int currentBatch = startBatch;
-	int remainingPoints = 1 * 1000 * 1000;
+	int remainingPoints = int(estimatedRemainingBudget);
 
 	while(remainingPoints > 0){
 
@@ -77,9 +105,9 @@ void main() {
 		remainingPoints = remainingPoints - currentPoints;
 		uOffset = (uOffset + currentPoints) % uNumPoints;
 		currentBatch = (currentBatch + 1)  % uNumBatches;
-
-
 	}
+
+	commands[4].count = int(estimatedRemainingBudget);
 	
 }
 
