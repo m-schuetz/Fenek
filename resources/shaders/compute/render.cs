@@ -20,10 +20,14 @@ layout (std430, binding = 0) buffer point_data {
 };
 
 layout (std430, binding = 1) buffer framebuffer_data {
-	uint64_t ssFramebuffer[];
+	//uint ssFramebuffer[];
+	int64_t ssFramebuffer[];
+	//uint64_t ssFramebuffer[];
 };
 
 uniform ivec2 uImageSize;
+
+layout(binding = 0) uniform sampler2D uGradient;
 
 
 void main(){
@@ -51,8 +55,14 @@ void main(){
 	uint64_t val64 = (u64Depth << 24) | v.colors;
 
 
-	atomicMin(ssFramebuffer[pixelID], val64);
-	//atomicAdd(ssFramebuffer[pixelID], 1u);
+	//atomicMin(ssFramebuffer[pixelID], val64);
+	//atomicMin(ssFramebuffer[pixelID + 1], val64);
+	//atomicMin(ssFramebuffer[pixelID + uImageSize.x], val64);
+	//atomicMin(ssFramebuffer[pixelID + uImageSize.x + 1], val64);
+	
+	
+	atomicAdd(ssFramebuffer[pixelID], 3l);
+	//atomicAdd(ssFramebuffer[pixelID], 5);
 
 }
 

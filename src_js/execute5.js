@@ -2,7 +2,7 @@
 if(true){
 	
 	//let las = loadLASProgressive("D:/dev/pointclouds/matterhorn.las");
-	let las = loadBINProgressive("D:/dev/pointclouds/matterhorn.bin");
+	let las = loadBINProgressive("D:/dev/pointclouds/pix4d/matterhorn.bin");
 	
 	let pc = new PointCloudProgressive("testcloud", "blabla");
 

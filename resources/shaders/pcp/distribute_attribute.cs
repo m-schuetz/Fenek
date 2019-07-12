@@ -93,36 +93,33 @@ void main(){
 	t = permuteI(t, primeI64);
 	uint targetIndex = uint(t);
 
+	uint value = inputBuffer[inputIndex];
 
 	if(targetIndex < 134000000){
-		uint value = inputBuffer[inputIndex];
+		
 		Vertex v = targetBuffer0[targetIndex];
 		v.value = value;
-		//v.value = 0xFF0000FF;
 
 		targetBuffer0[targetIndex] = v;
 	}else if(targetIndex < 2 * 134000000){
 		targetIndex = targetIndex - 134000000;
 
-		uint value = inputBuffer[inputIndex];
-		Vertex v = targetBuffer0[targetIndex];
-		//v.value = value;
+		Vertex v = targetBuffer1[targetIndex];
+		v.value = value;
 
 		targetBuffer1[targetIndex] = v;
 	}else if(targetIndex < 3 * 134000000){
 		targetIndex = targetIndex - 2 * 134000000;
 
-		uint value = inputBuffer[inputIndex];
-		Vertex v = targetBuffer0[targetIndex];
-		//v.value = value;
+		Vertex v = targetBuffer2[targetIndex];
+		v.value = value;
 
 		targetBuffer2[targetIndex] = v;
 	}else if(targetIndex < 4 * 134000000){
 		targetIndex = targetIndex - 3 * 134000000;
 
-		uint value = inputBuffer[inputIndex];
-		Vertex v = targetBuffer0[targetIndex];
-		//v.value = value;
+		Vertex v = targetBuffer3[targetIndex];
+		v.value = value;
 
 		targetBuffer3[targetIndex] = v;
 	}

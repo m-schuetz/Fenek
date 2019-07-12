@@ -138,11 +138,11 @@ void uploadHook(ProgressiveLoader* loader, v8::Persistent<Object, v8::CopyablePe
 	loader->uploadNextAvailableChunk();
 
 
-	auto isolate = Isolate::GetCurrent();
-	Local<Object> objLAS = Local<Object>::New(isolate, pObjLAS);
-
-	auto lNumPoints = v8::Integer::New(isolate, loader->pointsUploaded);
-	objLAS->Set(String::NewFromUtf8(isolate, "numPoints"), lNumPoints);
+	//auto isolate = Isolate::GetCurrent();
+	//Local<Object> objLAS = Local<Object>::New(isolate, pObjLAS);
+	//
+	//auto lNumPoints = v8::Integer::New(isolate, loader->pointsUploaded);
+	//objLAS->Set(String::NewFromUtf8(isolate, "numPoints"), lNumPoints);
 
 	schedule([loader, pObjLAS]() {
 
@@ -175,11 +175,11 @@ void binaryUploadHook(ProgressiveBINLoader* loader, v8::Persistent<Object, v8::C
 	long int abc;
 
 
-	auto isolate = Isolate::GetCurrent();
-	Local<Object> objLAS = Local<Object>::New(isolate, pObjLAS);
-
-	auto lNumPoints = v8::Integer::New(isolate, loader->pointsUploaded);
-	objLAS->Set(String::NewFromUtf8(isolate, "numPoints"), lNumPoints);
+	//auto isolate = Isolate::GetCurrent();
+	//Local<Object> objLAS = Local<Object>::New(isolate, pObjLAS);
+	//
+	//auto lNumPoints = v8::Integer::New(isolate, loader->pointsUploaded);
+	//objLAS->Set(String::NewFromUtf8(isolate, "numPoints"), lNumPoints);
 
 	schedule([loader, pObjLAS]() {
 
@@ -530,7 +530,7 @@ int main() {
 		Local<ObjectTemplate> lasTempl = ObjectTemplate::New(isolate);
 		auto objLAS = lasTempl->NewInstance();
 
-		auto lNumPoints = v8::Integer::New(isolate, 0);
+		auto lNumPoints = v8::Integer::New(isolate, loader->loader->header.numPoints);
 
 		auto lHandles = Array::New(isolate, loader->ssVertexBuffers.size());
 		for (int i = 0; i < loader->ssVertexBuffers.size(); i++) {
@@ -572,7 +572,7 @@ int main() {
 		Local<ObjectTemplate> lasTempl = ObjectTemplate::New(isolate);
 		auto objLAS = lasTempl->NewInstance();
 
-		auto lNumPoints = v8::Integer::New(isolate, 0);
+		auto lNumPoints = v8::Integer::New(isolate, loader->loader->numPoints);
 
 		auto lHandles = Array::New(isolate, loader->ssVertexBuffers.size());
 		for (int i = 0; i < loader->ssVertexBuffers.size(); i++) {

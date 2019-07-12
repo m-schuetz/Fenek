@@ -1754,6 +1754,20 @@ void V8Helper::setupGL() {
 		args.GetReturnValue().Set(val);
 	}));
 
+	tpl->Set(String::NewFromUtf8(isolate, "getQueryObjectui64Indirect"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+		if (args.Length() != 3) {
+			V8Helper::_instance->throwException("getQueryObjectui64Indirect requires 3 arguments");
+			return;
+		}
+
+		int query = args[0]->Int32Value();
+		GLenum pname = args[1]->Uint32Value();
+		uint64_t offset = args[2]->Uint32Value();
+
+		glGetQueryObjectui64v(query, pname, (GLuint64*) + offset);
+
+	}));
+
 	tpl->Set(String::NewFromUtf8(isolate, "depthMask"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("depthMask requires 1 arguments");

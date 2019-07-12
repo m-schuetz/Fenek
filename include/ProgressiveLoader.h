@@ -215,9 +215,9 @@ public:
 			auto uOffset = csDistribute->uniformLocations["uOffset"];
 			glUniform1i(uOffset, pointsUploaded);
 
-			if (pointsUploaded > 50'000'000) {
-				int a = 10;
-			}
+			//if (pointsUploaded > 50'000'000) {
+			//	int a = 10;
+			//}
 
 			int groups = ceil(double(chunkSize) / 32.0);
 			glDispatchCompute(groups, 1, 1);
@@ -227,8 +227,6 @@ public:
 			for (int i = 0; i < ssVertexBuffers.size(); i++) {
 				glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2 + i, 0);
 			}
-			//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, 0);
-			//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, 0);
 			
 			glUseProgram(0);
 
@@ -245,52 +243,6 @@ public:
 		return chunk->size;
 	}
 
-	void uploadChunk(void* data, int offset, int size) {
-
-		int targetOffset = offset;
-		int chunkSize = size;
-
-		{// upload
-			glNamedBufferSubData(ssChunk16B, 0, chunkSize * 16, data);
-			//glNamedBufferSubData(ssChunkIndices, 0, chunkSize * 4, chunk->shuffledOrder.data());
-		}
-
-		{// distribute to shuffled location
-			glUseProgram(csDistribute->program);
-
-			int bufferIndex = pointsUploaded / maxPointsPerBuffer;
-
-			GLuint ssInput = ssChunk16B;
-			GLuint ssTarget = ssVertexBuffers[bufferIndex];
-
-			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssInput);
-			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, ssTarget);
-
-			auto uLocation = csDistribute->uniformLocations["uNumPoints"];
-			glUniform1i(uLocation, chunkSize);
-
-			auto uPrime = csDistribute->uniformLocations["uPrime"];
-			glUniform1d(uPrime, double(prime));
-
-			//cout << "offset: " << targetOffset << endl;
-			auto uOffset = csDistribute->uniformLocations["uOffset"];
-			glUniform1i(uOffset, targetOffset);
-
-			int groups = ceil(double(chunkSize) / 32.0);
-			glMemoryBarrier(GL_ALL_BARRIER_BITS);
-			glDispatchCompute(groups, 1, 1);
-			glMemoryBarrier(GL_ALL_BARRIER_BITS);
-
-			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
-			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, 0);
-
-			glUseProgram(0);
-
-			glMemoryBarrier(GL_ALL_BARRIER_BITS);
-		}
-
-	}
-
 	void uploadChunkAttribute(void* data, int offset, int size) {
 
 		int targetOffset = offset;
@@ -304,13 +256,17 @@ public:
 		{// distribute to shuffled location
 			glUseProgram(csDistributeAttributes->program);
 
-			int bufferIndex = pointsUploaded / maxPointsPerBuffer;
+			int bufferIndex = offset / maxPointsPerBuffer;
 
 			GLuint ssInput = ssChunk4B;
 			GLuint ssTarget = ssVertexBuffers[bufferIndex];
 
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssInput);
-			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, ssTarget);
+			//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, ssTarget);
+
+			for (int i = 0; i < ssVertexBuffers.size(); i++) {
+				glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2 + i, ssVertexBuffers[i]);
+			}
 
 			auto uLocation = csDistribute->uniformLocations["uNumPoints"];
 			glUniform1i(uLocation, chunkSize);
@@ -325,7 +281,11 @@ public:
 			glDispatchCompute(groups, 1, 1);
 
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
-			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, 0);
+			//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, 0);
+
+			for (int i = 0; i < ssVertexBuffers.size(); i++) {
+				glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2 + i, 0);
+			}
 
 			glUseProgram(0);
 

@@ -72,8 +72,18 @@ function renderComputeBasic(node, view, proj, target){
 		gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 1, ssboFramebuffer);
 		//gl.bindImageTexture(0, target.textures[0], 0, gl.FALSE, 0, gl.READ_WRITE, gl.RGBA8UI);
 
+		{
+			gl.activeTexture(gl.TEXTURE0);
+			gl.bindTexture(gradientTexture.type, gradientTexture.handle);
+			if(csRender.uniforms.uGradient){
+				gl.uniform1i(csRender.uniforms.uGradient, 0);
+			}
+		}
+
 		let pointsLeft = node.numPoints;
 		let batchSize = 134 * 1000 * 1000;
+
+		//gl.disable(gl.DEPTH_TEST);
 
 		for(let buffer of node.glBuffers){
 			gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 0, buffer.vbo);
@@ -83,7 +93,7 @@ function renderComputeBasic(node, view, proj, target){
 
 			let numPoints = Math.max(Math.min(pointsLeft, batchSize), 0);
 			let groups = parseInt(numPoints / 128);
-			//groups = 30000;
+			//groups = 300;
 			gl.dispatchCompute(groups, 1, 1);
 
 			pointsLeft = pointsLeft - batchSize;
@@ -91,6 +101,10 @@ function renderComputeBasic(node, view, proj, target){
 
 		gl.useProgram(0);
 		GLTimerQueries.mark("render-compute-renderpass-end");
+		GLTimerQueries.measure("render.compute.render", "render-compute-renderpass-start", "render-compute-renderpass-end", (duration) => {
+			let ms = (duration * 1000).toFixed(3);
+			setDebugValue("gl.render.compute.render", `${ms}ms`);
+		});
 	}
 
 	{ // RESOLVE
@@ -100,6 +114,18 @@ function renderComputeBasic(node, view, proj, target){
 		//gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 0, buffer.vbo);
 		gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 1, ssboFramebuffer);
 		gl.bindImageTexture(0, fbo.textures[0], 0, gl.FALSE, 0, gl.READ_WRITE, gl.RGBA8UI);
+
+		{
+			gl.activeTexture(gl.TEXTURE1);
+			gl.bindTexture(gradientTexture.type, gradientTexture.handle);
+
+			//log(csResolve.uniforms.uGradient);
+
+			if(csResolve.uniforms.uGradient){
+				log("abc");
+				gl.uniform1i(csResolve.uniforms.uGradient, 1);
+			}
+		}
 
 
 		let groups = [
@@ -112,6 +138,10 @@ function renderComputeBasic(node, view, proj, target){
 
 		gl.useProgram(0);
 		GLTimerQueries.mark("render-compute-resolvepass-end");
+		GLTimerQueries.measure("render.compute.resolve", "render-compute-resolvepass-start", "render-compute-resolvepass-end", (duration) => {
+			let ms = (duration * 1000).toFixed(3);
+			setDebugValue("gl.render.compute.resolve", `${ms}ms`);
+		});
 	}
 	
 	gl.blitNamedFramebuffer(fbo.handle, target.handle, 

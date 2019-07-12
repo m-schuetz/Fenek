@@ -72,11 +72,8 @@ int64_t permuteI(int64_t number, int64_t prime){
 	}
 
 	int64_t q = number * number;
-
 	int64_t d = q / prime;
-	q = q - d * prime;
-
-	int64_t residue = q;
+	int64_t residue = q - d * prime;
 
 	if(number <= prime / 2){
 		return residue;

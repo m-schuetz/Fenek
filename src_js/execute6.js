@@ -3,16 +3,19 @@
 if(typeof e4called === "undefined"){
 	e4called = true;
 	
-	let las = loadBINProgressive("D:/dev/pointclouds/riegl/niederweiden_400m.bin");
+	//let las = loadBINProgressive("D:/dev/pointclouds/riegl/niederweiden_400m.bin");
 	//let las = loadLASProgressive("D:/dev/pointclouds/tuwien_baugeschichte/Museum Affandi_las export/batch_1.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/NVIDIA/laserscans/merged.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/hofbibliothek/HB_64.las");
-	//let las = loadLASProgressive("D:/dev/pointclouds/tuwien_baugeschichte/Candi Sari_las export/candi_sari.las");
+	let las = loadLASProgressive("D:/dev/pointclouds/tuwien_baugeschichte/Candi Sari_las export/candi_sari.las");
 	//let las = loadBINProgressive("D:/dev/pointclouds/test.bin");
 
 	//let las = loadLASProgressive("D:/dev/pointclouds/archpro/heidentor.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/mschuetz/lion.las");
+	//let las = loadLASProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v5_250k.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v3.las");
+
+	//let las = loadLASProgressive("D:/dev/pointclouds/tuwien_baugeschichte/Candi Sari_las export/candi_sari.las");
 
 
 	let pc = new PointCloudProgressive("testcloud", "blabla");
@@ -29,6 +32,7 @@ if(typeof e4called === "undefined"){
 
 	let maxPointsPerBuffer = 134 * 1000 * 1000;
 	let numPointsLeft = las.numPoints;
+
 	let glBuffers = handles.map( (handle) => {
 
 		let numPointsInBuffer = numPointsLeft > maxPointsPerBuffer ? maxPointsPerBuffer : numPointsLeft;
@@ -67,7 +71,7 @@ if(typeof e4called === "undefined"){
 	let s = 0.3;
 	pc.transform.elements.set([
 		s, 0, 0, 0, 
-		0, 0, s, 0, 
+		0, 0, -s, 0, 
 		0, s, 0, 0, 
 		-10, 1.4, -11, 1, 
 	]);
@@ -86,8 +90,8 @@ if(typeof e4called === "undefined"){
 }
 
 view.set(
-	[-11.34062835354112, 4.054401647775217, -7.931739384765451],
-	[-8.015805951564435, 2.834597543000753, -8.789907181758469],
+	[230.13768672641308, 232.68237814619096, -42.7020015586547 ],
+	[235.8914409252224, 31.297050778225838, -175.80788110667288],
 );
 
 camera.fov = 100;
