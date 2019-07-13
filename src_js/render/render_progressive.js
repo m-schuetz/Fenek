@@ -183,14 +183,32 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 		GLTimerQueries.mark("render-progressive-reproject-end");
 		GLTimerQueries.measure("render.progressive.reproject", "render-progressive-reproject-start", "render-progressive-reproject-end", (duration) => {
 			let ms = (duration * 1000).toFixed(3);
+
+			//if(ms < 0.14 || ms > 0.9){
+			//	log(ms);
+			//}
+
 			setDebugValue("gl.render.progressive.reproject", `${ms}ms`);
 		});
 	}
 
 
-	{ // FILL PASS
+	if(true){ // FILL PASS
 
-		if(true){ // Let compute shader decide which points to draw
+		//dversion = 0;
+		//dtarget = 0;
+
+		//if(dversion < dtarget){ // Let compute shader decide which points to draw
+
+		// {
+		// 	let sum = 0;
+		// 	for(let i = 0; i < 100 * 1000 * 1000; i++){
+		// 		sum = sum + i;
+		// 	}
+		// }
+
+		{
+			//dversion++;
 			GLTimerQueries.mark("render-progressive-fill-compute-fixed-start");
 			let csFillFixed = state.csFillFixed;
 			let ssFillFixed = state.ssFillFixed;
@@ -269,6 +287,15 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 
 				gl.drawArraysIndirect(gl.POINTS, i * 4 * 4);
 			}
+
+			//{ // DEBUG
+			//	let buffer = buffers[0];
+
+			//	gl.uniform1i(shAdd.uniforms.uOffset, 0);
+			//	gl.bindVertexArray(buffer.vao);
+			//	gl.bindBuffer(gl.DRAW_INDIRECT_BUFFER, 0);
+			//	gl.drawArrays(gl.POINTS, 21 * 1000 * 1000, 1 * 1000 * 1000);
+			//}
 			
 
 			gl.bindVertexArray(0);
@@ -285,11 +312,32 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 			GLTimerQueries.mark("render-progressive-add-end");
 			GLTimerQueries.measure("render.progressive.add", "render-progressive-add-start", "render-progressive-add-end", (duration) => {
 				let ms = (duration * 1000).toFixed(3);
+
+				//runningAverage.push(duration * 1000);
+
+				//while(runningAverage.length > 60){
+				//	runningAverage.shift();
+				//}
+
+				//if(runningAverage.length >= 60){
+
+				//	let mean = runningAverage.reduce( (a, i) => a + i, 0) / runningAverage.length;
+				//	let min = Math.min(...runningAverage);
+				//	let max = Math.max(...runningAverage);
+
+
+				//	log(mean.toFixed(3) + ", " + min.toFixed(3) + ", " + max.toFixed(3));
+				//}
+
+				//if(ms < 3.61 || ms > 4.70){
+				//	log(ms);
+				//}
+
 				setDebugValue("gl.render.progressive.add", `${ms}ms`);
 			});
 		}
 
-		{ // TODO decide how much more points we can draw with the remaining time
+		if(true){ // TODO decide how much more points we can draw with the remaining time
 			GLTimerQueries.mark("render-progressive-fill-compute-remaining-start");
 			let csFillRemaining = state.csFillRemaining;
 			let ssFillFixed = state.ssFillFixed;
@@ -314,7 +362,7 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 			});
 		}
 
-		{ // TODO draw some more points to take advantage of remaining time
+		if(true){ // TODO draw some more points to take advantage of remaining time
 			GLTimerQueries.mark("render-progressive-add-remaining-start");
 			gl.useProgram(shAdd.program);
 
@@ -456,7 +504,11 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 		//log("====");
 
 		let estimate = view.getUint32(4 * 16, true);
-		log(numberWithCommas(estimate));
+
+		//if(estimate > 1*1000*1000){
+		//if(estimate < 500){
+			log(numberWithCommas(estimate));
+		//}
 	
 
 		//for(let i = 0; i < pointcloud.glBuffers.length; i++){

@@ -42,25 +42,24 @@ int[10] getCummulativeBatchSizes(){
 	return cummulative;
 }
 
-#define NUM_FIXED 1000000
 #define uBudgetMillies 7.0
 
 void main() {
+
+	uint numPointsRendered = 0;
+	for(int i = 0; i < uNumBatches; i++){
+		numPointsRendered = numPointsRendered + commands[i].count;
+	}
 	
-	uint64_t nanos = tEndAdd - tStartAdd;
-	//uint64_t nanos = 1000000ul;
-
-	double milliesConsumed = double(nanos) / double(1000000.0);
+	uint64_t nanosConsumed = tEndAdd - tStart;
+	double milliesConsumed = double(nanosConsumed) / double(1000000.0);
 	double milliesRemaining = max(uBudgetMillies - milliesConsumed, 0);
+	double milliesConsumedByFillFixed = double(tEndAdd - tStartAdd) / double(1000000.0);
 
-	double pointsPerMillies = double(NUM_FIXED) / milliesConsumed;
+	double pointsPerMillies = double(numPointsRendered) / milliesConsumedByFillFixed;
 
 	double estimatedRemainingBudget = pointsPerMillies * milliesRemaining;
-	estimatedRemainingBudget = 0.6 * estimatedRemainingBudget;
-
-
-
-
+	estimatedRemainingBudget = 0.8 * estimatedRemainingBudget;
 
 	// reset commands
 	for(int i = 0; i < uNumBatches; i++){
@@ -76,16 +75,12 @@ void main() {
 	int[10] cum = getCummulativeBatchSizes();
 
 	int startBatch = uNumBatches - 1;
-	//uOffset = 268 * 1000 * 1000;
 	for(int i = 0; i < uNumBatches; i++){
 		if(uOffset < cum[i]){
 			startBatch = i;
 			break;
 		}
 	}
-
-	//estimatedRemainingBudget = 800000;
-	//estimatedRemainingBudget = 10 * 1000 * 1000;
 
 	int currentBatch = startBatch;
 	int remainingPoints = int(estimatedRemainingBudget);
@@ -108,6 +103,7 @@ void main() {
 	}
 
 	commands[4].count = int(estimatedRemainingBudget);
+	//commands[4].count = int(milliesConsumed * 1000);
 	
 }
 

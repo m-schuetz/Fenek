@@ -3,12 +3,13 @@
 if(typeof e4called === "undefined"){
 	e4called = true;
 	
-	//let las = loadBINProgressive("D:/dev/pointclouds/riegl/niederweiden_400m.bin");
+	//let las = loadLASProgressive("D:/dev/pointclouds/ludwig_boltzmann/heidentor.las");
 	let las = loadLASProgressive("D:/dev/pointclouds/NVIDIA/photogrammetry/test.las");
+
+	//let las = loadBINProgressive("D:/dev/pointclouds/riegl/niederweiden_400m.bin");
 	//let las = loadLASProgressive("D:/dev/pointclouds/tuwien_baugeschichte/Museum Affandi_las export/batch_1.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/NVIDIA/laserscans/merged.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/hofbibliothek/HB_64.las");
-	//let las = loadLASProgressive("D:/dev/pointclouds/ludwig_boltzmann/heidentor.las");
 	//let las = loadBINProgressive("D:/dev/pointclouds/test.bin");
 
 	//let las = loadLASProgressive("D:/dev/pointclouds/archpro/heidentor.las");
