@@ -212,9 +212,14 @@ class GLTimerQueries{
 		for(let [name, history] of GLTimerQueries.history){
 			let sum = history.reduce( (a, i) => a + i, 0);
 			let avg = sum / history.length;
-			let ms = (avg * 1000).toFixed(3);
+			let min = Math.min(...history);
+			let max = Math.max(...history);
 
-			setDebugValue(`test.${name}`, `${ms}ms`);
+			let msAvg = (avg * 1000).toFixed(3);
+			let msMin = (min * 1000).toFixed(3);
+			let msMax = (max * 1000).toFixed(3);
+
+			setDebugValue(`test.${name}`, `${msAvg}ms / ${msMin}ms / ${msMax}ms`);
 		}
 
 		GLTimerQueries.measures = unresolvedMeasures;
