@@ -140,10 +140,11 @@ var renderRegular = function() {
 			gl.COLOR_BUFFER_BIT, gl.LINEAR);
 
 		GLTimerQueries.mark("edl-end");
-		GLTimerQueries.measure("render.edl", "edl-start", "edl-end", (duration) => {
-			let ms = (duration * 1000).toFixed(3);
-			setDebugValue("gl.render.edl", `${ms}ms`);
-		});
+		GLTimerQueries.measure("render.edl", "edl-start", "edl-end");
+		//GLTimerQueries.measure("render.edl", "edl-start", "edl-end", (duration) => {
+		//	let ms = (duration * 1000).toFixed(3);
+		//	setDebugValue("gl.render.edl", `${ms}ms`);
+		//});
 
 		//gl.blitNamedFramebuffer(fboEDL.handle, 0, 
 		//	600, 400, 600 + 128, 400 + 128, 

@@ -718,13 +718,16 @@ var render = function(){
 
 	scene.drawQueue = [];
 
+	//log(`echo "test"`);
+
 	//GLTimerQueries.mark = () => {};
 
 	GLTimerQueries.mark("render-end");
-	GLTimerQueries.measure("render", "render-start", "render-end", (duration) => {
-		let ms = (duration * 1000).toFixed(3);
-		setDebugValue("gl.render", `${ms}ms`);
-	});
+	GLTimerQueries.measure("render", "render-start", "render-end");
+	//GLTimerQueries.measure("render", "render-start", "render-end", (duration) => {
+	//	let ms = (duration * 1000).toFixed(3);
+	//	setDebugValue("gl.render", `${ms}ms`);
+	//});
 	GLTimerQueries.resolve();
 	//GLTimerQueries.resolve( (result) => {
 

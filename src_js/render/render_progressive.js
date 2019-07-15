@@ -181,31 +181,18 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 		gl.bindVertexArray(0);
 
 		GLTimerQueries.mark("render-progressive-reproject-end");
-		GLTimerQueries.measure("render.progressive.reproject", "render-progressive-reproject-start", "render-progressive-reproject-end", (duration) => {
-			let ms = (duration * 1000).toFixed(3);
+		GLTimerQueries.measure("render.progressive.p1_reproject", "render-progressive-reproject-start", "render-progressive-reproject-end");
+		//GLTimerQueries.measure("render.progressive.reproject", "render-progressive-reproject-start", "render-progressive-reproject-end", (duration) => {
+		//	let ms = (duration * 1000).toFixed(3);
 
-			//if(ms < 0.14 || ms > 0.9){
-			//	log(ms);
-			//}
-
-			setDebugValue("gl.render.progressive.reproject", `${ms}ms`);
-		});
+		//	setDebugValue("gl.render.progressive.reproject", `${ms}ms`);
+		//});
 	}
 
 
 	if(true){ // FILL PASS
 
-		//dversion = 0;
-		//dtarget = 0;
-
-		//if(dversion < dtarget){ // Let compute shader decide which points to draw
-
-		// {
-		// 	let sum = 0;
-		// 	for(let i = 0; i < 100 * 1000 * 1000; i++){
-		// 		sum = sum + i;
-		// 	}
-		// }
+		GLTimerQueries.mark("render-progressive-fill-start");
 
 		{
 			//dversion++;
@@ -247,10 +234,11 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 			gl.useProgram(0);
 
 			GLTimerQueries.mark("render-progressive-fill-compute-fixed-end");
-			GLTimerQueries.measure("render.progressive.compute_fixed", "render-progressive-fill-compute-fixed-start", "render-progressive-fill-compute-fixed-end", (duration) => {
-				let ms = (duration * 1000).toFixed(3);
-				setDebugValue("gl.render.progressive.compute_fixed", `${ms}ms`);
-			});
+			GLTimerQueries.measure("render.progressive.p2_fill.compute_fixed", "render-progressive-fill-compute-fixed-start", "render-progressive-fill-compute-fixed-end");
+			//GLTimerQueries.measure("render.progressive.compute_fixed", "render-progressive-fill-compute-fixed-start", "render-progressive-fill-compute-fixed-end", (duration) => {
+			//	let ms = (duration * 1000).toFixed(3);
+			//	setDebugValue("gl.render.progressive.compute_fixed", `${ms}ms`);
+			//});
 
 		}
 
@@ -310,31 +298,12 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 			}
 
 			GLTimerQueries.mark("render-progressive-add-end");
-			GLTimerQueries.measure("render.progressive.add", "render-progressive-add-start", "render-progressive-add-end", (duration) => {
-				let ms = (duration * 1000).toFixed(3);
+			GLTimerQueries.measure("render.progressive.p2_fill.render_fixed", "render-progressive-add-start", "render-progressive-add-end");
+			//GLTimerQueries.measure("render.progressive.add", "render-progressive-add-start", "render-progressive-add-end", (duration) => {
+			//	let ms = (duration * 1000).toFixed(3);
 
-				//runningAverage.push(duration * 1000);
-
-				//while(runningAverage.length > 60){
-				//	runningAverage.shift();
-				//}
-
-				//if(runningAverage.length >= 60){
-
-				//	let mean = runningAverage.reduce( (a, i) => a + i, 0) / runningAverage.length;
-				//	let min = Math.min(...runningAverage);
-				//	let max = Math.max(...runningAverage);
-
-
-				//	log(mean.toFixed(3) + ", " + min.toFixed(3) + ", " + max.toFixed(3));
-				//}
-
-				//if(ms < 3.61 || ms > 4.70){
-				//	log(ms);
-				//}
-
-				setDebugValue("gl.render.progressive.add", `${ms}ms`);
-			});
+			//	setDebugValue("gl.render.progressive.add", `${ms}ms`);
+			//});
 		}
 
 		if(true){ // TODO decide how much more points we can draw with the remaining time
@@ -356,10 +325,11 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 			gl.useProgram(0);
 
 			GLTimerQueries.mark("render-progressive-fill-compute-remaining-end");
-			GLTimerQueries.measure("render.progressive.compute_remaining", "render-progressive-fill-compute-remaining-start", "render-progressive-fill-compute-remaining-end", (duration) => {
-				let ms = (duration * 1000).toFixed(3);
-				setDebugValue("gl.render.progressive.compute_remaining", `${ms}ms`);
-			});
+			GLTimerQueries.measure("render.progressive.p2_fill.compute_remaining", "render-progressive-fill-compute-remaining-start", "render-progressive-fill-compute-remaining-end");
+			//GLTimerQueries.measure("render.progressive.compute_remaining", "render-progressive-fill-compute-remaining-start", "render-progressive-fill-compute-remaining-end", (duration) => {
+			//	let ms = (duration * 1000).toFixed(3);
+			//	setDebugValue("gl.render.progressive.compute_remaining", `${ms}ms`);
+			//});
 		}
 
 		if(true){ // TODO draw some more points to take advantage of remaining time
@@ -399,11 +369,15 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 			gl.bindVertexArray(0);
 
 			GLTimerQueries.mark("render-progressive-add-remaining-end");
-			GLTimerQueries.measure("render.progressive.add_remaining", "render-progressive-add-remaining-start", "render-progressive-add-remaining-end", (duration) => {
-				let ms = (duration * 1000).toFixed(3);
-				setDebugValue("gl.render.progressive.add_remaining", `${ms}ms`);
-			});
+			GLTimerQueries.measure("render.progressive.p2_fill.render_remaining", "render-progressive-add-remaining-start", "render-progressive-add-remaining-end");
+			//GLTimerQueries.measure("render.progressive.add_remaining", "render-progressive-add-remaining-start", "render-progressive-add-remaining-end", (duration) => {
+			//	let ms = (duration * 1000).toFixed(3);
+			//	setDebugValue("gl.render.progressive.add_remaining", `${ms}ms`);
+			//});
 		}
+
+		GLTimerQueries.mark("render-progressive-fill-end");
+		GLTimerQueries.measure("render.progressive.p2_fill", "render-progressive-fill-start", "render-progressive-fill-end");
 	}
 
 
@@ -462,10 +436,11 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 		gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 4, 0);
 
 		GLTimerQueries.mark("render-progressive-ibo-end");
-		GLTimerQueries.measure("render.progressive.ibo", "render-progressive-ibo-start", "render-progressive-ibo-end", (duration) => {
-			let ms = (duration * 1000).toFixed(3);
-			setDebugValue("gl.render.progressive.ibo", `${ms}ms`);
-		});
+		GLTimerQueries.measure("render.progressive.p3_vbo", "render-progressive-ibo-start", "render-progressive-ibo-end");
+		//GLTimerQueries.measure("render.progressive.ibo", "render-progressive-ibo-start", "render-progressive-ibo-end", (duration) => {
+		//	let ms = (duration * 1000).toFixed(3);
+		//	setDebugValue("gl.render.progressive.ibo", `${ms}ms`);
+		//});
 
 	}
 
@@ -490,6 +465,7 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 	}
 
 	//let doLog = (frameCount % 1000) === 0 || (frameCount % 1000) === 1;
+	// print estimated point budget
 	if(false){
 		gl.memoryBarrier(gl.ALL_BARRIER_BITS);
 		// taken from https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
@@ -503,7 +479,7 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 
 		//log("====");
 
-		let estimate = view.getUint32(4 * 16, true);
+		let estimate = view.getUint32(5 * 16, true);
 
 		//if(estimate > 1*1000*1000){
 		//if(estimate < 500){
@@ -618,10 +594,11 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 	// 	gl.COLOR_BUFFER_BIT, gl.NEAREST);
 
 	GLTimerQueries.mark("render-progressive-end");
-	GLTimerQueries.measure("render.progressive", "render-progressive-start", "render-progressive-end", (duration) => {
-		let ms = (duration * 1000).toFixed(3);
-		setDebugValue("gl.render.progressive", `${ms}ms`);
-	});
+	GLTimerQueries.measure("render.progressive", "render-progressive-start", "render-progressive-end");
+	//GLTimerQueries.measure("render.progressive", "render-progressive-start", "render-progressive-end", (duration) => {
+	//	let ms = (duration * 1000).toFixed(3);
+	//	setDebugValue("gl.render.progressive", `${ms}ms`);
+	//});
 
 	//state.round++;
 

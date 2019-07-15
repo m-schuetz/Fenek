@@ -2,6 +2,7 @@
 #include "V8Helper.h"
 
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <chrono>
 #include <regex>
@@ -2322,6 +2323,31 @@ void V8Helper::setupV8() {
 		args.GetReturnValue().Set(resolver->GetPromise());
 
 	});
+
+	//V8Helper::_instance->registerFunction("writeState", [](const FunctionCallbackInfo<Value>& args) {
+	//	if (args.Length() != 0) {
+	//		V8Helper::_instance->throwException("writeState requires 0 arguments");
+	//		return;
+	//	}
+	//
+	//	auto isolate = Isolate::GetCurrent();
+	//	
+	//	thread t([isolate]() {
+	//		string text = "abc";
+	//		string path = "./state.html";
+	//
+	//		std::ofstream file;
+	//		file.open(path);
+	//
+	//		file << text << endl;
+	//
+	//		file.close();
+	//
+	//	});
+	//		
+	//	t.detach();
+	//
+	//});
 
 
 	struct IPoint {

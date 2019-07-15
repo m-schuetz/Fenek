@@ -193,6 +193,67 @@ void binaryUploadHook(ProgressiveBINLoader* loader, v8::Persistent<Object, v8::C
 		});
 };
 
+void writeState() {
+
+	stringstream text;
+
+	text << "<html>" << endl;
+	text << "<head>" << endl;
+	text << "	<meta http-equiv=\"refresh\" content = \"1\">" << endl;
+
+	text << "<style>" << endl;
+	text << "tr:nth-child(even) {background: rgb(245, 245, 245)}" << endl;
+	text << "tr:nth-child(odd) {background: #FFF}" << endl;
+	text << "table{" << endl;
+	text << "	border-collapse: collapse;" << endl;
+	text << "}" << endl;
+	text << "td{" << endl;
+	text << "	border: 1px solid rgb(200, 200, 200);" << endl;
+	text << "	font-family: \"Consolas\";" << endl;
+	text << "	padding: 6px 13px 6px 13px;" << endl;
+	text << "	margin: 0px;" << endl;
+	text << "}" << endl;
+	text << "pre{" << endl;
+	text << "	font-family: \"Consolas\";" << endl;
+	text << "}" << endl;
+	text << "</style>" << endl;
+
+	text << "</head>" << endl;
+	text << "<body>" << endl;
+
+	text << "<table>" << endl;
+	
+	//cout << "============" << endl;
+	for (auto& entry : V8Helper::instance()->debugValue) {
+
+		text << "	<tr>" << endl;
+		text << "		<td>" << entry.first << "</td>" << endl;
+		text << "		<td><pre>" << entry.second << "</pre></td>" << endl;
+		text << "	</tr>" << endl;
+		//text << entry.first << ": " << entry.second << endl;
+	}
+	//cout << "== end of frame ==" << endl;
+
+	text << "</table>" << endl;
+
+	text << "</body>" << endl;
+	text << "</html>" << endl;
+
+	string strText = text.str();
+
+	//thread t([strText]() {
+		string path = "./state.html";
+
+		std::ofstream file;
+		file.open(path);
+
+		file << strText << endl;
+
+		file.close();
+	//});
+
+	//t.detach();
+}
 
 int main() {
 
@@ -624,6 +685,9 @@ int main() {
 				}
 				cout << "== end of frame ==" << endl;
 			}
+
+			// write state to self-refreshing html file
+			writeState();
 
 			lastFPSTime = now;
 			fpsCounter = 0;

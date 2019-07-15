@@ -191,7 +191,9 @@ class GLTimerQueries{
 				let nanos = end.timestamp - start.timestamp;
 				let seconds = nanos / (1000000000);
 
-				measure.callback(seconds);
+				if(measure.callback){
+					measure.callback(seconds);
+				}
 
 				if(!GLTimerQueries.history.has(measure.name)){
 					GLTimerQueries.history.set(measure.name, []);
@@ -209,17 +211,24 @@ class GLTimerQueries{
 			}
 		}
 
+		let colWidth = 50;
+		//for(let [name, history] of GLTimerQueries.history){
+		//	colWidth = Math.max(colWidth, name.length);
+		//}
+
 		for(let [name, history] of GLTimerQueries.history){
 			let sum = history.reduce( (a, i) => a + i, 0);
 			let avg = sum / history.length;
 			let min = Math.min(...history);
 			let max = Math.max(...history);
 
-			let msAvg = (avg * 1000).toFixed(3);
-			let msMin = (min * 1000).toFixed(3);
-			let msMax = (max * 1000).toFixed(3);
+			let msAvg = (avg * 1000).toFixed(3).padStart(8);
+			let msMin = (min * 1000).toFixed(3).padStart(8);
+			let msMax = (max * 1000).toFixed(3).padStart(8);
 
-			setDebugValue(`test.${name}`, `${msAvg}ms / ${msMin}ms / ${msMax}ms`);
+
+
+			setDebugValue(`gl.${name}`.padEnd(colWidth, " "), `${msAvg}ms / ${msMin}ms / ${msMax}ms`);
 		}
 
 		GLTimerQueries.measures = unresolvedMeasures;

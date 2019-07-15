@@ -15,7 +15,7 @@ if($("desktop_mirror")){
 
 DEBUG_USER_FILTER_CAM = false;
 
-reportState(true);
+reportState(false);
 
 CLOD_RANGE = [0.4, 1.2];
 CLOD_BATCH_SIZE = 50 * 1000 * 1000;
@@ -23,7 +23,7 @@ CLOD_BATCH_SIZE = 50 * 1000 * 1000;
 POINT_BUDGET = 20 * 1000 * 1000;
 POINT_BUDGET_RANGE = [POINT_BUDGET, POINT_BUDGET];
 
-MSAA_SAMPLES = 4; 
+MSAA_SAMPLES = 1; 
 EDL_ENABLED = true; 
 RENDER_DEFAULT_ENABLED = false;
 desktopMirrorEnabled = false;

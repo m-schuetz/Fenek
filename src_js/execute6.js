@@ -4,7 +4,7 @@ if(typeof e4called === "undefined"){
 	e4called = true;
 	
 	//let las = loadLASProgressive("D:/dev/pointclouds/ludwig_boltzmann/heidentor.las");
-	let las = loadLASProgressive("D:/dev/pointclouds/NVIDIA/photogrammetry/test.las");
+	//let las = loadLASProgressive("D:/dev/pointclouds/NVIDIA/photogrammetry/test.las");
 
 	//let las = loadBINProgressive("D:/dev/pointclouds/riegl/niederweiden_400m.bin");
 	//let las = loadLASProgressive("D:/dev/pointclouds/tuwien_baugeschichte/Museum Affandi_las export/batch_1.las");
@@ -12,7 +12,7 @@ if(typeof e4called === "undefined"){
 	//let las = loadLASProgressive("D:/dev/pointclouds/hofbibliothek/HB_64.las");
 	//let las = loadBINProgressive("D:/dev/pointclouds/test.bin");
 
-	//let las = loadLASProgressive("D:/dev/pointclouds/archpro/heidentor.las");
+	let las = loadLASProgressive("D:/dev/pointclouds/archpro/heidentor.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/mschuetz/lion.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v5_250k.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v3.las");
@@ -26,8 +26,8 @@ if(typeof e4called === "undefined"){
 
 	let attributes = [
 		new GLBufferAttribute("position", 0, 3, gl.FLOAT, gl.FALSE, 12, 0),
-		new GLBufferAttribute("color",    1, 4, gl.UNSIGNED_BYTE, gl.TRUE, 4, 12),
-		//new GLBufferAttribute("value", 1, 4, gl.INT, gl.FALSE, 4, 12, {targetType: "int"}),
+		//new GLBufferAttribute("color",    1, 4, gl.UNSIGNED_BYTE, gl.TRUE, 4, 12),
+		new GLBufferAttribute("value", 1, 4, gl.INT, gl.FALSE, 4, 12, {targetType: "int"}),
 	];
 
 	let bytesPerPoint = attributes.reduce( (p, c) => p + c.bytes, 0);

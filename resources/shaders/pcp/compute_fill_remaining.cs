@@ -42,7 +42,7 @@ int[10] getCummulativeBatchSizes(){
 	return cummulative;
 }
 
-#define uBudgetMillies 7.0
+#define uBudgetMillies 12.0
 
 void main() {
 
@@ -102,7 +102,7 @@ void main() {
 		currentBatch = (currentBatch + 1)  % uNumBatches;
 	}
 
-	commands[4].count = int(estimatedRemainingBudget);
+	commands[5].count = int(estimatedRemainingBudget);
 	//commands[4].count = int(milliesConsumed * 1000);
 	
 }
