@@ -19,15 +19,24 @@ if( typeof getRenderVRState === "undefined"){
 
 			let vsPath = "../../resources/shaders/edl.vs";
 			let fsPath = "../../resources/shaders/edl.fs";
-			let shader = new Shader([
+			let fsPathMSAA = "../../resources/shaders/edlMSAA.fs";
+
+			let edlShaderMSAA = new Shader([
+				{type: gl.VERTEX_SHADER, path: vsPath},
+				{type: gl.FRAGMENT_SHADER, path: fsPathMSAA},
+			]);
+			edlShaderMSAA.watch();
+
+			let edlShader = new Shader([
 				{type: gl.VERTEX_SHADER, path: vsPath},
 				{type: gl.FRAGMENT_SHADER, path: fsPath},
 			]);
-			shader.watch();
+			edlShader.watch();
 
 			renderVRState = {
 				fboEDL: fboEDL,
-				edlShader: shader,
+				edlShader: edlShader,
+				edlShaderMSAA: edlShaderMSAA,
 				fboLeft: fboLeft,
 				fboRight: fboRight,
 				fboResolveLeft: fboResolveLeft,
@@ -118,14 +127,17 @@ var renderVR = function(){
 		let isquad = $("image_space_quad");
 		let buffer = isquad.getComponent(GLBuffer);
 
-		let shader = state.edlShader;
+		let samples = fbo.samples;
+
+		let shader = (samples === 1) ? state.edlShader : state.edlShaderMSAA;
 		let shader_data = shader.uniformBlocks.shader_data;
 
 		gl.bindFramebuffer(gl.FRAMEBUFFER, fboResolveLeft.handle);
 
 		gl.useProgram(shader.program);
 
-		let textureType = gl.TEXTURE_2D_MULTISAMPLE;
+		//let textureType = gl.TEXTURE_2D_MULTISAMPLE;
+		let textureType = (samples === 1) ? gl.TEXTURE_2D : gl.TEXTURE_2D_MULTISAMPLE;
 		gl.activeTexture(gl.TEXTURE0);
 		gl.bindTexture(textureType, fbo.textures[0]);
 		gl.uniform1i(shader.uniforms.uColor, 0);
@@ -188,14 +200,16 @@ var renderVR = function(){
 		let isquad = $("image_space_quad");
 		let buffer = isquad.getComponent(GLBuffer);
 
-		let shader = state.edlShader;
+		let samples = fbo.samples;
+
+		let shader = (samples === 1) ? state.edlShader : state.edlShaderMSAA;
 		let shader_data = shader.uniformBlocks.shader_data;
 
 		gl.bindFramebuffer(gl.FRAMEBUFFER, fboResolveRight.handle);
 
 		gl.useProgram(shader.program);
 
-		let textureType = gl.TEXTURE_2D_MULTISAMPLE;
+		let textureType = (samples === 1) ? gl.TEXTURE_2D : gl.TEXTURE_2D_MULTISAMPLE;
 		gl.activeTexture(gl.TEXTURE0);
 		gl.bindTexture(textureType, fbo.textures[0]);
 		gl.uniform1i(shader.uniforms.uColor, 0);

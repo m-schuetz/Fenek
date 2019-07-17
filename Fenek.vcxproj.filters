@@ -92,5 +92,8 @@
     <ClInclude Include="include\BArray.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\GLTimerQueries.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

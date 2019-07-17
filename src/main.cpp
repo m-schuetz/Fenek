@@ -14,6 +14,7 @@
 #include "LASLoader.h"
 #include "ProgressiveLoader.h"
 #include "ProgressiveBINLoader.h"
+#include "GLTimerQueries.h"
 
 
 using std::unordered_map;
@@ -698,13 +699,61 @@ int main() {
 
 		EventQueue::instance->process();
 
+		if(false){ // GL TIMER MEASUREMENS
+			GLTimerQueries::resolve();
+
+			for (auto it : GLTimerQueries::getMeanMinMax()) {
+
+				string name = it.first;
+				double avg = it.second[0];
+				double mi = it.second[1];
+				double ma = it.second[2];
+
+				stringstream ssAvg;
+				stringstream ssMin;
+				stringstream ssMax;
+				ssAvg << std::setprecision(3) << std::setw(8) << (avg * 1000);
+				ssMin << std::setprecision(3) << std::setw(8) << (mi * 1000);
+				ssMax << std::setprecision(3) << std::setw(8) << (ma * 1000);
+
+				string msg = ssAvg.str() + "ms / " + ssMin.str() + "ms / " + ssMax.str() + "ms";
+			
+				V8Helper::instance()->debugValue[name] = msg;
+			}
+
+			for (auto it : GLTimerQueries::getHistory()) {
+
+				string name = it.first;
+				deque<double>& values = it.second;
+
+				stringstream ss;
+				ss << std::setprecision(3);
+				int i = 0;
+				for (double value : values) {
+					ss << (value * 1000) << ", ";
+
+					i++;
+					if (i > 20) {
+						ss << " ...";
+						break;
+					}
+				}
+
+				string key = name + ".history";
+				string msg = ss.str();
+				V8Helper::instance()->debugValue[key] = msg;
+
+			}
+		}
+
+
 		//if (loadingLAS) {
 		//	cout << "tslf: " << timeSinceLastFrame << endl;
 		//}
 
-		if (timeSinceLastFrame > 0.016) {
-			cout << "too slow! time since last frame: " << int(timeSinceLastFrame * 1000.0) << "ms" << endl;
-		}
+		//if (timeSinceLastFrame > 0.016) {
+			//cout << "too slow! time since last frame: " << int(timeSinceLastFrame * 1000.0) << "ms" << endl;
+		//}
 
 		// ----------------
 		// RENDER WITH JAVASCRIPT

@@ -17,6 +17,7 @@
 
 #include "LASLoader.h"
 #include "ComputeShader.h"
+#include "GLTimerQueries.h"
 
 using std::string;
 using std::vector;
@@ -182,6 +183,8 @@ public:
 		//	cout << "!!!!!!!!!!!!!  " << max << "   !!!!!!!!!!!!!!!!!" << endl;
 		//}
 
+		GLTimerQueries::mark("loader.uploadChunk-start");
+
 		{// upload
 			glNamedBufferSubData(ssChunk16B, 0, chunkSize * 16, chunk->xyzrgba.data());
 			//glNamedBufferSubData(ssChunkIndices, 0, chunkSize * 4, chunk->shuffledOrder.data());
@@ -232,6 +235,9 @@ public:
 
 			glMemoryBarrier(GL_ALL_BARRIER_BITS);
 		}
+
+		GLTimerQueries::mark("loader.uploadChunk-end");
+		GLTimerQueries::measure("loader.uploadChunk", "loader.uploadChunk-start", "loader.uploadChunk-end");
 
 		chunks.emplace_back(chunk);
 

@@ -154,6 +154,7 @@
     <ClInclude Include="include\Application.h" />
     <ClInclude Include="include\BArray.h" />
     <ClInclude Include="include\ComputeShader.h" />
+    <ClInclude Include="include\GLTimerQueries.h" />
     <ClInclude Include="include\LASLoader.h" />
     <ClInclude Include="include\OpenVRHelper.h" />
     <ClInclude Include="include\ProgressiveBINLoader.h" />
