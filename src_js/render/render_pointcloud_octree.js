@@ -114,7 +114,7 @@ drawBoxes = function(nodes){
 	};
 }
 
-renderPointCloudOctree = function(pointcloud, view, proj){
+renderPointCloudOctreeBasic = function(pointcloud, view, proj){
 
 	GLTimerQueries.mark("render-octree-start");
 
@@ -127,8 +127,6 @@ renderPointCloudOctree = function(pointcloud, view, proj){
 	let worldViewProj = new Float32Array(16);
 	let worldView = new Float32Array(16);
 	let world = pointcloud.transform;
-	//log(pointcloud.transform.elements);
-	//log(pointcloud.world.elements);
 
 	{
 		let transform = new Matrix4();
@@ -211,16 +209,6 @@ renderPointCloudOctree = function(pointcloud, view, proj){
 
 		let mat32 = new Float32Array(16);
 
-		//mat32.set(Matrix4.IDENTITY.elements);
-		//mat32.set(transform.elements);
-		//gl.uniformMatrix4fv(/*shader.uniforms.uTransform*/ 1, 1, gl.FALSE, mat32);
-
-		//mat32.set(world.elements);
-		//gl.uniformMatrix4fv(/*shader.uniforms.uWorld*/ 2, 1, gl.FALSE, mat32);
-
-		//mat32.set(view.elements);
-		//gl.uniformMatrix4fv(/*shader.uniforms.uView*/ 3, 1, gl.FALSE, mat32);
-
 		mat32.set(proj.elements);
 		gl.uniformMatrix4fv(/*shader.uniforms.uProj*/ 4, 1, gl.FALSE, mat32);
 
@@ -285,27 +273,142 @@ renderPointCloudOctree = function(pointcloud, view, proj){
 		pointsRendered += buffer.count;
 		nodesRendered++;
 
-		//renderCompute(node, view, proj, fbo, mat32);
+		node.transform = pointcloud.transform;
+		node.glBuffers = [node.buffer];
+		//renderPointCloudCompute(node, view, proj, fbo);
 
 		i++;
 	}
 	
 	GLTimerQueries.mark("render-octree-end");
 
-	//let countBuffer = new ArrayBuffer(4);
-	//gl.getBufferSubData(gl.SHADER_STORAGE_BUFFER, 8, 4, countBuffer);
-	//let count = new DataView(countBuffer).getInt32(0, true);
-	//log(count);
-	//gl.bindBuffer(gl.SHADER_STORAGE_BUFFER, 0);
-
 	setDebugValue("#nodes rendered", addCommas(nodesRendered));
 	setDebugValue("#points rendered", addCommas(pointsRendered));
-
-	//drawBoxes(pointcloud.visibleNodes);
 
 	gl.useProgram(0);
 
 
 };
+
+
+
+renderPointCloudOctreeCompute = function(pointcloud, view, proj, target){
+
+
+	if(typeof octreeComputeState === "undefined"){
+
+		let pathRender = `../../resources/shaders/compute/render.cs`;
+		let pathResolve = `../../resources/shaders/compute/resolve.cs`;
+
+		let csRender = new Shader([{type: gl.COMPUTE_SHADER, path: pathRender}]);
+		let csResolve = new Shader([{type: gl.COMPUTE_SHADER, path: pathResolve}]);
+
+		csRender.watch();
+		csResolve.watch();
+
+		let [width, height] = [3000, 2000];
+		let numPixels = width * height; // TODO support resizing
+		let framebuffer = new ArrayBuffer(numPixels * 8);
+
+		let ssboFramebuffer = gl.createBuffer();
+		gl.namedBufferData(ssboFramebuffer, framebuffer.byteLength, framebuffer, gl.DYNAMIC_DRAW);
+
+		let fbo = new Framebuffer();
+
+		octreeComputeState = {
+			csRender: csRender,
+			csResolve: csResolve,
+			numPixels: numPixels,
+			ssboFramebuffer: ssboFramebuffer,
+			fbo: fbo,
+		};
+	}
+
+	let csRender = octreeComputeState.csRender;
+	let csResolve = octreeComputeState.csResolve;
+	let ssboFramebuffer = octreeComputeState.ssboFramebuffer;
+	let fbo = octreeComputeState.fbo;
+
+	fbo.setSize(target.width, target.height);
+
+	let mat32 = new Float32Array(16);
+	let transform = new Matrix4();
+	let world = pointcloud.transform;
+	transform.copy(Matrix4.IDENTITY);
+	transform.multiply(proj).multiply(view).multiply(world);
+	mat32.set(transform.elements);
+
+	{ // RENDER PASS
+
+		gl.bindFramebuffer(gl.FRAMEBUFFER, 0);
+		gl.useProgram(csRender.program);
+
+		gl.uniformMatrix4fv(csRender.uniforms.uTransform, 1, gl.FALSE, mat32);
+		gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 1, ssboFramebuffer);
+
+		{
+			gl.activeTexture(gl.TEXTURE0);
+			gl.bindTexture(gradientTexture.type, gradientTexture.handle);
+			if(csRender.uniforms.uGradient){
+				gl.uniform1i(csRender.uniforms.uGradient, 0);
+			}
+		}
+
+		let pointsRendered = 0;
+		let nodesRendered = 0;
+		let i = 0; 
+		for(let node of pointcloud.visibleNodes){
+
+			let buffer = node.buffer;
+
+			gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 0, buffer.vbo);
+
+			let {width, height} = fbo;
+			gl.uniform2i(csRender.uniforms.uImageSize, width, height);
+
+			let numPoints = buffer.count;
+			let groups = parseInt(numPoints / 128);
+
+			gl.dispatchCompute(groups, 1, 1);
+		}
+	}
+
+	{ // RESOLVE
+		gl.useProgram(csResolve.program);
+
+		gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 1, ssboFramebuffer);
+		gl.bindImageTexture(0, fbo.textures[0], 0, gl.FALSE, 0, gl.READ_WRITE, gl.RGBA8UI);
+
+		{
+			gl.activeTexture(gl.TEXTURE1);
+			gl.bindTexture(gradientTexture.type, gradientTexture.handle);
+
+			if(csResolve.uniforms.uGradient){
+				log("abc");
+				gl.uniform1i(csResolve.uniforms.uGradient, 1);
+			}
+		}
+
+		let groups = [
+			parseInt(1 + fbo.width / 16),
+			parseInt(1 + fbo.height / 16),
+			1
+		];
+
+		gl.dispatchCompute(...groups);
+	}
+
+
+	gl.useProgram(0);
+
+	gl.blitNamedFramebuffer(fbo.handle, target.handle, 
+		0, 0, fbo.width, fbo.height, 
+		0, 0, target.width, target.height, 
+		gl.COLOR_BUFFER_BIT, gl.LINEAR);
+
+
+};
+
+renderPointCloudOctree = renderPointCloudOctreeCompute;
 
 "render_pointcloud_octree.js"

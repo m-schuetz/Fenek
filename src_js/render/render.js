@@ -434,7 +434,7 @@ var renderBuffers = function(view, proj, target){
 		//log(node.name);
 
 		if(node instanceof PointCloudOctree){
-			renderPointCloudOctree(node, view, proj);
+			renderPointCloudOctree(node, view, proj, target);
 		}
 		else if(node instanceof PointCloudProgressive){
 			//renderPointCloudCompute(node, view, proj, target);

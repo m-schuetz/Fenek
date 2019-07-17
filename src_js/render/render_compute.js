@@ -58,7 +58,6 @@ function renderComputeBasic(node, view, proj, target){
 	mat32.set(transform.elements);
 
 
-
 	if(true){ // RENDER
 
 		GLTimerQueries.mark("render-compute-renderpass-start");

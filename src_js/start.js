@@ -65,6 +65,13 @@ let desktopMirrorEnabled = true;
 
 let gradientImage = loadImage(`../../resources/images/gradient_spectral_2d.png`);
 let gradientTexture = new GLTexture(gradientImage.width, gradientImage.height, gradientImage.data);
+{
+	gl.bindTexture(gl.TEXTURE_2D, gradientTexture.handle);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+	gl.bindTexture(gl.TEXTURE_2D, 0);
+
+}
 
 let listeners = {
 	update: [],

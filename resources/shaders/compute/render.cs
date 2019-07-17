@@ -61,7 +61,7 @@ void main(){
 	//atomicMin(ssFramebuffer[pixelID + uImageSize.x + 1], val64);
 	
 	
-	atomicAdd(ssFramebuffer[pixelID], 3l);
+	atomicAdd(ssFramebuffer[pixelID], 1l);
 	//atomicAdd(ssFramebuffer[pixelID], 5);
 
 }
