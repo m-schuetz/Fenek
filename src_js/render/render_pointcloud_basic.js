@@ -75,19 +75,13 @@ renderPointCloudBasic = function(pointcloud, view, proj, target){
 		gl.bindVertexArray(0);
 
 		GLTimerQueries.mark("render-basic-add-end");
-		GLTimerQueries.measure("render.basic.add", "render-basic-add-start", "render-basic-add-end", (duration) => {
-			let ms = (duration * 1000).toFixed(3);
-			setDebugValue("gl.render.basic.add", `${ms}ms`);
-		});
+		GLTimerQueries.measure("render.basic.add", "render-basic-add-start", "render-basic-add-end");
 	}
 	
 	gl.useProgram(0);
 
 	GLTimerQueries.mark("render-basic-end");
-	GLTimerQueries.measure("render.basic", "render-basic-start", "render-basic-end", (duration) => {
-		let ms = (duration * 1000).toFixed(3);
-		setDebugValue("gl.render.basic", `${ms}ms`);
-	});
+	GLTimerQueries.measure("render.basic", "render-basic-start", "render-basic-end");
 
 	state.round++;
 
