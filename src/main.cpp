@@ -138,13 +138,6 @@ void uploadHook(ProgressiveLoader* loader, v8::Persistent<Object, v8::CopyablePe
 	loader->uploadNextAvailableChunk();
 	loader->uploadNextAvailableChunk();
 
-
-	//auto isolate = Isolate::GetCurrent();
-	//Local<Object> objLAS = Local<Object>::New(isolate, pObjLAS);
-	//
-	//auto lNumPoints = v8::Integer::New(isolate, loader->pointsUploaded);
-	//objLAS->Set(String::NewFromUtf8(isolate, "numPoints"), lNumPoints);
-
 	schedule([loader, pObjLAS]() {
 
 		if (!loader->isDone()) {
@@ -153,6 +146,47 @@ void uploadHook(ProgressiveLoader* loader, v8::Persistent<Object, v8::CopyablePe
 			endUpload = now();
 			double duration = endUpload - startUpload;
 			cout << "upload duration: " << duration << "s" << endl;
+
+
+			//{ // OUT OF CORE - FLUSHING
+			//
+			//	double tStartFlush = now();
+			//
+			//	auto& chunks = loader->chunks;
+			//
+			//	for (Attribute& attribute : loader->loader->getAttributes()) {
+			//
+			//
+			//		string file = loader->loader->file;
+			//		string folder = file + "/../.progressive/";
+			//		string filename = folder + attribute.name + ".bin";
+			//		fs::create_directories(folder);
+			//
+			//		std::fstream myfile = std::fstream(filename, std::ios::out | std::ios::binary);
+			//		//FILE* myfile = fopen(filename.c_str(), "wb");
+			//
+			//		for (auto points : chunks) {
+			//			auto& as = points->attributes;
+			//			auto a = std::find_if(as.begin(), as.end(), [&attribute](const Attribute& a) {return a.name == attribute.name; });
+			//
+			//			if (a == as.end()) {
+			//				cout << "damn!" << endl;
+			//			} else {
+			//				BArray* data = (*a).data;
+			//				//fwrite(data->data, 1, data->size, myfile);
+			//				myfile.write(reinterpret_cast<const char*>(data->data), data->size);
+			//			}
+			//		}
+			//		
+			//		myfile.close();
+			//		//fclose(myfile);
+			//	}
+			//
+			//	double tEndFlush = now();
+			//	double duration = tEndFlush - tStartFlush;
+			//	cout << "duration(flush): " << duration << "s" << endl;
+			//
+			//}
 
 			loadingLAS = false;
 		}

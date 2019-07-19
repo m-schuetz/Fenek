@@ -23,7 +23,7 @@ CLOD_BATCH_SIZE = 50 * 1000 * 1000;
 POINT_BUDGET = 20 * 1000 * 1000;
 POINT_BUDGET_RANGE = [POINT_BUDGET, POINT_BUDGET];
 
-MSAA_SAMPLES = 4; 
+MSAA_SAMPLES = 1; 
 EDL_ENABLED = true; 
 RENDER_DEFAULT_ENABLED = false;
 desktopMirrorEnabled = false;
@@ -142,8 +142,8 @@ desktopMirrorEnabled = false;
 
 
 
-log(view.position);
-log(view.getPivot());
+// log(view.position);
+// log(view.getPivot());
 
 
 if(typeof setAttribute !== "undefined"){

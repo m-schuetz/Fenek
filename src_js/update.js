@@ -628,6 +628,17 @@ var update = function() {
 	let duration = now() - start;
 	let durationMS = (duration * 1000).toFixed(3);
 	setDebugValue("duration.cp.update", `${durationMS}ms`);
+
+	{
+		//log(view.position);
+		//log(view.getPivot());
+
+		let pos = view.position.toArray().map(v => v.toFixed(3)).join(", ");
+		let target = view.getPivot().toArray().map(v => v.toFixed(3)).join(", ");
+
+		setDebugValue("setView", `view.set([\n\t${pos}, \n\t${target}\n]);`);
+
+	}
 	
 };
 
