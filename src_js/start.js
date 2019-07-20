@@ -1,5 +1,6 @@
 
 
+const rootDir = "../../";
 const jsDir = "../../src_js";
 const resourceDir = "../../resources";
 
@@ -34,7 +35,6 @@ watchJS(`${jsDir}/render/render_regular.js`);
 watchJS(`${jsDir}/render/render_pointcloud_basic.js`);
 watchJS(`${jsDir}/render/render_pointcloud_octree.js`);
 watchJS(`${jsDir}/render/render_progressive.js`);
-watchJS(`${jsDir}/render/render_compute.js`);
 watchJS(`${jsDir}/render/render_clod.js`);
 
 watchJS(`${jsDir}/scene/PointCloudOctree.js`);
@@ -45,6 +45,12 @@ watchJS(`${jsDir}/scene/PointCloudExp.js`);
 watchJS(`${jsDir}/math/Intersections.js`);
 
 watchJS(`${jsDir}/Shader.js`);
+
+
+watchJS(`${rootDir}/modules/compute/render.js`);
+watchJS(`${rootDir}/modules/compute_ll/render.js`);
+watchJS(`${rootDir}/modules/compute_hqs/render.js`);
+
 
 let fbo = new Framebuffer();
 fbo.setNumColorAttachments(2);

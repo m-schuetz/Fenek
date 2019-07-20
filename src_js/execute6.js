@@ -12,7 +12,7 @@ if(typeof e4called === "undefined"){
 	//let las = loadLASProgressive("D:/dev/pointclouds/hofbibliothek/HB_64.las");
 	//let las = loadBINProgressive("D:/dev/pointclouds/test.bin");
 
-	let las = loadLASProgressive("D:/dev/pointclouds/archpro/heidentor.las");
+	//let las = loadLASProgressive("D:/dev/pointclouds/archpro/heidentor.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/mschuetz/lion.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v5_250k.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v3.las");

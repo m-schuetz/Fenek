@@ -5,10 +5,10 @@ if(typeof e4called === "undefined"){
 	
 	//let las = loadBINProgressive("D:/dev/pointclouds/riegl/niederweiden_400m.bin");
 	//let las = loadLASProgressive("D:/dev/pointclouds/tuwien_baugeschichte/Museum Affandi_las export/batch_1.las");
-	//let las = loadLASProgressive("D:/dev/pointclouds/NVIDIA/laserscans/merged.las");
+	let las = loadLASProgressive("D:/dev/pointclouds/NVIDIA/laserscans/merged.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/hofbibliothek/HB_64.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/tuwien_baugeschichte/Candi Sari_las export/candi_sari.las");
-	let las = loadBINProgressive("D:/dev/pointclouds/test.bin");
+	//let las = loadBINProgressive("D:/dev/pointclouds/test.bin");
 
 
 	let pc = new PointCloudProgressive("testcloud", "blabla");

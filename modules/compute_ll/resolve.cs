@@ -65,7 +65,7 @@ void main(){
 	uint idepth = ssDepth[pixelID];
 	int i = 0;
 	//while(pointer >= 0 && i < 16384){
-	while(pointer >= 0 && i < 100){
+	while(pointer >= 0 && i < 10){
 		Node node = nodes[pointer];
 		//Vertex vertex = vertices[node.pointID];
 

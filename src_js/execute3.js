@@ -13,7 +13,7 @@ if(true){
 
 	//let las = loadLASProgressive("D:/dev/pointclouds/archpro/heidentor.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/eclepens.las");
-	let las = loadLASProgressive("D:/dev/pointclouds/Riegl/Retz_Airborne_Terrestrial_Combined_1cm.las");
+	//let las = loadLASProgressive("D:/dev/pointclouds/Riegl/Retz_Airborne_Terrestrial_Combined_1cm.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/tuwien_baugeschichte/Candi Sari_las export/candi_sari.las");
 	
 	//let las = loadLASProgressive("D:/dev/pointclouds/riegl/niederweiden.las");
