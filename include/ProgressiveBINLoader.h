@@ -254,13 +254,13 @@ public:
 			glNamedBufferData(ssDebug, loader->numPoints * 4, nullptr, usage);
 		}
 
-		string csPath = "../../resources/shaders/pcp/distribute.cs";
+		string csPath = "../../modules/progressive/distribute.cs";
 		csDistribute = new ComputeShader(csPath);
 		monitorFile(csPath, [=]() {
 			csDistribute = new ComputeShader(csPath);
 		});
 
-		string csDAPath = "../../resources/shaders/pcp/distribute_attribute.cs";
+		string csDAPath = "../../modules/progressive/distribute_attribute.cs";
 		csDistributeAttributes = new ComputeShader(csDAPath);
 		monitorFile(csDAPath, [=]() {
 			csDistributeAttributes = new ComputeShader(csDAPath);

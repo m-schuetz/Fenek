@@ -31,6 +31,7 @@ void main() {
 	gl_PointSize = 2.0;
 	
 	vColor = getColorFromV3();
+	//vColor = vec3(1, 0, 0);
 
 	//vColor = aValue.xyz;
 

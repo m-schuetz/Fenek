@@ -13,8 +13,8 @@ if(typeof PointCloudProgressive === "undefined"){
 			this.path = path;
 
 			{ // reprojection shader
-				let vsPath = "../../resources/shaders/pcp/reproject.vs";
-				let fsPath = "../../resources/shaders/pcp/reproject.fs";
+				let vsPath = `${rootDir}/modules/progressive/reproject.vs`;
+				let fsPath = `${rootDir}/modules/progressive/reproject.fs`;
 
 				let shader = new Shader([
 					{type: gl.VERTEX_SHADER, path: vsPath},
@@ -26,8 +26,8 @@ if(typeof PointCloudProgressive === "undefined"){
 			}
 
 			{ // add shader
-				let vsPath = "../../resources/shaders/pcp/fill.vs";
-				let fsPath = "../../resources/shaders/pcp/fill.fs";
+				let vsPath = `${rootDir}/modules/progressive/fill.vs`;
+				let fsPath = `${rootDir}/modules/progressive/fill.fs`;
 
 				let shader = new Shader([
 					{type: gl.VERTEX_SHADER, path: vsPath},
@@ -39,7 +39,7 @@ if(typeof PointCloudProgressive === "undefined"){
 			}
 
 			{ // create IBO shader
-				let path = "../../resources/shaders/pcp/create_vbo.cs";
+				let path = `${rootDir}/modules/progressive/create_vbo.cs`;
 				let shader = new Shader([{type: gl.COMPUTE_SHADER, path: path}]);
 				shader.watch();
 				this.csCreateIBO = shader;

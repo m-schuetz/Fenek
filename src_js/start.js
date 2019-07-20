@@ -34,11 +34,10 @@ watchJS(`${jsDir}/render/render_vr.js`);
 watchJS(`${jsDir}/render/render_regular.js`);
 watchJS(`${jsDir}/render/render_pointcloud_basic.js`);
 watchJS(`${jsDir}/render/render_pointcloud_octree.js`);
-watchJS(`${jsDir}/render/render_progressive.js`);
 watchJS(`${jsDir}/render/render_clod.js`);
 
 watchJS(`${jsDir}/scene/PointCloudOctree.js`);
-watchJS(`${jsDir}/scene/PointCloudProgressive.js`);
+//watchJS(`${jsDir}/scene/PointCloudProgressive.js`);
 watchJS(`${jsDir}/scene/PointCloudBasic.js`);
 watchJS(`${jsDir}/scene/PointCloudExp.js`);
 
@@ -50,6 +49,8 @@ watchJS(`${jsDir}/Shader.js`);
 watchJS(`${rootDir}/modules/compute/render.js`);
 watchJS(`${rootDir}/modules/compute_ll/render.js`);
 watchJS(`${rootDir}/modules/compute_hqs/render.js`);
+watchJS(`${rootDir}/modules/progressive/render_progressive.js`);
+watchJS(`${rootDir}/modules/progressive/PointCloudProgressive.js`);
 
 
 let fbo = new Framebuffer();

@@ -42,7 +42,7 @@ getRenderProgressiveState = function(target){
 
 		let csFillFixed = null;
 		{ // create time estimation shader
-			let path = "../../resources/shaders/pcp/compute_fill_fixed.cs";
+			let path = `${rootDir}/modules/progressive/compute_fill_fixed.cs`;
 			let shader = new Shader([{type: gl.COMPUTE_SHADER, path: path}]);
 			shader.watch();
 			csFillFixed = shader;
@@ -50,7 +50,7 @@ getRenderProgressiveState = function(target){
 
 		let csFillRemaining = null;
 		{ // create time estimation shader
-			let path = "../../resources/shaders/pcp/compute_fill_remaining.cs";
+			let path = `${rootDir}/modules/progressive/compute_fill_remaining.cs`;
 			let shader = new Shader([{type: gl.COMPUTE_SHADER, path: path}]);
 			shader.watch();
 			csFillRemaining = shader;
