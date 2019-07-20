@@ -67,9 +67,11 @@ void main(){
 	float depth = pos.w;
 	uint idepth = uint(depth * 1000.0);
 
+	
+
 	uint oldDepth = atomicMin(ssDepth[pixelID], idepth);
 
-	if(idepth < (oldDepth + 1000))
+	if(idepth < (float(oldDepth) * 1.005))
 	{
 		int previousCounter = atomicExchange(headPointers[pixelID], currentCount);
 

@@ -69,7 +69,7 @@ void main(){
 		Node node = nodes[pointer];
 		//Vertex vertex = vertices[node.pointID];
 
-		if(node.depth <= (idepth + 1000)){
+		if(node.depth <= (float(idepth) * 1.005)){
 			col = col + vec4(unpackUnorm4x8(node.colors).rgb, 1.0);
 		}
 
