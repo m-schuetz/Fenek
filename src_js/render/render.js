@@ -439,8 +439,8 @@ var renderBuffers = function(view, proj, target){
 		else if(node instanceof PointCloudProgressive){
 			//renderComputeLL(node, view, proj, target);
 			//renderPointCloudCompute(node, view, proj, target);
-			//renderComputeHQS(node, view, proj, target);
-			renderPointCloudProgressive(node, view, proj, target);
+			renderComputeHQS(node, view, proj, target);
+			//renderPointCloudProgressive(node, view, proj, target);
 			//renderPointCloudBasic(node, view, proj, target);
 			//renderDefault(node, view, proj, target);
 		}

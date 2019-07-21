@@ -61,8 +61,8 @@ if(typeof PointCloudExp === "undefined"){
 			gl.bindVertexArray(0);
 
 			{
-				let vsPath = "../../resources/shaders/experimental/pointcloud_clod.vs";
-				let fsPath = "../../resources/shaders/pointcloud.fs";
+				let vsPath = `${rootDir}/modules/clod/pointcloud.vs`;
+				let fsPath = `${rootDir}/modules/clod/pointcloud.fs`;
 
 				let shader = new Shader([
 					{type: gl.VERTEX_SHADER, path: vsPath}, 

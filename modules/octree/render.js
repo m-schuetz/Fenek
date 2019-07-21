@@ -297,8 +297,8 @@ renderPointCloudOctreeCompute = function(pointcloud, view, proj, target){
 
 	if(typeof octreeComputeState === "undefined"){
 
-		let pathRender = `../../resources/shaders/compute/render.cs`;
-		let pathResolve = `../../resources/shaders/compute/resolve.cs`;
+		let pathRender =  `${rootDir}/modules/compute/render.cs`;
+		let pathResolve = `${rootDir}/modules/compute/resolve.cs`;
 
 		let csRender = new Shader([{type: gl.COMPUTE_SHADER, path: pathRender}]);
 		let csResolve = new Shader([{type: gl.COMPUTE_SHADER, path: pathResolve}]);
@@ -409,6 +409,7 @@ renderPointCloudOctreeCompute = function(pointcloud, view, proj, target){
 
 };
 
+//renderPointCloudOctree = renderPointCloudOctreeBasic;
 renderPointCloudOctree = renderPointCloudOctreeCompute;
 
 "render_pointcloud_octree.js"

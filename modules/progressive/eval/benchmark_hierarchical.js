@@ -1,7 +1,8 @@
 
 loadOctree = function(){
 	
-	let pc = new PointCloudOctree("octree", "D:/dev/pointclouds/converted/affandi_batch_1/cloud.js");
+	let pc = new PointCloudOctree("octree", "D:/dev/pointclouds/archpro/heidentor.las_converted/cloud.js");
+	//let pc = new PointCloudOctree("octree", "D:/dev/pointclouds/converted/affandi_batch_1/cloud.js");
 	
 	//heidentor.transform.elements.set([
 	//	1, 0, 0, 0, 

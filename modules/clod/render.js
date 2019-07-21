@@ -22,7 +22,7 @@ getCLODState = function(pointcloud){
 			return null;
 		}
 
-		let shaderSource = "../../resources/shaders/experimental/filter_points.cs";
+		let shaderSource = `${rootDir}/modules/clod/filter_points.cs`;
 		let shader = new Shader([{type: gl.COMPUTE_SHADER, path: shaderSource}]);
 		shader.watch();
 

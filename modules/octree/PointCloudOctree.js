@@ -38,8 +38,8 @@ if(typeof PointCloudOctree === "undefined"){
 			//this.pointBudget = 2 * 1000 * 1000;
 
 			{
-				let vsPath = "../../resources/shaders/octree/pointcloud.vs";
-				let fsPath = "../../resources/shaders/octree/pointcloud.fs";
+				let vsPath = `${rootDir}/modules/octree/pointcloud.vs`;
+				let fsPath = `${rootDir}/modules/octree/pointcloud.fs`;
 				let shader = new Shader([
 					{type: gl.VERTEX_SHADER, path: vsPath},
 					{type: gl.FRAGMENT_SHADER, path: fsPath},
