@@ -142,8 +142,7 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 
 		GLTimerQueries.mark("render-progressive-fill-start");
 
-		{
-			//dversion++;
+		{ // COMPUTE FILL FIXED
 			GLTimerQueries.mark("render-progressive-fill-compute-fixed-start");
 			let csFillFixed = state.csFillFixed;
 			let ssFillFixed = state.ssFillFixed;
@@ -190,7 +189,7 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 
 		}
 
-		{ // ADD
+		{ // FILL FIXED
 			GLTimerQueries.mark("render-progressive-add-start");
 			gl.useProgram(shAdd.program);
 
@@ -254,7 +253,8 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 			//});
 		}
 
-		if(true){ // TODO decide how much more points we can draw with the remaining time
+		// COMPUTE FILL REMAINING 
+		if(false){ 
 			GLTimerQueries.mark("render-progressive-fill-compute-remaining-start");
 			let csFillRemaining = state.csFillRemaining;
 			let ssFillFixed = state.ssFillFixed;
@@ -280,7 +280,8 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 			//});
 		}
 
-		if(true){ // TODO draw some more points to take advantage of remaining time
+		// FILL REMAINING
+		if(false){ 
 			GLTimerQueries.mark("render-progressive-add-remaining-start");
 			gl.useProgram(shAdd.program);
 
@@ -393,15 +394,16 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 	}
 
 	reproject();
-	//fill();
-	if(fillToggle === 0){
-		fill();
-		createVBO();
-		//fillToggle++;
-	}else{
-		fill();
-		//createVBO();
-	}
+	fill();
+	createVBO();
+	//if(fillToggle === 0){
+	//	fill();
+	//	createVBO();
+	//	//fillToggle++;
+	//}else{
+	//	fill();
+	//	//createVBO();
+	//}
 
 
 	//let doLog = (frameCount % 1000) === 0 || (frameCount % 1000) === 1;
