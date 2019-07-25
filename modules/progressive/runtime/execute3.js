@@ -18,7 +18,7 @@ if(true){
 	
 	//let las = loadLASProgressive("D:/dev/pointclouds/riegl/niederweiden.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/open_topography/ca13/morro_bay.las");
-	//let las = loadLASProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v3.las");
+	let las = loadLASProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v3.las");
 	
 	//let las = loadLASProgressive("D:/dev/pointclouds/weiss/pos6_LDHI_module.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/pix4d/eclepens.las");
@@ -27,6 +27,8 @@ if(true){
 	//let las = loadLASProgressive("C:/dev/pointclouds/wienCity.las");
 
 	let pc = new PointCloudProgressive("testcloud", "blabla");
+	pc.boundingBox.min.set(...las.boundingBox.min);
+	pc.boundingBox.max.set(...las.boundingBox.max);
 
 	//let handles = [las.handle0, las.handle1];
 	let handles = las.handles;

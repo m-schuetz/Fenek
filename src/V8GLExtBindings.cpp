@@ -7008,8 +7008,8 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			data = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glClearNamedBufferData): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glClearNamedBufferData): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 

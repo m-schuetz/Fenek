@@ -515,6 +515,10 @@ namespace LASLoaderThreaded {
 			header.minY = reinterpret_cast<double*>(headerBuffer.data() + 203)[0];
 			header.minZ = reinterpret_cast<double*>(headerBuffer.data() + 219)[0];
 
+			header.maxX = reinterpret_cast<double*>(headerBuffer.data() + 179)[0];
+			header.maxY = reinterpret_cast<double*>(headerBuffer.data() + 195)[0];
+			header.maxZ = reinterpret_cast<double*>(headerBuffer.data() + 211)[0];
+
 			if (header.versionMajor >= 1 && header.versionMinor >= 4) {
 				header.numPoints = reinterpret_cast<uint64_t*>(headerBuffer.data() + 247)[0];
 			}

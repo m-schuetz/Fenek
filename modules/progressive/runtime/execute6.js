@@ -21,6 +21,10 @@ if(typeof e4called === "undefined"){
 
 
 	let pc = new PointCloudProgressive("testcloud", "blabla");
+	pc.boundingBox.min.set(...las.boundingBox.min);
+	pc.boundingBox.max.set(...las.boundingBox.max);
+
+	log(pc.boundingBox);
 
 	let handles = las.handles;
 

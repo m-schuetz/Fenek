@@ -88,6 +88,7 @@ watchJS(`${rootDir}/modules/compute_hqs/render.js`);
 runJSFile(`${rootDir}/modules/progressive/module.js`);
 runJSFile(`${rootDir}/modules/octree/module.js`);
 runJSFile(`${rootDir}/modules/clod/module.js`);
+runJSFile(`${rootDir}/modules/build/module.js`);
 
 
 

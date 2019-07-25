@@ -636,6 +636,29 @@ int main() {
 		objLAS->Set(String::NewFromUtf8(isolate, "handles"), lHandles);
 		objLAS->Set(String::NewFromUtf8(isolate, "numPoints"), lNumPoints);
 
+		{
+			Local<ObjectTemplate> boxTempl = ObjectTemplate::New(isolate);
+			auto objBox = lasTempl->NewInstance();
+
+			auto &header = loader->loader->header;
+
+			auto lMin = Array::New(isolate, 3);
+			lMin->Set(0, v8::Number::New(isolate, header.minX));
+			lMin->Set(1, v8::Number::New(isolate, header.minY));
+			lMin->Set(2, v8::Number::New(isolate, header.minZ));
+
+			auto lMax = Array::New(isolate, 3);
+			lMax->Set(0, v8::Number::New(isolate, header.maxX));
+			lMax->Set(1, v8::Number::New(isolate, header.maxY));
+			lMax->Set(2, v8::Number::New(isolate, header.maxZ));
+
+			objBox->Set(String::NewFromUtf8(isolate, "min"), lMin);
+			objBox->Set(String::NewFromUtf8(isolate, "max"), lMax);
+
+			objLAS->Set(String::NewFromUtf8(isolate, "boundingBox"), objBox);
+		}
+		
+
 		auto pObjLAS = v8::Persistent<Object, v8::CopyablePersistentTraits<v8::Object>>(isolate, objLAS);
 
 		duration = now() - startUpload;

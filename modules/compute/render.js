@@ -93,6 +93,10 @@ function renderComputeBasic(node, view, proj, target){
 			let numPoints = Math.max(Math.min(pointsLeft, batchSize), 0);
 			let groups = parseInt(numPoints / 128);
 			//groups = 300;
+
+			//groups = frameCount % groups;
+		
+
 			gl.dispatchCompute(groups, 1, 1);
 
 			pointsLeft = pointsLeft - batchSize;
