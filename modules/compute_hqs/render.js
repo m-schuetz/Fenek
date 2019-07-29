@@ -1,6 +1,5 @@
 
 function renderComputeHQS(node, view, proj, target){
-
 	GLTimerQueries.mark("render-compute-start");
 
 	// TODO support resizing
@@ -76,6 +75,7 @@ function renderComputeHQS(node, view, proj, target){
 		let pointsLeft = node.numPoints;
 		let batchSize = 134 * 1000 * 1000;
 
+
 		for(let buffer of node.glBuffers){
 			gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 0, buffer.vbo);
 
@@ -84,6 +84,8 @@ function renderComputeHQS(node, view, proj, target){
 
 			let numPoints = Math.max(Math.min(pointsLeft, batchSize), 0);
 			let groups = parseInt(numPoints / 128);
+
+			//log(numPoints);
 			//groups = 300;
 			gl.dispatchCompute(groups, 1, 1);
 

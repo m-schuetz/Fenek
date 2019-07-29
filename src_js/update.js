@@ -636,7 +636,11 @@ var update = function() {
 		let pos = view.position.toArray().map(v => v.toFixed(3)).join(", ");
 		let target = view.getPivot().toArray().map(v => v.toFixed(3)).join(", ");
 
-		setDebugValue("setView", `view.set([\n\t${pos}, \n\t${target}\n]);`);
+		setDebugValue("setView", 
+`view.set(
+	[${pos}], 
+	[${target}]
+);`);
 
 	}
 	

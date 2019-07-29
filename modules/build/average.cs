@@ -12,6 +12,11 @@ struct Vertex{
 	uint colors;
 };
 
+struct Box3{
+	vec3 min;
+	vec3 max;
+};
+
 layout(std430, binding = 0) buffer ssPartitions{
 	Vertex vertices[];
 };
@@ -40,6 +45,9 @@ layout(std430, binding = 6) buffer ssAverageA{
 	uint weight[];
 };
 
+layout(std430, binding = 7) buffer ssAverageRG{
+	uint64_t rg[];
+};
 
 layout(location = 0) uniform vec3 uMin;
 layout(location = 1) uniform vec3 uMax;
@@ -65,22 +73,58 @@ int getCellIndex(Vertex v){
 	return cellIndex;
 }
 
-int getAvgCellIndex(int cellIndex, Vertex v){
-	return 0;
+Box3 getCellBoundingBox(Vertex v){
+	vec3 normalized = vec3(v.x, v.y, v.z) / (uMax - uMin);
+
+	vec3 cellIndices = vec3(
+		floor(min(normalized.x * uGridSize, uGridSize - 1)),
+		floor(min(normalized.y * uGridSize, uGridSize - 1)),
+		floor(min(normalized.z * uGridSize, uGridSize - 1))
+	);
+
+	vec3 dimensions = uMax - uMin;
+
+	vec3 cellMin = (dimensions * cellIndices) / uGridSize;
+	vec3 cellMax = (dimensions * (cellIndices + 1)) / uGridSize;
+
+	Box3 box;
+	box.min = cellMin;
+	box.max = cellMax;
+
+	return box;
+}
+
+int getAvgCellIndex(Vertex v){
+
+	Box3 box = getCellBoundingBox(v);
+
+	vec3 normalized = (vec3(v.x, v.y, v.z) - box.min) / (box.max - box.min);
+
+	ivec3 cellIndices = ivec3(
+		int(min(normalized.x * uAvgGridSize, uAvgGridSize - 1)),
+		int(min(normalized.y * uAvgGridSize, uAvgGridSize - 1)),
+		int(min(normalized.z * uAvgGridSize, uAvgGridSize - 1))
+	);
+
+	int cellIndex = int(cellIndices.x 
+		+ cellIndices.y * uAvgGridSize 
+		+ cellIndices.z * uAvgGridSize * uAvgGridSize);
+
+	return cellIndex;
 }
 
 void main(){
 
 	uint globalID = gl_GlobalInvocationID.x;
 
-	if(uBatchSize >= uBatchSize){
+	if(globalID >= uBatchSize){
 		return;
 	}
 
 	Vertex v = vertices[globalID + uOffset];
 
-	int cellIndex = getCellIndex(v);
-	int avgCellIndex = getAvgCellIndex(cellIndex, v);
+	//int cellIndex = getCellIndex(v);
+	int avgCellIndex = getAvgCellIndex(v);
 
 	uint b = (v.colors >> 16) & 0xFF;
 	uint g = (v.colors >> 8) & 0xFF;
@@ -90,6 +134,8 @@ void main(){
 	atomicAdd(green[avgCellIndex], g);
 	atomicAdd(blue[avgCellIndex], b);
 	atomicAdd(weight[avgCellIndex], 1);
+
+	//weight[avgCellIndex] = 2;
 
 }
 

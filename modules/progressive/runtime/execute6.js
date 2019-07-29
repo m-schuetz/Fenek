@@ -3,19 +3,21 @@
 if(typeof e4called === "undefined"){
 	e4called = true;
 	
-	//let las = loadLASProgressive("D:/dev/pointclouds/ludwig_boltzmann/heidentor.las");
+	//let las = loadLASProgressive("D:/dev/pointclouds/archpro/heidentor.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/NVIDIA/photogrammetry/test.las");
 
 	//let las = loadBINProgressive("D:/dev/pointclouds/riegl/niederweiden_400m.bin");
 	//let las = loadLASProgressive("D:/dev/pointclouds/tuwien_baugeschichte/Museum Affandi_las export/batch_1.las");
+	//let las = loadLASProgressive("D:/dev/pointclouds/tuwien_baugeschichte/Kirchenburg Arbegen/batch_0.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/NVIDIA/laserscans/merged.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/hofbibliothek/HB_64.las");
 	//let las = loadBINProgressive("D:/dev/pointclouds/test.bin");
 
-	let las = loadLASProgressive("D:/dev/pointclouds/archpro/heidentor.las");
+	//let las = loadLASProgressive("D:/dev/pointclouds/archpro/heidentor.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/mschuetz/lion.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v5_250k.las");
 	//let las = loadLASProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v3.las");
+	//let las = loadLASProgressive("D:/dev/pointclouds/weiss/pos7_Subsea_equipment.las");
 
 	//let las = loadLASProgressive("D:/dev/pointclouds/tuwien_baugeschichte/Candi Sari_las export/candi_sari.las");
 

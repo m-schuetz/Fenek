@@ -23,7 +23,7 @@ CLOD_BATCH_SIZE = 50 * 1000 * 1000;
 POINT_BUDGET = 5 * 1000 * 1000;
 POINT_BUDGET_RANGE = [POINT_BUDGET, POINT_BUDGET];
 
-MSAA_SAMPLES = 4; 
+MSAA_SAMPLES = 1; 
 EDL_ENABLED = false; 
 RENDER_DEFAULT_ENABLED = false;
 desktopMirrorEnabled = false;
@@ -197,7 +197,7 @@ if(typeof setAttribute !== "undefined"){
 	// 	]);
 	// }
 
-	//setAttribute([{name: "intensity", scale: 1 / 10000, offset: 0}]);
+	setAttribute([{name: "intensity", scale: 1 / 60000, offset: 0}]);
 	
 	attributeToggle++;
 		

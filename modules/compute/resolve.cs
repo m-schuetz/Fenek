@@ -38,44 +38,17 @@ uvec4 colorAt(int pixelID){
 
 	vec4 color = 255.0 * unpackUnorm4x8(ucol);
 
-	//float w = float(ucol) * 0.0001;
-	//float w = log2(float(ucol));
+	//{
+	//	//float w = pow(float(ucol), 0.9) / 500;
+	//	float fcol = float(ucol);
+	//	float w = 0.1 * log2(fcol) / log2(1.6);
+	//	w = clamp(w, 0, 1);
+	//	
+	//	color = 255.0 * texture(uGradient, vec2(w, 0.0));
+	//	color.a = 255;
 
-	//float w = pow(float(ucol), 0.6) / 500;
-	//w = clamp(w, 0, 1);
-	//w = -w;
+	//}
 
-	//float w = log2(float(ucol)) / 15;
-
-	{
-		//float w = pow(float(ucol), 0.9) / 500;
-		float fcol = float(ucol);
-		float w = 0.1 * log2(fcol) / log2(1.6);
-		w = clamp(w, 0, 1);
-		
-		
-
-		color = 255.0 * texture(uGradient, vec2(w, 0.0));
-		color.a = 255;
-
-		// if(ucol >= 60){
-		// 	color = 255 * vec4(1.0, 0.1, 0.1, 1.0);
-		// }else{
-		// 	color = 255 * vec4(0.1, 0.1, 0.1, 1.0);
-		// }
-	}
-
-	// {
-	// 	float fcol = float(ucol);
-	// 	float w = (log2(fcol) / log2(3)) / 3;
-	// 	w = pow(w, 1.2) * 0.4;
-	// 	w = clamp(w, 0, 1);
-	// 	w = -w;
-
-	// 	//color = clamp(-w * 1, 0.1, 1.0) * 255.0 * texture(uGradient, vec2(w, 0.0));
-	// 	color = smoothstep(0.0, 0.1, clamp(-w, 0.03, 1.0)) * 255.0 * texture(uGradient, vec2(w, 0.0));
-	// 	//color = 255.0 * texture(uGradient, vec2(w, 0.0));
-	// }
 
 	uvec4 icolor = uvec4(color);
 
@@ -100,9 +73,8 @@ void main(){
 	//if(val64 != 0xffffffffff000000UL){
 	imageStore(uOutput, pixelCoords, icolor);
 	//ssFramebuffer[pixelID] = 0xffffffffff000000UL;
-	ssFramebuffer[pixelID] = 0UL;
-	//ssFramebuffer[pixelID] = 0x00000000;
-	//}
+	ssFramebuffer[pixelID] = 0xffffffffff000000UL;
+	//ssFramebuffer[pixelID] = 0UL;
 
 }
 

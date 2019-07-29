@@ -254,7 +254,7 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 		}
 
 		// COMPUTE FILL REMAINING 
-		if(false){ 
+		if(true){ 
 			GLTimerQueries.mark("render-progressive-fill-compute-remaining-start");
 			let csFillRemaining = state.csFillRemaining;
 			let ssFillFixed = state.ssFillFixed;
@@ -281,7 +281,7 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 		}
 
 		// FILL REMAINING
-		if(false){ 
+		if(true){ 
 			GLTimerQueries.mark("render-progressive-add-remaining-start");
 			gl.useProgram(shAdd.program);
 

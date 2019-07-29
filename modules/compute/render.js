@@ -95,7 +95,7 @@ function renderComputeBasic(node, view, proj, target){
 			//groups = 300;
 
 			//groups = frameCount % groups;
-		
+			//log(numPoints);
 
 			gl.dispatchCompute(groups, 1, 1);
 

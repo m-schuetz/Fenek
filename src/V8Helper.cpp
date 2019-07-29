@@ -2017,6 +2017,35 @@ void V8Helper::setupV8() {
 		args.GetReturnValue().Set(v8str);
 	});
 
+	V8Helper::_instance->registerFunction("writeTextFile", [](const FunctionCallbackInfo<Value>& args) {
+		if (args.Length() != 2) {
+			V8Helper::_instance->throwException("writeTextFile requires 2 arguments");
+			return;
+		}
+
+		String::Utf8Value fileUTF8(args[0]);
+		string file = *fileUTF8;
+
+		String::Utf8Value textUTF8(args[1]);
+		string text = *textUTF8;
+
+		// see https://stackoverflow.com/questions/2602013/read-whole-ascii-file-into-c-stdstring
+		std::ofstream t(file);
+
+		t << text;
+
+		t.close();
+
+
+		//std::stringstream buffer;
+		//buffer << t.rdbuf();
+		//string text = buffer.str();
+
+		//auto v8str = v8::String::NewFromUtf8(Isolate::GetCurrent(), text.c_str());
+
+		//args.GetReturnValue().Set(v8str);
+	});
+
 	V8Helper::_instance->registerFunction("openFile", [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("openFile requires 1 arguments");

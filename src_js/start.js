@@ -82,7 +82,7 @@ watchJS(`${jsDir}/execute2.js`);
 
 
 
-watchJS(`${rootDir}/modules/compute/render.js`);
+runJSFile(`${rootDir}/modules/compute/module.js`);
 watchJS(`${rootDir}/modules/compute_ll/render.js`);
 watchJS(`${rootDir}/modules/compute_hqs/render.js`);
 runJSFile(`${rootDir}/modules/progressive/module.js`);

@@ -21,8 +21,8 @@ layout (std430, binding = 0) buffer point_data {
 
 layout (std430, binding = 1) buffer framebuffer_data {
 	//uint ssFramebuffer[];
-	int64_t ssFramebuffer[];
-	//uint64_t ssFramebuffer[];
+	//int64_t ssFramebuffer[];
+	uint64_t ssFramebuffer[];
 };
 
 uniform ivec2 uImageSize;
@@ -48,21 +48,38 @@ void main(){
 	ivec2 pixelCoords = ivec2(imgPos);
 	int pixelID = pixelCoords.x + pixelCoords.y * uImageSize.x;
 
-	float depth = pos.w;
+	double depth = pos.w;
 	uint64_t u64Depth = uint64_t(depth * 1000000.0);
+	//uint64_t u64Depth = 0;
+
+	//if(depth < 1.0){
+	//	u64Depth = uint64_t(depth * 1000000000.0lf);
+	//}else if(depth < 10.0){
+	//	u64Depth = uint64_t(depth * 100000000.0lf);
+	//}else if(depth < 100.0){
+	//	u64Depth = uint64_t(depth * 10000000.0lf);
+	//}else if(depth < 1000.0){
+	//	u64Depth = uint64_t(depth * 1000000.0lf);
+	//}else if(depth < 10000.0){
+	//	u64Depth = uint64_t(depth * 100000.0lf);
+	//}else if(depth < 100000.0){
+	//	u64Depth = uint64_t(depth * 10000.0lf);
+	//}else if(depth < 1000000.0){
+	//	u64Depth = uint64_t(depth * 1000.0lf);
+	//}
+
 
 	uint64_t u64Colors = v.colors;
 	uint64_t val64 = (u64Depth << 24) | v.colors;
 
 
-	//atomicMin(ssFramebuffer[pixelID], val64);
+	atomicMin(ssFramebuffer[pixelID], val64);
 	//atomicMin(ssFramebuffer[pixelID + 1], val64);
 	//atomicMin(ssFramebuffer[pixelID + uImageSize.x], val64);
 	//atomicMin(ssFramebuffer[pixelID + uImageSize.x + 1], val64);
 	
 	
-	atomicAdd(ssFramebuffer[pixelID], 1l);
-	//atomicAdd(ssFramebuffer[pixelID], 5);
+	//atomicAdd(ssFramebuffer[pixelID], 1l);
 
 }
 

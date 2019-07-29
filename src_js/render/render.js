@@ -437,12 +437,17 @@ var renderBuffers = function(view, proj, target){
 			renderPointCloudOctree(node, view, proj, target);
 		}
 		else if(node instanceof PointCloudProgressive){
+
+			if(typeof renderDebug !== "undefined"){
+				renderDebug(node, view, proj, target);
+			}else{
 			//renderComputeLL(node, view, proj, target);
 			renderPointCloudCompute(node, view, proj, target);
 			//renderComputeHQS(node, view, proj, target);
 			//renderPointCloudProgressive(node, view, proj, target);
 			//renderPointCloudBasic(node, view, proj, target);
 			//renderDefault(node, view, proj, target);
+			}
 		}
 		else if(node instanceof PointCloudBasic){
 			//renderPointCloudCompute(node, view, proj, target);
