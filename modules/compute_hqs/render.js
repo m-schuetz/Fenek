@@ -51,6 +51,8 @@ function renderComputeHQS(node, view, proj, target){
 	let {ssboDepthbuffer, ssboFramebuffer, ssRG, ssBA} = computeHQSState;
 	let {fbo} = computeHQSState;
 
+	GLTimerQueries.mark("render-compute-hqs-start");
+
 	fbo.setSize(target.width, target.height);
 
 	let mat32 = new Float32Array(16);
@@ -180,7 +182,8 @@ function renderComputeHQS(node, view, proj, target){
 		0, 0, target.width, target.height, 
 		gl.COLOR_BUFFER_BIT, gl.LINEAR);
 
-	GLTimerQueries.mark("render-compute-end");
+	GLTimerQueries.mark("render-compute-hqs-end");
+	GLTimerQueries.measure("render.compute.hqs", "render-compute-hqs-start", "render-compute-hqs-end");
 
 };
 

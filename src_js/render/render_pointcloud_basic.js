@@ -53,7 +53,6 @@ renderPointCloudBasic = function(pointcloud, view, proj, target){
 	shader_data.submit();
 
 	{
-		GLTimerQueries.mark("render-basic-add-start");
 		gl.useProgram(shader.program);
 
 		let pointsLeft = pointcloud.numPoints;
@@ -73,9 +72,6 @@ renderPointCloudBasic = function(pointcloud, view, proj, target){
 		}
 
 		gl.bindVertexArray(0);
-
-		GLTimerQueries.mark("render-basic-add-end");
-		GLTimerQueries.measure("render.basic.add", "render-basic-add-start", "render-basic-add-end");
 	}
 	
 	gl.useProgram(0);

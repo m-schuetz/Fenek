@@ -104,7 +104,7 @@ function renderComputeBasic(node, view, proj, target){
 
 		gl.useProgram(0);
 		GLTimerQueries.mark("render-compute-renderpass-end");
-		GLTimerQueries.measure("render.compute.render", "render-compute-renderpass-start", "render-compute-renderpass-end");
+		GLTimerQueries.measure("render.compute.regular.render", "render-compute-renderpass-start", "render-compute-renderpass-end");
 	}
 
 	{ // RESOLVE
@@ -138,7 +138,7 @@ function renderComputeBasic(node, view, proj, target){
 
 		gl.useProgram(0);
 		GLTimerQueries.mark("render-compute-resolvepass-end");
-		GLTimerQueries.measure("render.compute.resolve", "render-compute-resolvepass-start", "render-compute-resolvepass-end");
+		GLTimerQueries.measure("render.compute.regular.resolve", "render-compute-resolvepass-start", "render-compute-resolvepass-end");
 	}
 	
 	gl.blitNamedFramebuffer(fbo.handle, target.handle, 
@@ -147,6 +147,7 @@ function renderComputeBasic(node, view, proj, target){
 		gl.COLOR_BUFFER_BIT, gl.LINEAR);
 
 	GLTimerQueries.mark("render-compute-end");
+	GLTimerQueries.measure("render.compute.regular", "render-compute-start", "render-compute-end");
 
 }
 

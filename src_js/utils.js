@@ -202,7 +202,7 @@ class GLTimerQueries{
 				let history = GLTimerQueries.history.get(measure.name);
 				history.push(seconds);
 
-				if(history.length > 100){
+				if(history.length > 10){
 					history.shift();
 				}
 
