@@ -39,6 +39,14 @@ void main() {
 
 	gl_Position = pos;
 
+	vec3 v = aPosition;
+	if(v.x < 130 || v.x > 165){
+		gl_Position.w = 0.001;
+	}
+	if(v.y < 151 || v.y > 180){
+		gl_Position.w = 0.001;
+	}
+
 
 	//vColor = aColor.rgb;
 	vColor = getColorFromV3();

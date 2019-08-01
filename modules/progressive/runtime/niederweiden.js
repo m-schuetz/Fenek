@@ -1,26 +1,10 @@
 
 
+loadNiederweiden = function(){
 if(typeof e4called === "undefined"){
 	e4called = true;
 	
-	//let las = loadLASProgressive("D:/dev/pointclouds/archpro/heidentor.las");
-	//let las = loadLASProgressive("D:/dev/pointclouds/NVIDIA/photogrammetry/test.las");
-
 	let las = loadBINProgressive("D:/dev/pointclouds/riegl/niederweiden_400m.bin");
-	//let las = loadLASProgressive("D:/dev/pointclouds/tuwien_baugeschichte/Museum Affandi_las export/batch_1.las");
-	//let las = loadLASProgressive("D:/dev/pointclouds/tuwien_baugeschichte/Kirchenburg Arbegen/batch_0.las");
-	//let las = loadLASProgressive("D:/dev/pointclouds/NVIDIA/laserscans/merged.las");
-	//let las = loadLASProgressive("D:/dev/pointclouds/hofbibliothek/HB_64.las");
-	//let las = loadBINProgressive("D:/dev/pointclouds/test.bin");
-
-	//let las = loadLASProgressive("D:/dev/pointclouds/archpro/heidentor.las");
-	//let las = loadLASProgressive("D:/dev/pointclouds/mschuetz/lion.las");
-	//let las = loadLASProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v5_250k.las");
-	//let las = loadLASProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v3.las");
-	//let las = loadLASProgressive("D:/dev/pointclouds/weiss/pos7_Subsea_equipment.las");
-
-	//let las = loadLASProgressive("D:/dev/pointclouds/tuwien_baugeschichte/Candi Sari_las export/candi_sari.las");
-
 
 	let pc = new PointCloudProgressive("testcloud", "blabla");
 	//pc.boundingBox.min.set(...las.boundingBox.min);
@@ -96,26 +80,21 @@ if(typeof e4called === "undefined"){
 	});
 
 }
+}
 
+
+
+loadNiederweiden();
+	
 view.set(
-	[-12.362381738151846, 4.05480067990359, -15.238182318876296 ],
-	[-8.091633605894913, 1.9830766937417055, -14.241735502512483],
+	[-14.902, 5.629, 8.810], 
+	[-1.655, -1.351, 6.070]
 );
 
-camera.fov = 100;
+window.width = 1920;
+window.height = 1080;
+window.x = 0;
+window.y = 0;
 
-// log($("testcloud"));
 
-// if($("testcloud")){
-// 	let pc = $("testcloud");
-// 	let s = 0.03;
-// 	pc.transform.elements.set([
-// 		s, 0, 0, 0, 
-// 		0, 0, s, 0, 
-// 		0, s, 0, 0, 
-// 		-0.5, 0.7, 1, 1, 
-// 	]);
-
-// 	log("lala");
-
-// }
+camera.fov = 80;

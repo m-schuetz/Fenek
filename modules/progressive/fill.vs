@@ -28,7 +28,7 @@ vec3 getColorFromV3(){
 void main() {
 	
 	gl_Position = uWorldViewProj * vec4(aPosition, 1.0);
-	gl_PointSize = 2.0;
+	gl_PointSize = 1.0;
 	
 	vColor = getColorFromV3();
 	//vColor = vec3(1, 0, 0);

@@ -38,6 +38,13 @@ void main(){
 		return;
 	}
 
+	if(v.x < 130 || v.x > 165){
+		return;
+	}
+	if(v.y < 151 || v.y > 180){
+		return;
+	}
+
 	vec2 imgPos = (pos.xy * 0.5 + 0.5) * uImageSize;
 	ivec2 pixelCoords = ivec2(imgPos);
 	int pixelID = pixelCoords.x + pixelCoords.y * uImageSize.x;

@@ -72,8 +72,8 @@ void main(){
 
 	//if(val64 != 0xffffffffff000000UL){
 	imageStore(uOutput, pixelCoords, icolor);
-	//ssFramebuffer[pixelID] = 0xffffffffff000000UL;
 	ssFramebuffer[pixelID] = 0xffffffffff000000UL;
+	//ssFramebuffer[pixelID] = 0xffffffffff00FF00UL;
 	//ssFramebuffer[pixelID] = 0UL;
 
 }

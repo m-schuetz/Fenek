@@ -56,6 +56,42 @@ getRenderProgressiveState = function(target){
 			csFillRemaining = shader;
 		}
 
+		let shReproject = null;
+		{ // reprojection shader
+			let vsPath = `${rootDir}/modules/progressive/reproject.vs`;
+			let fsPath = `${rootDir}/modules/progressive/reproject.fs`;
+
+			let shader = new Shader([
+				{type: gl.VERTEX_SHADER, path: vsPath},
+				{type: gl.FRAGMENT_SHADER, path: fsPath},
+			]);
+			shader.watch();
+
+			shReproject = shader;
+		}
+
+		let shFill = null;
+		{ // add shader
+			let vsPath = `${rootDir}/modules/progressive/fill.vs`;
+			let fsPath = `${rootDir}/modules/progressive/fill.fs`;
+
+			let shader = new Shader([
+				{type: gl.VERTEX_SHADER, path: vsPath},
+				{type: gl.FRAGMENT_SHADER, path: fsPath},
+			]);
+			shader.watch();
+
+			shFill = shader;
+		}
+
+		let csCreateVBO = null;
+		{ // create IBO shader
+			let path = `${rootDir}/modules/progressive/create_vbo.cs`;
+			let shader = new Shader([{type: gl.COMPUTE_SHADER, path: path}]);
+			shader.watch();
+			csCreateVBO = shader;
+		}
+
 
 
 		let state = {
@@ -63,8 +99,14 @@ getRenderProgressiveState = function(target){
 			ssTimestamps: ssTimestamps,
 			ssFillFixed: ssFillFixed,
 			ssFillCommands: ssFillCommands,
+
 			csFillFixed: csFillFixed,
 			csFillRemaining: csFillRemaining,
+
+			shReproject: shReproject,
+			shFill: shFill,
+			csCreateVBO: csCreateVBO,
+
 			reprojectBuffer: reprojectBuffer,
 			round: 0, 
 			fboPrev: fboPrev,
@@ -85,8 +127,8 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 
 	GLTimerQueries.mark("render-progressive-start");
 
-	let {shReproject, shAdd, csCreateIBO} = pointcloud;
 	let state = getRenderProgressiveState(target);
+	let {shReproject, shFill, csCreateVBO} = state;
 	let {ssIndirectCommand, ssTimestamps, reprojectBuffer, fboPrev} = state;
 
 	{ // start timestamp to ssTimestamps
@@ -191,7 +233,7 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 
 		{ // FILL FIXED
 			GLTimerQueries.mark("render-progressive-add-start");
-			gl.useProgram(shAdd.program);
+			gl.useProgram(shFill.program);
 
 			{ // start add timestamp to ssTimestamps
 				let qtStart = gl.createQuery();
@@ -204,18 +246,18 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 
 			gl.activeTexture(gl.TEXTURE0);
 			gl.bindTexture(gradientTexture.type, gradientTexture.handle);
-			if(shAdd.uniforms.uGradient){
-				gl.uniform1i(shAdd.uniforms.uGradient, 0);
+			if(shFill.uniforms.uGradient){
+				gl.uniform1i(shFill.uniforms.uGradient, 0);
 			}
 
-			gl.uniformMatrix4fv(shAdd.uniforms.uWorldViewProj, 1, gl.FALSE, mat32);
+			gl.uniformMatrix4fv(shFill.uniforms.uWorldViewProj, 1, gl.FALSE, mat32);
 
 			let buffers = pointcloud.glBuffers;
 
 			for(let i = 0; i < buffers.length; i++){
 				let buffer = buffers[i];
 
-				gl.uniform1i(shAdd.uniforms.uOffset, i * 134 * 1000 * 1000);
+				gl.uniform1i(shFill.uniforms.uOffset, i * 134 * 1000 * 1000);
 
 				gl.bindVertexArray(buffer.vao);
 				gl.bindBuffer(gl.DRAW_INDIRECT_BUFFER, state.ssFillCommands);
@@ -226,7 +268,7 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 			//{ // DEBUG
 			//	let buffer = buffers[0];
 
-			//	gl.uniform1i(shAdd.uniforms.uOffset, 0);
+			//	gl.uniform1i(shFill.uniforms.uOffset, 0);
 			//	gl.bindVertexArray(buffer.vao);
 			//	gl.bindBuffer(gl.DRAW_INDIRECT_BUFFER, 0);
 			//	gl.drawArrays(gl.POINTS, 21 * 1000 * 1000, 1 * 1000 * 1000);
@@ -283,15 +325,15 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 		// FILL REMAINING
 		if(true){ 
 			GLTimerQueries.mark("render-progressive-add-remaining-start");
-			gl.useProgram(shAdd.program);
+			gl.useProgram(shFill.program);
 
 			gl.activeTexture(gl.TEXTURE0);
 			gl.bindTexture(gradientTexture.type, gradientTexture.handle);
-			if(shAdd.uniforms.uGradient){
-				gl.uniform1i(shAdd.uniforms.uGradient, 0);
+			if(shFill.uniforms.uGradient){
+				gl.uniform1i(shFill.uniforms.uGradient, 0);
 			}
 
-			gl.uniformMatrix4fv(shAdd.uniforms.uWorldViewProj, 1, gl.FALSE, mat32);
+			gl.uniformMatrix4fv(shFill.uniforms.uWorldViewProj, 1, gl.FALSE, mat32);
 
 			{
 				let buffers = new Uint32Array([
@@ -306,7 +348,7 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 			for(let i = 0; i < buffers.length; i++){
 				let buffer = buffers[i];
 
-				gl.uniform1i(shAdd.uniforms.uOffset, i * 134 * 1000 * 1000);
+				gl.uniform1i(shFill.uniforms.uOffset, i * 134 * 1000 * 1000);
 
 				gl.bindVertexArray(buffer.vao);
 				gl.bindBuffer(gl.DRAW_INDIRECT_BUFFER, state.ssFillCommands);
@@ -333,7 +375,7 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 	let createVBO = () => { // CREATE VBO
 		GLTimerQueries.mark("render-progressive-ibo-start");
 
-		gl.useProgram(csCreateIBO.program);
+		gl.useProgram(csCreateVBO.program);
 
 		let indirectData = new Uint32Array([0, 1, 0, 0, 0]);
 		gl.namedBufferSubData(ssIndirectCommand, 0, indirectData.byteLength, indirectData);

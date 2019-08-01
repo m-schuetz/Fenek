@@ -197,7 +197,7 @@ if(typeof setAttribute !== "undefined"){
 	// 	]);
 	// }
 
-	setAttribute([{name: "intensity", scale: 1 / 60000, offset: 0}]);
+	//setAttribute([{name: "intensity", scale: 1 / 60000, offset: 0}]);
 	
 	attributeToggle++;
 		

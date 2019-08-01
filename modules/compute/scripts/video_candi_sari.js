@@ -68,15 +68,7 @@ if(typeof e4called === "undefined"){
 	]);
 
 	scene.root.add(pc);
-
-	listeners.update.push(() => {
-
-		if(pc.numPoints !== las.numPoints){
-			//log(las.numPoints);
-		}
-		pc.numPoints = las.numPoints;
-		
-	});
+	pc.numPoints = las.numPoints;
 
 }
 
@@ -86,7 +78,7 @@ window.x = 0;
 window.y = 0;
 
 view.set(
-	[31.969, 28.616, -56.888], 
+	[31.329, 30.002, -55.138], 
 	[33.898, 26.970, -61.021]
 );
 
@@ -98,7 +90,7 @@ listeners.update = [() => {
 	
 	const r = 8;
 
-	const t = now();
+	const t = 2 * now();
 	const x = Math.cos(1 * t) * r;
 	const y = Math.sin(1 * t) * r;
 

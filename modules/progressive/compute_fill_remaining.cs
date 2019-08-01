@@ -42,7 +42,7 @@ int[10] getCummulativeBatchSizes(){
 	return cummulative;
 }
 
-#define uBudgetMillies 8.0
+#define uBudgetMillies 3.0
 
 void main() {
 
