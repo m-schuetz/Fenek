@@ -33,21 +33,18 @@ void main(){
 
 	vec4 pos = uTransform * vec4(v.x, v.y, v.z, 1.0);
 	pos.xyz = pos.xyz / pos.w;
-
+2
 	if(pos.w <= 0.0 || pos.x < -1.0 || pos.x > 1.0 || pos.y < -1.0 || pos.y > 1.0){
 		return;
 	}
 
-	// if(v.x < 130 || v.x > 165){
-	// 	return;
-	// }
-	// if(v.y < 151 || v.y > 180){
-	// 	return;
-	// }
-
 	vec2 imgPos = (pos.xy * 0.5 + 0.5) * uImageSize;
 	ivec2 pixelCoords = ivec2(imgPos);
 	int pixelID = pixelCoords.x + pixelCoords.y * uImageSize.x;
+
+	// see compute/render.cs on how to compute double-precision depth values
+	// it's completely unnecessary for high-quality splatting though,
+	// since fragments with a certain depth-range are blended anyway so z-fighting doesn't happen
 
 	float depth = pos.w;
 	uint64_t u64Depth = uint64_t(depth * 1000000.0);

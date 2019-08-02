@@ -68,6 +68,12 @@ function renderComputeBasic(node, view, proj, target){
 
 		//log(transform32);
 		gl.uniformMatrix4fv(csRender.uniforms.uTransform, 1, gl.FALSE, mat32);
+
+		const e = transform.elements;
+		//gl.uniform4d(csRender.uniforms.uDepthLine, e[12], e[13], e[14], e[15]);
+		if(csRender.uniforms.uDepthLine){
+			gl.uniform4d(csRender.uniforms.uDepthLine, e[3], e[7], e[11], e[15]);
+		}
 		gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 1, ssboFramebuffer);
 		//gl.bindImageTexture(0, target.textures[0], 0, gl.FALSE, 0, gl.READ_WRITE, gl.RGBA8UI);
 
