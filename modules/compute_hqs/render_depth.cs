@@ -33,7 +33,7 @@ void main(){
 
 	vec4 pos = uTransform * vec4(v.x, v.y, v.z, 1.0);
 	pos.xyz = pos.xyz / pos.w;
-2
+
 	if(pos.w <= 0.0 || pos.x < -1.0 || pos.x > 1.0 || pos.y < -1.0 || pos.y > 1.0){
 		return;
 	}
