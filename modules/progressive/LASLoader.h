@@ -18,6 +18,7 @@
 #include <functional>
 
 #include "BArray.h"
+#include "modules/CppUtils/CppUtils.h"
 
 // for benchmarking cold start performance
 #define DISABLE_FILE_CACHE
@@ -46,18 +47,6 @@ namespace LASLoaderThreaded {
 	using std::stringstream;
 	using std::function;
 	using std::queue;
-
-	static long long ll_start_time = std::chrono::high_resolution_clock::now().time_since_epoch().count();
-
-	double llnow() {
-		auto now = std::chrono::high_resolution_clock::now();
-		long long nanosSinceStart = now.time_since_epoch().count() - ll_start_time;
-
-		double secondsSinceStart = double(nanosSinceStart) / 1'000'000'000;
-
-		return secondsSinceStart;
-	}
-
 
 	struct LASHeader {
 
@@ -111,8 +100,6 @@ namespace LASLoaderThreaded {
 		vector<char> buffer;
 	};
 
-	vector<int> dataTypeSizes = { 0, 1, 1, 2, 2, 4, 4, 8, 8, 4, 8, 2, 2, 4, 4, 8, 8, 16, 16, 8, 16, 3, 3, 6, 6, 12, 12, 24, 24, 12, 24 };
-
 	struct ExtraBytes {
 
 		uint8_t reserved[2];
@@ -126,6 +113,8 @@ namespace LASLoaderThreaded {
 		double scale[3];
 		double offset[3];
 		int8_t description[32];
+
+		vector<int> dataTypeSizes = { 0, 1, 1, 2, 2, 4, 4, 8, 8, 4, 8, 2, 2, 4, 4, 8, 8, 16, 16, 8, 16, 3, 3, 6, 6, 12, 12, 24, 24, 12, 24 };
 
 		int bytes() {
 			return dataTypeSizes[dataType];
@@ -342,16 +331,16 @@ namespace LASLoaderThreaded {
 
 	};
 
-	vector<DataFormat> dataFormats = {
-		DataFormat{20},
-		DataFormat{28},
-		DataFormat{26},
-		DataFormat{34},
-		DataFormat{57},
-		DataFormat{63},
-		DataFormat{30},
-		DataFormat{36},
-	};
+	//vector<DataFormat> dataFormats = {
+	//	DataFormat{20},
+	//	DataFormat{28},
+	//	DataFormat{26},
+	//	DataFormat{34},
+	//	DataFormat{57},
+	//	DataFormat{63},
+	//	DataFormat{30},
+	//	DataFormat{36},
+	//};
 
 	class LASLoader {
 
@@ -866,6 +855,17 @@ namespace LASLoaderThreaded {
 				attributes.push_back(a);
 			}
 
+			static vector<DataFormat> dataFormats = {
+				DataFormat{20},
+				DataFormat{28},
+				DataFormat{26},
+				DataFormat{34},
+				DataFormat{57},
+				DataFormat{63},
+				DataFormat{30},
+				DataFormat{36},
+			};
+
 			int currentOffset = dataFormats[header.pointDataFormat].size;
 			auto extraBytes = getExtraBytes();
 
@@ -929,7 +929,7 @@ namespace LASLoaderThreaded {
 					//cout << "parsing chunk[" << i << "], size: " << binaryChunk->size() << endl;
 
 					{
-						auto start = llnow();
+						auto start = Utils::now();
 
 						auto attributes = getAttributes();
 
@@ -1021,7 +1021,7 @@ namespace LASLoaderThreaded {
 
 						delete binaryChunk;
 
-						auto end = llnow();
+						auto end = Utils::now();
 						auto duration = end - start;
 						//cout << "process duration: " << duration << "s" << endl;
 					}
@@ -1045,7 +1045,7 @@ namespace LASLoaderThreaded {
 		void createBinaryLoaderThread() {
 
 			thread t([this]() {
-				double start = llnow();
+				double start = Utils::now();
 
 				uint64_t offset = header.offsetToPointData;
 				uint64_t pointsLoaded = 0;
@@ -1095,7 +1095,7 @@ namespace LASLoaderThreaded {
 
 				cout << pointsLoaded << endl;
 
-				double end = llnow();
+				double end = Utils::now();
 				double duration = end - start;
 
 				cout << "done loading binary chunks" << endl;

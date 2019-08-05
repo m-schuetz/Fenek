@@ -15,7 +15,8 @@
 #include "GL\glew.h"
 #include "GLFW\glfw3.h"
 
-#include "LASLoader.h"
+#include "modules/CppUtils/CppUtils.h"
+#include "modules/progressive/LASLoader.h"
 #include "ComputeShader.h"
 #include "GLTimerQueries.h"
 
@@ -166,7 +167,7 @@ public:
 	///
 	uint32_t uploadNextAvailableChunk() {
 
-		auto start = now();
+		auto start = Utils::now();
 
 		Points* chunk = loader->getNextChunk();
 
@@ -243,7 +244,7 @@ public:
 
 		pointsUploaded += chunk->size;
 
-		auto duration = now() - start;
+		auto duration = Utils::now() - start;
 		//cout << "uploadNextAvailableChunk(): " << duration << "s" << endl;
 
 		return chunk->size;

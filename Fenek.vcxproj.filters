@@ -13,6 +13,15 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="modules">
+      <UniqueIdentifier>{0fce757f-1aab-4800-9c1a-a75bc4971fdf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="modules\progressive">
+      <UniqueIdentifier>{cc5c9ab9-4dd8-41c2-85fe-4551f17c8c9d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="modules\CppUtils">
+      <UniqueIdentifier>{d5a6a814-0137-4768-8072-d94c72ad4faa}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -51,6 +60,9 @@
     <ClCompile Include="src\V8File.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="modules\progressive\progressive.cpp">
+      <Filter>modules\progressive</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\V8Helper.h">
@@ -80,12 +92,6 @@
     <ClInclude Include="include\v8File.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\LASLoader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\ProgressiveLoader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\ProgressiveBINLoader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -94,6 +100,18 @@
     </ClInclude>
     <ClInclude Include="include\GLTimerQueries.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="modules\progressive\LASLoader.h">
+      <Filter>modules\progressive</Filter>
+    </ClInclude>
+    <ClInclude Include="modules\progressive\ProgressiveLoader.h">
+      <Filter>modules\progressive</Filter>
+    </ClInclude>
+    <ClInclude Include="modules\progressive\progressive.h">
+      <Filter>modules\progressive</Filter>
+    </ClInclude>
+    <ClInclude Include="modules\CppUtils\CppUtils.h">
+      <Filter>modules\CppUtils</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
