@@ -11,11 +11,10 @@
 #include "GL\glew.h"
 #include "GLFW\glfw3.h"
 
-//#include "modules/progressive/LASLoader.h"
 #include "modules/progressive/ProgressiveLoader.h"
 #include "modules/progressive/progressive.h"
+#include "modules/progressive/ProgressiveBINLoader.h"
 
-#include "ProgressiveBINLoader.h"
 #include "GLTimerQueries.h"
 
 
@@ -126,41 +125,6 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 
 double startUpload = 0.0;
 double endUpload = 0.0;
-
-
-
-
-void binaryUploadHook(ProgressiveBINLoader* loader, v8::Persistent<Object, v8::CopyablePersistentTraits<v8::Object>> pObjLAS) {
-
-
-	//cout << "chunks.size(): " << loader->loader->chunks.size() << endl;
-
-	loader->uploadNextAvailableChunk();
-	loader->uploadNextAvailableChunk();
-	loader->uploadNextAvailableChunk();
-	loader->uploadNextAvailableChunk();
-	loader->uploadNextAvailableChunk();
-
-	long int abc;
-
-
-	//auto isolate = Isolate::GetCurrent();
-	//Local<Object> objLAS = Local<Object>::New(isolate, pObjLAS);
-	//
-	//auto lNumPoints = v8::Integer::New(isolate, loader->pointsUploaded);
-	//objLAS->Set(String::NewFromUtf8(isolate, "numPoints"), lNumPoints);
-
-	schedule([loader, pObjLAS]() {
-
-		if (!loader->isDone()) {
-			binaryUploadHook(loader, pObjLAS);
-		} else {
-			endUpload = now();
-			double duration = endUpload - startUpload;
-			cout << "upload duration: " << duration << "s" << endl;
-		}
-		});
-};
 
 void writeState() {
 
@@ -362,7 +326,7 @@ int main() {
 		string file = *fileUTF8;
 
 		auto loadData = loadLasProgressive(file);
-		auto loader = loadData.loader;
+		auto loader = loadData->loader;
 
 		auto isolate = Isolate::GetCurrent();
 		Local<ObjectTemplate> lasTempl = ObjectTemplate::New(isolate);
@@ -414,17 +378,13 @@ int main() {
 		String::Utf8Value fileUTF8(args[0]);
 		string file = *fileUTF8;
 
-		startUpload = now();
-
-		auto* loader = new ProgressiveBINLoader(file);
-		auto duration = now() - startUpload;
-		cout << "loader created after " << duration << "s" << endl;
+		auto load = loadBinProgressive(file);
 
 		auto isolate = Isolate::GetCurrent();
 		Local<ObjectTemplate> lasTempl = ObjectTemplate::New(isolate);
 		auto objLAS = lasTempl->NewInstance();
 
-		auto lNumPoints = v8::Integer::New(isolate, loader->loader->numPoints);
+		auto lNumPoints = v8::Integer::New(isolate, load->loader->loader->numPoints);
 
 		auto lHandles = Array::New(isolate, loader->ssVertexBuffers.size());
 		for (int i = 0; i < loader->ssVertexBuffers.size(); i++) {
@@ -436,7 +396,9 @@ int main() {
 
 		auto pObjLAS = v8::Persistent<Object, v8::CopyablePersistentTraits<v8::Object>>(isolate, objLAS);
 
-		binaryUploadHook(loader, pObjLAS);
+		// TODO might have to initialize point size right away since upload hook 
+		// doesn't update js object anymore
+		//binaryUploadHook(loader, pObjLAS);
 
 		args.GetReturnValue().Set(objLAS);
 	});

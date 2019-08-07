@@ -3,34 +3,52 @@
 #include "modules/progressive/progressive.h"
 
 #include <iostream>
+#include <memory>
 
 using std::cout;
 using std::endl;
+using std::make_shared;
 
-static double startUpload = 0;
-static double endUpload = 0;
 static bool loadingLAS = false;
 
-//ProgressiveLoader* loader = nullptr;
+void binaryUploadHook(shared_ptr<BinLoadData> loadData) {
 
-
-void uploadHook(LoadData loadData) {
-	auto start = now();
-	//cout << "chunks.size(): " << loader->loader->chunks.size() << endl;
-
-	loadData.loader->uploadNextAvailableChunk();
-	loadData.loader->uploadNextAvailableChunk();
-	loadData.loader->uploadNextAvailableChunk();
-	loadData.loader->uploadNextAvailableChunk();
-	loadData.loader->uploadNextAvailableChunk();
+	loadData->loader->uploadNextAvailableChunk();
+	loadData->loader->uploadNextAvailableChunk();
+	loadData->loader->uploadNextAvailableChunk();
+	loadData->loader->uploadNextAvailableChunk();
+	loadData->loader->uploadNextAvailableChunk();
 
 	schedule([loadData]() {
 
-		if (!loadData.loader->isDone()) {
+		if (!loadData->loader->isDone()) {
+			binaryUploadHook(loadData);
+		} else {
+			loadData->tEndUpload = now();
+			double duration = loadData->tEndUpload - loadData->tStartUpload;
+			cout << "upload duration: " << duration << "s" << endl;
+		}
+	});
+};
+
+
+void uploadHook(shared_ptr<LoadData> loadData) {
+	auto start = now();
+	//cout << "chunks.size(): " << loader->loader->chunks.size() << endl;
+
+	loadData->loader->uploadNextAvailableChunk();
+	loadData->loader->uploadNextAvailableChunk();
+	loadData->loader->uploadNextAvailableChunk();
+	loadData->loader->uploadNextAvailableChunk();
+	loadData->loader->uploadNextAvailableChunk();
+
+	schedule([loadData]() {
+
+		if (!loadData->loader->isDone()) {
 			uploadHook(loadData);
 		} else {
-			endUpload = now();
-			double duration = endUpload - startUpload;
+			loadData->tEndUpload = now();
+			double duration = loadData->tEndUpload - loadData->tStartUpload;
 			cout << "upload duration: " << duration << "s" << endl;
 
 
@@ -82,15 +100,29 @@ void uploadHook(LoadData loadData) {
 	//cout << "uploadHook(): " << duration << "s" << endl;
 };
 
-LoadData loadLasProgressive(string file) {
+shared_ptr<LoadData> loadLasProgressive(string file) {
 
 	ProgressiveLoader* loader = new ProgressiveLoader(file);
-	LoadData load;
+	shared_ptr<LoadData> load = make_shared<LoadData>();
+	load->tStartUpload = now();
 	//load.tStart = now();
 
-	load.loader = loader;
+	load->loader = loader;
 
 	uploadHook(load);
+
+	return load;
+}
+
+shared_ptr<BinLoadData> loadBinProgressive(string file) {
+
+	ProgressiveBINLoader* loader = new ProgressiveBINLoader(file);
+	shared_ptr<BinLoadData> load = make_shared<BinLoadData>();
+	load->tStartUpload = now();
+
+	load->loader = loader;
+
+	binaryUploadHook(load);
 
 	return load;
 }

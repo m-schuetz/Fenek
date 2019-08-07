@@ -157,7 +157,6 @@
     <ClInclude Include="include\ComputeShader.h" />
     <ClInclude Include="include\GLTimerQueries.h" />
     <ClInclude Include="include\OpenVRHelper.h" />
-    <ClInclude Include="include\ProgressiveBINLoader.h" />
     <ClInclude Include="include\Shader.h" />
     <ClInclude Include="include\utils.h" />
     <ClInclude Include="include\V8ComputeShader.h" />
@@ -167,6 +166,7 @@
     <ClInclude Include="modules\CppUtils\CppUtils.h" />
     <ClInclude Include="modules\progressive\LASLoader.h" />
     <ClInclude Include="modules\progressive\progressive.h" />
+    <ClInclude Include="modules\progressive\ProgressiveBINLoader.h" />
     <ClInclude Include="modules\progressive\ProgressiveLoader.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

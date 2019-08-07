@@ -4,6 +4,7 @@
 #include "v8.h"
 
 #include "modules/progressive/ProgressiveLoader.h"
+#include "modules/progressive/ProgressiveBINLoader.h"
 
 using v8::CopyablePersistentTraits;
 using v8::Persistent;
@@ -18,6 +19,8 @@ class LoadData {
 public:
 
 	ProgressiveLoader* loader = nullptr;
+	double tStartUpload = 0;
+	double tEndUpload = 0;
 
 	LoadData() {
 
@@ -26,8 +29,26 @@ public:
 };
 
 
+class BinLoadData {
+public:
 
-void uploadHook(LoadData loadData);
+	ProgressiveBINLoader* loader = nullptr;
+	double tStartUpload = 0;
+	double tEndUpload = 0;
 
-LoadData loadLasProgressive(string file);
+	BinLoadData() {
+
+	}
+
+};
+
+
+void uploadHook(shared_ptr<LoadData> loadData);
+
+shared_ptr<LoadData> loadLasProgressive(string file);
+
+
+void binaryUploadHook(BinLoadData* loader);
+
+shared_ptr<BinLoadData> loadBinProgressive(string file);
 

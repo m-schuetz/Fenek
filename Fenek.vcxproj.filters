@@ -92,9 +92,6 @@
     <ClInclude Include="include\v8File.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\ProgressiveBINLoader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\BArray.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -112,6 +109,9 @@
     </ClInclude>
     <ClInclude Include="modules\CppUtils\CppUtils.h">
       <Filter>modules\CppUtils</Filter>
+    </ClInclude>
+    <ClInclude Include="modules\progressive\ProgressiveBINLoader.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
