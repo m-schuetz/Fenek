@@ -1,7 +1,7 @@
 
 if(!$("testcloud")){
 	
-	let las = loadLASProgressive("D:/dev/pointclouds/archpro/heidentor.las");
+	let las = loadLASProgressive("D:/dev/pointclouds/riegl/Retz_Airborne_Terrestrial_Combined_1cm.las");
 
 	let pc = new PointCloudProgressive("testcloud", "blabla");
 
@@ -69,8 +69,8 @@ if(!$("testcloud")){
 }
 
 view.set(
-	[-10.345953680165964, 10.620905761903753, -0.02535870577455146],
-	[5.123214356964963, 4.573860054923273, -7.986573283576178],
+	[629.908, 82.148, -799.211], 
+	[569.602, 41.695, -857.466]
 );
 
 // window.x = 200;

@@ -42,7 +42,7 @@ int[10] getCummulativeBatchSizes(){
 	return cummulative;
 }
 
-#define uBudgetMillies 3.0
+#define uBudgetMillies 12.0
 
 void main() {
 
@@ -59,7 +59,7 @@ void main() {
 	double pointsPerMillies = double(numPointsRendered) / milliesConsumedByFillFixed;
 
 	double estimatedRemainingBudget = pointsPerMillies * milliesRemaining;
-	estimatedRemainingBudget = 0.8 * estimatedRemainingBudget;
+	estimatedRemainingBudget = 1.0 * estimatedRemainingBudget;
 
 	// reset commands
 	for(int i = 0; i < uNumBatches; i++){

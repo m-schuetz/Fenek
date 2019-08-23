@@ -64,7 +64,7 @@ void main() {
 	float sumShade = 0.0;
 	for(int msaaSampleNr = 0; msaaSampleNr < ssArgs.msaaSampleCount; msaaSampleNr++){
 		float res = response(pos, msaaSampleNr);
-		float shade = exp(-res * 300.0 * ssArgs.edlStrength * 1.9);
+		float shade = exp(-res * 300.0 * ssArgs.edlStrength * 0.8);
 
 		sumShade += shade;
 		col += texelFetch(uColor, pos, msaaSampleNr);

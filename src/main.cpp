@@ -267,11 +267,14 @@ int main() {
 	glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
 	glDebugMessageCallback(debugCallback, NULL);
 
-	high_resolution_clock::time_point start = high_resolution_clock::now();
-	high_resolution_clock::time_point previous = start;
+	//high_resolution_clock::time_point start = high_resolution_clock::now();
+	//high_resolution_clock::time_point previous = start;
 
 	int fpsCounter = 0;
-	high_resolution_clock::time_point lastFPSTime = start;
+	//high_resolution_clock::time_point lastFPSTime = start;
+	double start = now();
+	double tPrevious = start;
+	double tPreviousFPSMeasure = start;
 
 
 	V8Helper::instance()->window = window;
@@ -413,14 +416,18 @@ int main() {
 		// TIME
 		// ----------------
 
-		high_resolution_clock::time_point now = high_resolution_clock::now();
-		double nanosecondsSinceLastFrame = double((now - previous).count());
-		double nanosecondsSinceLastFPSMeasure = double((now - lastFPSTime).count());
+		//high_resolution_clock::time_point now = high_resolution_clock::now();
+		//double nanosecondsSinceLastFrame = double((now - previous).count());
+		//double nanosecondsSinceLastFPSMeasure = double((now - lastFPSTime).count());
+		//
+		//double timeSinceLastFrame = nanosecondsSinceLastFrame / 1'000'000'000;
+		//double timeSinceLastFPSMeasure = nanosecondsSinceLastFPSMeasure / 1'000'000'000;
 
-		double timeSinceLastFrame = nanosecondsSinceLastFrame / 1'000'000'000;
-		double timeSinceLastFPSMeasure = nanosecondsSinceLastFPSMeasure / 1'000'000'000;
+		double tCurrent = now();
+		double timeSinceLastFrame = tCurrent - tPrevious;
+		tPrevious = tCurrent;
 
-		previous = now;
+		double timeSinceLastFPSMeasure = tCurrent - tPreviousFPSMeasure;
 
 		if(timeSinceLastFPSMeasure >= 1.0){
 			double fps = double(fpsCounter) / timeSinceLastFPSMeasure;
@@ -444,7 +451,7 @@ int main() {
 			// write state to self-refreshing html file
 			writeState();
 
-			lastFPSTime = now;
+			tPreviousFPSMeasure = tCurrent;
 			fpsCounter = 0;
 		}
 		V8Helper::instance()->timeSinceLastFrame = timeSinceLastFrame;
@@ -508,6 +515,31 @@ int main() {
 		//if (timeSinceLastFrame > 0.016) {
 			//cout << "too slow! time since last frame: " << int(timeSinceLastFrame * 1000.0) << "ms" << endl;
 		//}
+
+		{
+			static double toggle = now();
+			static int missedFrames = 0;
+
+			if (timeSinceLastFrame > 0.016) {
+				missedFrames++;
+			}
+
+			if(now() - toggle >= 1.0){
+
+				string msg = "";
+				if (missedFrames == 0) {
+					msg = std::to_string(missedFrames);
+				} else {
+					msg = "<b style=\"color:red\">" + std::to_string(missedFrames) + "</b>";
+				}
+				V8Helper::instance()->debugValue["#missed frames"] = msg;
+
+				missedFrames = 0;
+				toggle = now();
+			}
+
+		}
+
 
 		// ----------------
 		// RENDER WITH JAVASCRIPT

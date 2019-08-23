@@ -996,15 +996,15 @@ namespace LASLoaderThreaded {
 								//point.b = 200;
 								//point.a = 255;
 
-								//point.r = aRed.data->dataU16[i] / 256;
-								//point.g = aGreen.data->dataU16[i] / 256;
-								//point.b = aBlue.data->dataU16[i] / 256;
-								//point.a = 0;
+								point.r = aRed.data->dataU16[i] / 256;
+								point.g = aGreen.data->dataU16[i] / 256;
+								point.b = aBlue.data->dataU16[i] / 256;
+								point.a = 0;
 
-								point.r = aRed.data->dataU16[i];
+								/*point.r = aRed.data->dataU16[i];
 								point.g = aGreen.data->dataU16[i];
 								point.b = aBlue.data->dataU16[i];
-								point.a = 0;
+								point.a = 0;*/
 
 								//point.r = a2.data->dataU16[i] / 256;
 								//point.g = a2.data->dataU16[i];
