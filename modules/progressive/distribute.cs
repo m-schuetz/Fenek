@@ -101,7 +101,8 @@ void main(){
 	t = permuteI(t, primeI64);
 	uint targetIndex = uint(t);
 
-	//targetIndex = globalInputIndex;
+	// disable shuffling
+	targetIndex = globalInputIndex;
 
 	atomicAdd(debugBuffer[targetIndex], 1);
 

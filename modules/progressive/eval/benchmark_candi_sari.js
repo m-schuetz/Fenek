@@ -1,7 +1,7 @@
 
 if(!$("testcloud")){
 	
-	let las = loadLASProgressive("D:/dev/pointclouds/riegl/Retz_Airborne_Terrestrial_Combined_1cm.las");
+	let las = loadLASProgressive("D:/dev/pointclouds/tuwien_baugeschichte/Candi Sari_las export/candi_sari.las");
 
 	let pc = new PointCloudProgressive("testcloud", "blabla");
 
@@ -69,8 +69,8 @@ if(!$("testcloud")){
 }
 
 view.set(
-	[629.908, 82.148, -799.211], 
-	[569.602, 41.695, -857.466]
+	[130.730, 98.314, -147.144], 
+	[145.004, 86.113, -166.498]
 );
 
 window.x = 0;

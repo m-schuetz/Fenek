@@ -130,29 +130,81 @@ void writeState() {
 
 	stringstream text;
 
-	text << "<html>" << endl;
-	text << "<head>" << endl;
-	text << "	<meta http-equiv=\"refresh\" content = \"1\">" << endl;
+	text << R"V0G0N(
 
-	text << "<style>" << endl;
-	text << "tr:nth-child(even) {background: rgb(245, 245, 245)}" << endl;
-	text << "tr:nth-child(odd) {background: #FFF}" << endl;
-	text << "table{" << endl;
-	text << "	border-collapse: collapse;" << endl;
-	text << "}" << endl;
-	text << "td{" << endl;
-	text << "	border: 1px solid rgb(200, 200, 200);" << endl;
-	text << "	font-family: \"Consolas\";" << endl;
-	text << "	padding: 6px 13px 6px 13px;" << endl;
-	text << "	margin: 0px;" << endl;
-	text << "}" << endl;
-	text << "pre{" << endl;
-	text << "	font-family: \"Consolas\";" << endl;
-	text << "}" << endl;
-	text << "</style>" << endl;
+<html>
+<head>
+	<meta http-equiv="refresh" content = "1">
+<style>
+tr:nth-child(even) {background: rgb(245, 245, 245)}
+tr:nth-child(odd) {background: #FFF}
+table{
+	border-collapse: collapse;
+}
+td{
+	border: 1px solid rgb(200, 200, 200);
+	font-family: "Consolas";
+	padding: 6px 13px 6px 13px;
+	margin: 0px;
+}
+pre{
+	font-family: "Consolas";
+}
+</style>
+</head>
+<body>
+<script>
+// see https://stackoverflow.com/questions/400212/how-do-i-copy-to-the-clipboard-in-javascript
+function clipboardCopy(text){
+	let textArea = document.createElement("textarea");
 
-	text << "</head>" << endl;
-	text << "<body>" << endl;
+	textArea.style.position = 'fixed';
+	textArea.style.top = 0;
+	textArea.style.left = 0;
+	textArea.style.width = '2em';
+	textArea.style.height = '2em';
+	textArea.style.padding = 0;
+	textArea.style.border = 'none';
+	textArea.style.outline = 'none';
+	textArea.style.boxShadow = 'none';
+	textArea.style.background = 'transparent';
+	textArea.value = text;
+
+	document.body.appendChild(textArea);
+
+	textArea.select();
+
+	 try {
+		let success = document.execCommand('copy');
+			if(success){
+				console.log("copied text to clipboard");
+			}else{
+				console.log("copy to clipboard failed");
+			}
+	} catch (err) {
+		console.log("error while trying to copy to clipboard");
+	}
+
+	document.body.removeChild(textArea);
+}
+
+function getEntry(key){
+	const trs = Array.from(document.querySelectorAll("tr"));
+	
+	for(const tr of trs){
+		const tds = tr.querySelectorAll("td");
+		if(tds[1].textContent === key){
+			return tds[2].textContent;
+		}
+	}
+
+	return null;
+}
+
+</script>
+
+	)V0G0N";
+
 
 	text << "<table>" << endl;
 	
@@ -169,8 +221,33 @@ void writeState() {
 
 	text << "</table>" << endl;
 
-	text << "</body>" << endl;
-	text << "</html>" << endl;
+	text << R"V0G0N(
+
+<script>
+	{ // add copy buttons
+		const rows = document.querySelectorAll("tr");
+		for(const row of rows){
+			const el = document.createElement("td");
+			el.innerHTML = "&#128203;"; 
+			const cells = row.querySelectorAll("td");
+			const last = cells[cells.length - 1];
+			const content = last.textContent;
+
+			el.onclick = (function(text){
+				return function(){
+					clipboardCopy(text);
+				}
+			})(content);
+
+			row.insertBefore(el, row.firstChild);
+		}
+	}
+</script>
+
+</body>
+</html>
+
+)V0G0N";
 
 	string strText = text.str();
 

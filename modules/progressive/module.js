@@ -12,5 +12,7 @@ monitorJS(`${rootDir}/modules/progressive/runtime/wien.js`);
 
 monitorJS(`${rootDir}/modules/progressive/eval/benchmark_heidentor_progressive.js`);
 monitorJS(`${rootDir}/modules/progressive/eval/benchmark_retz_progressive.js`);
+monitorJS(`${rootDir}/modules/progressive/eval/benchmark_wien.js`);
+monitorJS(`${rootDir}/modules/progressive/eval/benchmark_candi_sari.js`);
 
 "module progressive";

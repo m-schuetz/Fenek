@@ -222,13 +222,14 @@ class GLTimerQueries{
 			let min = Math.min(...history);
 			let max = Math.max(...history);
 
-			let msAvg = (avg * 1000).toFixed(3).padStart(8);
-			let msMin = (min * 1000).toFixed(3).padStart(8);
-			let msMax = (max * 1000).toFixed(3).padStart(8);
+			let msAvg = (avg * 1000).toFixed(3);
+			let msMin = (min * 1000).toFixed(3);
+			let msMax = (max * 1000).toFixed(3);
 
 
 
-			setDebugValue(`gl.${name}`.padEnd(colWidth, " "), `${msAvg}ms / ${msMin}ms / ${msMax}ms`);
+			//setDebugValue(`gl.${name}`, `${msAvg}ms / ${msMin}ms / ${msMax}ms`);
+			setDebugValue(`gl.${name}`, `{"mean": ${msAvg}, "min": ${msMin}, "max": ${msMax}}`);
 		}
 
 		GLTimerQueries.measures = unresolvedMeasures;
