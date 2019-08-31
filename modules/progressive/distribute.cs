@@ -102,7 +102,7 @@ void main(){
 	uint targetIndex = uint(t);
 
 	// disable shuffling
-	targetIndex = globalInputIndex;
+	//targetIndex = globalInputIndex;
 
 	atomicAdd(debugBuffer[targetIndex], 1);
 

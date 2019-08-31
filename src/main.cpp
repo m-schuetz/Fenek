@@ -32,10 +32,10 @@ namespace fs = std::experimental::filesystem;
 
 static long long start_time = std::chrono::high_resolution_clock::now().time_since_epoch().count();
 
-int numPointsUploaded = 0;
+//int numPointsUploaded = 0;
 
-ProgressiveLoader* loader = nullptr;
-ProgressiveBINLoader* binLoader = nullptr;
+//ProgressiveLoader* loader = nullptr;
+//ProgressiveBINLoader* binLoader = nullptr;
 
 double now() {
 	auto now = std::chrono::high_resolution_clock::now();
@@ -459,12 +459,13 @@ int main() {
 		string file = *fileUTF8;
 
 		auto load = loadBinProgressive(file);
+		auto loader = load->loader;
 
 		auto isolate = Isolate::GetCurrent();
 		Local<ObjectTemplate> lasTempl = ObjectTemplate::New(isolate);
 		auto objLAS = lasTempl->NewInstance();
 
-		auto lNumPoints = v8::Integer::New(isolate, load->loader->loader->numPoints);
+		auto lNumPoints = v8::Integer::New(isolate, loader->loader->numPoints);
 
 		auto lHandles = Array::New(isolate, loader->ssVertexBuffers.size());
 		for (int i = 0; i < loader->ssVertexBuffers.size(); i++) {

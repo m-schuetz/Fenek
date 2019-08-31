@@ -1,7 +1,8 @@
 
 if(!$("testcloud")){
 	
-	let las = loadLASProgressive("D:/dev/pointclouds/tuwien_baugeschichte/Candi Sari_las export/candi_sari.las");
+	let las = loadBINProgressive("D:/dev/pointclouds/tuwien_baugeschichte/Candi Sari_las export/candi_sari.bin");
+	//let las = loadLASProgressive("D:/dev/pointclouds/tuwien_baugeschichte/Candi Sari_las export/candi_sari.las");
 
 	let pc = new PointCloudProgressive("testcloud", "blabla");
 
@@ -79,7 +80,7 @@ window.width = 1920;
 window.height = 1080;
 
 MSAA_SAMPLES = 8;
-EDL_ENABLED = false;
+EDL_ENABLED = true;
 
-//renderDebug = renderPointCloudProgressive;
-renderDebug = renderPointCloudBasic;
+renderDebug = renderPointCloudProgressive;
+//renderDebug = renderPointCloudBasic;

@@ -11,9 +11,9 @@ getRenderProgressiveState = function(target){
 		renderProgressiveMap = new Map();
 	}
 
-	//let start = now()
-
 	if(!renderProgressiveMap.has(target)){
+		// const tStart = now();
+
 		let ssIndirectCommand = gl.createBuffer();
 		let ssFillCommands = gl.createBuffer();
 		let icBytes = 5 * 4;
@@ -116,6 +116,10 @@ getRenderProgressiveState = function(target){
 		};
 
 		renderProgressiveMap.set(target, state);
+
+		// const tEnd = now();
+		// const duration = (tEnd - tStart).toFixed(3);
+		// log(duration);
 	}
 
 	return renderProgressiveMap.get(target);
@@ -128,6 +132,10 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 	let state = getRenderProgressiveState(target);
 	let {shReproject, shFill, csCreateVBO} = state;
 	let {ssIndirectCommand, ssTimestamps, reprojectBuffer, fboPrev} = state;
+
+	if(!pointcloud){
+		return;
+	}
 
 	{ // start timestamp to ssTimestamps
 		let qtStart = gl.createQuery();

@@ -991,25 +991,10 @@ namespace LASLoaderThreaded {
 								point.y = double(pos.y) * header.scaleY + header.offsetY - header.minY;
 								point.z = double(pos.z) * header.scaleZ + header.offsetZ - header.minZ;
 
-								//point.r = 200;
-								//point.g = 200;
-								//point.b = 200;
-								//point.a = 255;
-
 								point.r = aRed.data->dataU16[i] / 256;
 								point.g = aGreen.data->dataU16[i] / 256;
 								point.b = aBlue.data->dataU16[i] / 256;
 								point.a = 0;
-
-								/*point.r = aRed.data->dataU16[i];
-								point.g = aGreen.data->dataU16[i];
-								point.b = aBlue.data->dataU16[i];
-								point.a = 0;*/
-
-								//point.r = a2.data->dataU16[i] / 256;
-								//point.g = a2.data->dataU16[i];
-								//point.b = 0;
-								//point.a = 255;
 
 								points->xyzrgba.emplace_back(point);
 							}
