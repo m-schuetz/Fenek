@@ -43,17 +43,15 @@ void main() {
 		c.count = 0;
 		c.primCount = 1;
 		c.firstIndex = 0;
-		//c.baseInstance = 0;
 
 		commands[i] = c;
 	}
 
 	int[10] cum = getCummulativeBatchSizes();
 
-	int startBatch = uNumBatches - 1;
-	//uOffset = 268 * 1000 * 1000;
+	int startBatch = 0;
 	for(int i = 0; i < uNumBatches; i++){
-		if(uOffset < cum[i]){
+		if(uOffset <= cum[i]){
 			startBatch = i;
 			break;
 		}
@@ -62,23 +60,51 @@ void main() {
 	int currentBatch = startBatch;
 	int remainingPoints = 1 * 1000 * 1000;
 
-	while(remainingPoints > 0){
+	if(uNumBatches == 1){
+		int pointsToEnd = uBatchSizes[0] - uOffset;
+		int budgetToEnd = min(pointsToEnd, remainingPoints);
+		int stillRemaining = remainingPoints - budgetToEnd;
 
-		int currentPoints = cum[currentBatch] - uOffset;
-		currentPoints = min(currentPoints, remainingPoints);
+		{
+			IndirectCommand ic;
+			ic.count = budgetToEnd;
+			ic.primCount = 1;
+			ic.firstIndex = uOffset % 134000000;
 
-		IndirectCommand ic;
-		ic.count = currentPoints;
-		ic.primCount = 1;
-		ic.firstIndex = uOffset % 134000000;
+			commands[0] = ic;
+		}
 
-		commands[currentBatch] = ic;
+		{
+			IndirectCommand ic;
+			ic.count = stillRemaining;
+			ic.primCount = 1;
+			ic.firstIndex = uOffset % 134000000;
 
-		remainingPoints = remainingPoints - currentPoints;
-		uOffset = (uOffset + currentPoints) % uNumPoints;
-		currentBatch = (currentBatch + 1)  % uNumBatches;
+			commands[1] = ic;
+		}
+
+		//uOffset = (uOffset + remainingPoints) % uNumPoints;
+		uOffset = (uOffset + remainingPoints) % uNumPoints;
+	}else{
+
+		while(remainingPoints > 0){
+
+			int currentPoints = cum[currentBatch] - uOffset;
+			currentPoints = min(currentPoints, remainingPoints);
+
+			IndirectCommand ic;
+			ic.count = currentPoints;
+			ic.primCount = 1;
+			ic.firstIndex = uOffset % 134000000;
+
+			commands[currentBatch] = ic;
+
+			remainingPoints = remainingPoints - currentPoints;
+			uOffset = (uOffset + currentPoints) % uNumPoints;
+			currentBatch = (currentBatch + 1)  % uNumBatches;
 
 
+		}
 	}
 	
 

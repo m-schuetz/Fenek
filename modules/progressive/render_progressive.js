@@ -137,7 +137,7 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 		return;
 	}
 
-	{ // start timestamp to ssTimestamps
+	{ // write start timestamp to ssTimestamps
 		let qtStart = gl.createQuery();
 		gl.queryCounter(qtStart, gl.TIMESTAMP);
 		gl.bindBuffer(gl.QUERRY_BUFFER, ssTimestamps);
@@ -146,18 +146,21 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 		gl.deleteQuery(qtStart);
 	}
 
-	
+	{ // second color attachment for indices
+		let buffers = new Uint32Array([
+			gl.COLOR_ATTACHMENT0, 
+			gl.COLOR_ATTACHMENT1,
+		]);
+		gl.drawBuffers(buffers.length, buffers);
+	}
 
-	let mat32 = new Float32Array(16);
-	let transform = new Matrix4();
-	let world = pointcloud.transform;
-	transform.copy(Matrix4.IDENTITY);
+	const transform_m32 = new Float32Array(16);
+	const transform = new Matrix4();
+	const world = pointcloud.transform;
 	transform.multiply(proj).multiply(view).multiply(world);
-	mat32.set(transform.elements);
+	transform_m32.set(transform.elements);
 
-	let doUpdates = true;
-
-	let reproject = () => { // REPROJECT
+	const reproject = () => { // REPROJECT
 		GLTimerQueries.mark("render-progressive-reproject-start");
 		gl.useProgram(shReproject.program);
 
@@ -167,7 +170,7 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 			gl.uniform1i(shReproject.uniforms.uGradient, 0);
 		}
 
-		gl.uniformMatrix4fv(shReproject.uniforms.uWorldViewProj, 1, gl.FALSE, mat32);
+		gl.uniformMatrix4fv(shReproject.uniforms.uWorldViewProj, 1, gl.FALSE, transform_m32);
 
 		gl.bindVertexArray(reprojectBuffer.vao);
 		gl.bindBuffer(gl.DRAW_INDIRECT_BUFFER, ssIndirectCommand);
@@ -180,8 +183,7 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 		GLTimerQueries.measure("render.progressive.p1_reproject", "render-progressive-reproject-start", "render-progressive-reproject-end");
 	}
 
-
-	let fill = () => { // FILL PASS
+	const fill = () => { // FILL PASS
 
 		GLTimerQueries.mark("render-progressive-fill-start");
 
@@ -196,6 +198,8 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 				let numBatches = pointcloud.glBuffers.length;
 				let buffer = new ArrayBuffer((4 + numBatches) * 4);
 				let view = new DataView(buffer);
+
+				//log(`NUM POINTS!!! ${pointcloud.numPoints}`);
 
 				view.setInt32(0, pointcloud.numPoints, true);
 				view.setInt32(4, 0, true);
@@ -246,19 +250,36 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 				gl.uniform1i(shFill.uniforms.uGradient, 0);
 			}
 
-			gl.uniformMatrix4fv(shFill.uniforms.uWorldViewProj, 1, gl.FALSE, mat32);
+			gl.uniformMatrix4fv(shFill.uniforms.uWorldViewProj, 1, gl.FALSE, transform_m32);
 
 			let buffers = pointcloud.glBuffers;
 
-			for(let i = 0; i < buffers.length; i++){
-				let buffer = buffers[i];
+			if(buffers.length === 1){
+				// if remaining budget larger than remaining points to end of buffer:
+				// - indirectCommand[0] specifies #points to render to end of buffer
+				// - indirectCommand[1] specifies #points to render form start of buffer
+				const buffer = buffers[0];
 
-				gl.uniform1i(shFill.uniforms.uOffset, i * 134 * 1000 * 1000);
+				gl.uniform1i(shFill.uniforms.uOffset, 0);
 
 				gl.bindVertexArray(buffer.vao);
 				gl.bindBuffer(gl.DRAW_INDIRECT_BUFFER, state.ssFillCommands);
 
-				gl.drawArraysIndirect(gl.POINTS, i * 4 * 4);
+				gl.drawArraysIndirect(gl.POINTS, 0 * 4 * 4);
+				gl.drawArraysIndirect(gl.POINTS, 1 * 4 * 4);
+			}else{
+				// if point cloud in more than one buffer (>134M points):
+				// indirectCommand[i]: range of points of buffer[i] to render
+				for(let i = 0; i < buffers.length; i++){
+					let buffer = buffers[i];
+
+					gl.uniform1i(shFill.uniforms.uOffset, i * 134 * 1000 * 1000);
+
+					gl.bindVertexArray(buffer.vao);
+					gl.bindBuffer(gl.DRAW_INDIRECT_BUFFER, state.ssFillCommands);
+
+					gl.drawArraysIndirect(gl.POINTS, i * 4 * 4);
+				}
 			}
 
 			gl.bindVertexArray(0);
@@ -310,15 +331,7 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 				gl.uniform1i(shFill.uniforms.uGradient, 0);
 			}
 
-			gl.uniformMatrix4fv(shFill.uniforms.uWorldViewProj, 1, gl.FALSE, mat32);
-
-			{
-				let buffers = new Uint32Array([
-					gl.COLOR_ATTACHMENT0, 
-					gl.COLOR_ATTACHMENT1,
-				]);
-				gl.drawBuffers(buffers.length, buffers);
-			}
+			gl.uniformMatrix4fv(shFill.uniforms.uWorldViewProj, 1, gl.FALSE, transform_m32);
 
 			let buffers = pointcloud.glBuffers;
 
@@ -345,7 +358,7 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 	}
 
 
-	let createVBO = () => { // CREATE VBO
+	const createVBO = () => { // CREATE VBO
 		GLTimerQueries.mark("render-progressive-ibo-start");
 
 		gl.useProgram(csCreateVBO.program);

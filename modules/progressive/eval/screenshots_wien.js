@@ -1,7 +1,7 @@
 
 if(!$("testcloud")){
 	
-	let las = loadLASProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v6_125M.las");
+	let las = loadLASProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v6_250M.las");
 
 	let pc = new PointCloudProgressive("testcloud", "blabla");
 
@@ -50,36 +50,51 @@ if(!$("testcloud")){
 
 	pc.glBuffers = glBuffers;
 
-	let s = 1.0;
+	let s = 1;
 	pc.transform.elements.set([
 		s, 0, 0, 0, 
 		0, 0, -s, 0, 
 		0, s, 0, 0, 
 		0, 0, 0, 1, 
 	]);
+	//let s = 0.005;
+	// pc.transform.elements.set([
+	// 	s, 0, 0, 0, 
+	// 	0, 0, -s, 0, 
+	// 	0, s, 0, 0, 
+	// 	-1, 0.5, 5.2, 1, 
+	// ]);
 
 
 
 	scene.root.add(pc);
-c
+
 	listeners.update.push(() => {
 		pc.numPoints = las.numPoints;
 	});
 
 }
 
+// local-scale
 view.set(
-	[342.979, 478.404, -49.588], 
-	[729.613, -101.396, -645.563]
+	[2293.161, 304.490, -1559.689], 
+	[2350.421, 215.178, -1474.114]
 );
+
+// large-scale
+// view.set(
+// 	[-408.491, 1650.091, -953.084], 
+// 	[994.767, 5.151, -944.529]
+// );
 
 // window.x = 0;
 // window.y = 0;
 // window.width = 1920;
 // window.height = 1080;
 
-MSAA_SAMPLES = 1;
+MSAA_SAMPLES = 16;
 EDL_ENABLED = true;
 
-renderDebug = renderPointCloudProgressive;
-//renderDebug = renderPointCloudBasic;
+
+// vr.start()
+

@@ -205,16 +205,16 @@ public:
 	ProgressiveBINLoader(string path) {
 
 		loader = new BINLoader(path);
-		prime = previousPrimeCongruent3mod4(loader->numPoints);
+		prime = uint32_t(previousPrimeCongruent3mod4(loader->numPoints));
 
-		int numBuffers = (loader->numPoints / maxPointsPerBuffer) + 1;
+		uint64_t numBuffers = (loader->numPoints / maxPointsPerBuffer) + 1;
 		if ((loader->numPoints % maxPointsPerBuffer) == 0) {
 			numBuffers = numBuffers - 1;
 		}
 
 		GLbitfield usage = GL_DYNAMIC_DRAW;
 
-		int pointsLeft = loader->numPoints;
+		uint64_t pointsLeft = loader->numPoints;
 		for (int i = 0; i < numBuffers; i++) {
 			int numPointsInBuffer = pointsLeft > maxPointsPerBuffer ? maxPointsPerBuffer : pointsLeft;
 
@@ -283,8 +283,8 @@ public:
 			return 0;
 		}
 
-		int chunkSize = chunk->size;
-		int numPoints = chunkSize / 16;
+		uint64_t chunkSize = chunk->size;
+		uint64_t numPoints = chunkSize / 16;
 
 		//{
 		//	GLint64 max;
@@ -330,7 +330,7 @@ public:
 				int a = 10;
 			}
 
-			int groups = ceil(double(numPoints) / 32.0);
+			uint32_t groups = uint32_t(ceil(double(numPoints) / 32.0));
 			glDispatchCompute(groups, 1, 1);
 
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
@@ -384,7 +384,7 @@ public:
 			auto uOffset = csDistribute->uniformLocations["uOffset"];
 			glUniform1i(uOffset, targetOffset);
 
-			int groups = ceil(double(chunkSize) / 32.0);
+			uint32_t groups = uint32_t(ceil(double(chunkSize) / 32.0));
 			glMemoryBarrier(GL_ALL_BARRIER_BITS);
 			glDispatchCompute(groups, 1, 1);
 			glMemoryBarrier(GL_ALL_BARRIER_BITS);
@@ -429,7 +429,7 @@ public:
 			auto uOffset = csDistribute->uniformLocations["uOffset"];
 			glUniform1i(uOffset, targetOffset);
 
-			int groups = ceil(double(chunkSize) / 32.0);
+			uint32_t groups = uint32_t(ceil(double(chunkSize) / 32.0));
 			glDispatchCompute(groups, 1, 1);
 
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);

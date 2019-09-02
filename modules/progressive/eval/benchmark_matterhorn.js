@@ -1,8 +1,8 @@
 
 if(!$("testcloud")){
 	
-	let las = loadLASProgressive("D:/dev/pointclouds/pix4d/matterhorn.las");
-	//let las = loadBINProgressive("D:/dev/pointclouds/pix4d/matterhorn.bin");
+	//let las = loadLASProgressive("D:/dev/pointclouds/pix4d/matterhorn.las");
+	let las = loadBINProgressive("D:/dev/pointclouds/pix4d/matterhorn.bin");
 
 	let pc = new PointCloudProgressive("testcloud", "blabla");
 
@@ -81,7 +81,7 @@ window.height = 1080;
 // window.width = 2560;
 // window.height = 1440;
 
-MSAA_SAMPLES = 8;
+MSAA_SAMPLES = 1;
 EDL_ENABLED = true;
 
 renderDebug = renderPointCloudProgressive;

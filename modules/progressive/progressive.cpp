@@ -11,6 +11,9 @@ using std::make_shared;
 
 static bool loadingLAS = false;
 
+// TODO bad
+static ProgressiveLoader* loader = nullptr;
+
 void binaryUploadHook(shared_ptr<BinLoadData> loadData) {
 
 	loadData->loader->uploadNextAvailableChunk();
@@ -102,7 +105,8 @@ void uploadHook(shared_ptr<LoadData> loadData) {
 
 shared_ptr<LoadData> loadLasProgressive(string file) {
 
-	ProgressiveLoader* loader = new ProgressiveLoader(file);
+	//ProgressiveLoader* loader = new ProgressiveLoader(file);
+	loader = new ProgressiveLoader(file);
 	shared_ptr<LoadData> load = make_shared<LoadData>();
 	load->tStartUpload = now();
 	//load.tStart = now();
@@ -126,74 +130,174 @@ shared_ptr<BinLoadData> loadBinProgressive(string file) {
 
 	return load;
 }
-//
-//V8Helper::_instance->registerFunction("loadLASProgressive", [](const FunctionCallbackInfo<Value>& args) {
-//	if (args.Length() != 1) {
-//		V8Helper::_instance->throwException("loadLASProgressive requires 1 arguments");
-//		return;
-//	}
-//
-//	String::Utf8Value fileUTF8(args[0]);
-//	string file = *fileUTF8;
-//
-//	startUpload = now();
-//	loadingLAS = true;
-//
-//
-//	loader = new ProgressiveLoader(file);
-//	auto duration = now() - startUpload;
-//	cout << "loader created after " << duration << "s" << endl;
-//
-//	auto isolate = Isolate::GetCurrent();
-//	Local<ObjectTemplate> lasTempl = ObjectTemplate::New(isolate);
-//	auto objLAS = lasTempl->NewInstance();
-//
-//	auto lNumPoints = v8::Integer::New(isolate, loader->loader->header.numPoints);
-//
-//	auto lHandles = Array::New(isolate, loader->ssVertexBuffers.size());
-//	for (int i = 0; i < loader->ssVertexBuffers.size(); i++) {
-//		auto lHandle = v8::Integer::New(isolate, loader->ssVertexBuffers[i]);
-//		lHandles->Set(i, lHandle);
-//	}
-//	objLAS->Set(String::NewFromUtf8(isolate, "handles"), lHandles);
-//	objLAS->Set(String::NewFromUtf8(isolate, "numPoints"), lNumPoints);
-//
-//	{
-//		Local<ObjectTemplate> boxTempl = ObjectTemplate::New(isolate);
-//		auto objBox = lasTempl->NewInstance();
-//
-//		auto& header = loader->loader->header;
-//
-//		auto lMin = Array::New(isolate, 3);
-//		lMin->Set(0, v8::Number::New(isolate, header.minX));
-//		lMin->Set(1, v8::Number::New(isolate, header.minY));
-//		lMin->Set(2, v8::Number::New(isolate, header.minZ));
-//
-//		auto lMax = Array::New(isolate, 3);
-//		lMax->Set(0, v8::Number::New(isolate, header.maxX));
-//		lMax->Set(1, v8::Number::New(isolate, header.maxY));
-//		lMax->Set(2, v8::Number::New(isolate, header.maxZ));
-//
-//		objBox->Set(String::NewFromUtf8(isolate, "min"), lMin);
-//		objBox->Set(String::NewFromUtf8(isolate, "max"), lMax);
-//
-//		objLAS->Set(String::NewFromUtf8(isolate, "boundingBox"), objBox);
-//	}
-//
-//
-//	auto pObjLAS = Persistent<Object, CopyablePersistentTraits<Object>>(isolate, objLAS);
-//
-//	duration = now() - startUpload;
-//	//cout << "uploadHook after " << duration << "s" << endl;
-//
-//	uploadHook(loader, pObjLAS);
-//
-//	duration = now() - startUpload;
-//	//cout << "returning value after " << duration << "s" << endl;
-//
-//	args.GetReturnValue().Set(objLAS);
-//});
 
+
+void setAttribute(vector<SetAttributeDescriptor> attributes) {
+
+	if (loader == nullptr) {
+		return;
+	}
+
+	static atomic<int> pointsUploaded = 0;
+	static atomic<int> chunkIndex = 0;
+
+	pointsUploaded = 0;
+	chunkIndex = 0;
+
+	// TODO creating mutex pointer ... baaad
+	mutex* mtx = new mutex();
+
+	auto setAttributeTask = [attributes, mtx]() {
+
+		auto lasloader = loader->loader;
+
+		auto findAttribute = [lasloader](string name, Points* chunk) {
+
+			auto attributes = chunk->attributes;
+
+			auto it = std::find_if(attributes.begin(), attributes.end(), [name](LASLoaderThreaded::Attribute& a) {
+				return a.name == name;
+			});
+
+			if (it == attributes.end()) {
+				return attributes[0];
+			} else {
+				return *it;
+			}
+		};
+
+		while (true) {
+
+			mtx->lock();
+
+			if (chunkIndex >= loader->chunks.size()) {
+				mtx->unlock();
+				break;
+			}
+
+			auto chunk = loader->chunks[chunkIndex];
+			chunkIndex++;
+			mtx->unlock();
+
+			int chunkSize = chunk->size;
+			void* data = malloc(chunkSize * 4);
+			uint32_t* target = reinterpret_cast<uint32_t*>(data);
+			uint8_t* tu8 = reinterpret_cast<uint8_t*>(target);
+			uint16_t* tu16 = reinterpret_cast<uint16_t*>(target);
+
+			int targetByteOffset = 0;
+			int packing = 4;
+			if (attributes.size() == 2) {
+				packing = 2;
+			}if (attributes.size() > 2) {
+				packing = 1;
+			}
+
+			for (SetAttributeDescriptor requestedAttribute : attributes) {
+
+				string name = requestedAttribute.name;
+				
+
+				auto attribute = findAttribute(requestedAttribute.name, chunk);
+
+				auto source = attribute.data->data;
+
+				if(requestedAttribute.useScaleOffset){
+					
+					double scale = requestedAttribute.scale;
+					double offset = requestedAttribute.offset;
+
+					if (attributes.size() == 1) {
+						if (attribute.elementSize == 1) {
+							ProgressiveLoader::transformAttribute<uint8_t, float>(source, target, chunkSize, scale, offset, targetByteOffset);
+						} else if (attribute.elementSize == 2) {
+							ProgressiveLoader::transformAttribute<uint16_t, float>(source, target, chunkSize, scale, offset, targetByteOffset);
+						} else if (attribute.elementSize == 4) {
+							ProgressiveLoader::transformAttribute<uint32_t, float>(source, target, chunkSize, scale, offset, targetByteOffset);
+						}
+					} else if (attributes.size() == 2) {
+						if (attribute.elementSize == 1) {
+							ProgressiveLoader::transformAttribute<uint8_t, uint16_t>(source, target, chunkSize, scale, offset, targetByteOffset);
+						} else if (attribute.elementSize == 2) {
+							ProgressiveLoader::transformAttribute<uint16_t, uint16_t>(source, target, chunkSize, scale, offset, targetByteOffset);
+						} else if (attribute.elementSize == 4) {
+							ProgressiveLoader::transformAttribute<uint32_t, uint16_t>(source, target, chunkSize, scale, offset, targetByteOffset);
+						}
+					} else if (attributes.size() > 2) {
+						if (attribute.elementSize == 1) {
+							ProgressiveLoader::transformAttribute<uint8_t, uint8_t>(source, target, chunkSize, scale, offset, targetByteOffset);
+						} else if (attribute.elementSize == 2) {
+							ProgressiveLoader::transformAttribute<uint16_t, uint8_t>(source, target, chunkSize, scale, offset, targetByteOffset);
+						} else if (attribute.elementSize == 4) {
+							ProgressiveLoader::transformAttribute<uint32_t, uint8_t>(source, target, chunkSize, scale, offset, targetByteOffset);
+						}
+					}
+				} else if (requestedAttribute.useRange) {
+
+					double start = requestedAttribute.rangeStart;
+					double end = requestedAttribute.rangeEnd;
+
+					if (attributes.size() == 1) {
+						if (attribute.elementSize == 1) {
+							ProgressiveLoader::transformAttributeRange<uint8_t, float>(source, target, chunkSize, start, end, targetByteOffset);
+						} else if (attribute.elementSize == 2) {
+							ProgressiveLoader::transformAttributeRange<uint16_t, float>(source, target, chunkSize, start, end, targetByteOffset);
+						} else if (attribute.elementSize == 4) {
+							ProgressiveLoader::transformAttributeRange<uint32_t, float>(source, target, chunkSize, start, end, targetByteOffset);
+						}
+					} else if (attributes.size() == 2) {
+						if (attribute.elementSize == 1) {
+							ProgressiveLoader::transformAttributeRange<uint8_t, uint16_t>(source, target, chunkSize, start, end, targetByteOffset);
+						} else if (attribute.elementSize == 2) {
+							ProgressiveLoader::transformAttributeRange<uint16_t, uint16_t>(source, target, chunkSize, start, end, targetByteOffset);
+						} else if (attribute.elementSize == 4) {
+							ProgressiveLoader::transformAttributeRange<uint32_t, uint16_t>(source, target, chunkSize, start, end, targetByteOffset);
+						}
+					} else if (attributes.size() > 2) {
+						if (attribute.elementSize == 1) {
+							ProgressiveLoader::transformAttributeRange<uint8_t, uint8_t>(source, target, chunkSize, start, end, targetByteOffset);
+						} else if (attribute.elementSize == 2) {
+							ProgressiveLoader::transformAttributeRange<uint16_t, uint8_t>(source, target, chunkSize, start, end, targetByteOffset);
+						} else if (attribute.elementSize == 4) {
+							ProgressiveLoader::transformAttributeRange<uint32_t, uint8_t>(source, target, chunkSize, start, end, targetByteOffset);
+						}
+					}
+				}
+
+				vector<int> values;
+				for (int abc = 0; abc < 100; abc++) {
+					values.push_back(tu8[abc]);
+				}
+
+
+				targetByteOffset += packing;
+			}
+
+			int offset = pointsUploaded;
+
+			schedule([data, target, offset, chunkSize]() {
+				loader->uploadChunkAttribute(target, offset, chunkSize);
+
+				free(data);
+				});
+
+			pointsUploaded += chunkSize;
+
+		}
+
+		//mtx->unlock();
+		//delete mtx;
+
+	};
+
+	thread t1(setAttributeTask);
+	//thread t2(setAttributeTask);
+	//thread t3(setAttributeTask);
+
+	t1.detach();
+	//t2.detach();
+	//t3.detach();
+}
 
 
 

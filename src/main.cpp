@@ -449,6 +449,66 @@ int main() {
 		args.GetReturnValue().Set(objLAS);
 	});
 
+	V8Helper::_instance->registerFunction("setAttribute", [](const FunctionCallbackInfo<Value>& args) {
+		if (args.Length() != 1) {
+			V8Helper::_instance->throwException("setAttribute requires 1 arguments");
+			return;
+		}
+
+		Isolate* isolate = Isolate::GetCurrent();
+
+		auto obj = args[0]->ToObject(isolate);
+		auto length = obj->Get(String::NewFromUtf8(isolate, "length"))->Uint32Value();
+		auto array = Local<Array>::Cast(args[0]);
+
+		vector<SetAttributeDescriptor> requestedAttributes;
+
+		for (int i = 0; i < length; i++) {
+			auto obji = array->Get(i)->ToObject(isolate);
+			auto strName = String::NewFromUtf8(isolate, "name", NewStringType::kNormal).ToLocalChecked();
+			auto strScale = String::NewFromUtf8(isolate, "scale", NewStringType::kNormal).ToLocalChecked();
+			auto strOffset = String::NewFromUtf8(isolate, "offset", NewStringType::kNormal).ToLocalChecked();
+			auto strRange = String::NewFromUtf8(isolate, "range", NewStringType::kNormal).ToLocalChecked();
+
+			Local<Value> bla = obji->Get(strName);
+			String::Utf8Value utf8Name(isolate, bla);
+
+			string name = *utf8Name;
+
+			bool hasScale = obji->Has(strScale);
+			bool hasRange = obji->Has(strRange);
+			
+			if (hasScale) {
+				double scale = obji->Get(strScale)->NumberValue();
+				double offset = obji->Get(strOffset)->NumberValue();
+
+				SetAttributeDescriptor a;
+				a.name = name;
+				a.useScaleOffset = true;
+				a.scale = scale;
+				a.offset = offset;
+				requestedAttributes.emplace_back(a);
+			} else if (hasRange) {
+
+				auto rangeArray = obji->Get(strRange).As<v8::Array>();
+
+				double rangeStart = rangeArray->Get(0)->NumberValue();
+				double rangeEnd = rangeArray->Get(1)->NumberValue();
+
+				SetAttributeDescriptor a;
+				a.name = name;
+				a.useRange = true;
+				a.rangeStart = rangeStart;
+				a.rangeEnd = rangeEnd;
+				requestedAttributes.emplace_back(a);
+			}
+
+			
+		}
+
+		setAttribute(requestedAttributes);
+	});
+
 	V8Helper::_instance->registerFunction("loadBINProgressive", [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
 			V8Helper::_instance->throwException("loadLBINProgressive requires 1 arguments");

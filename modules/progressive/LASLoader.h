@@ -102,17 +102,17 @@ namespace LASLoaderThreaded {
 
 	struct ExtraBytes {
 
-		uint8_t reserved[2];
-		uint8_t dataType;
-		uint8_t options;
-		int8_t name[32];
-		uint8_t unused[4];
-		uint8_t noData[24];
-		uint8_t min[24];
-		uint8_t max[24];
-		double scale[3];
-		double offset[3];
-		int8_t description[32];
+		uint8_t reserved[2] = {0, 0};
+		uint8_t dataType = 0;
+		uint8_t options = 0;
+		int8_t name[32] = {0};
+		uint8_t unused[4] = {0};
+		uint8_t noData[24] = {0};
+		uint8_t min[24] = {0};
+		uint8_t max[24] = {0};
+		double scale[3] = {0.0, 0.0, 0.0};
+		double offset[3] = {0.0, 0.0, 0.0};
+		int8_t description[32] = {0};
 
 		vector<int> dataTypeSizes = { 0, 1, 1, 2, 2, 4, 4, 8, 8, 4, 8, 2, 2, 4, 4, 8, 8, 16, 16, 8, 16, 3, 3, 6, 6, 12, 12, 24, 24, 12, 24 };
 
@@ -547,7 +547,7 @@ namespace LASLoaderThreaded {
 			int vlrHeaderSize = 54;
 			int offset = header.headerSize;
 
-			for (int i = 0; i < header.numVLRs; i++) {
+			for (uint32_t i = 0; i < header.numVLRs; i++) {
 				//fhandle.seekg(offset, std::ios::beg);
 				//setReadPos(offset);
 
@@ -933,7 +933,7 @@ namespace LASLoaderThreaded {
 
 						auto attributes = getAttributes();
 
-						int n = binaryChunk->size / uint64_t(header.pointDataRecordLength);
+						uint64_t n = binaryChunk->size / uint64_t(header.pointDataRecordLength);
 						Points* points = new Points();
 						points->size = n;
 						points->xyzrgba.reserve(n);
@@ -987,9 +987,9 @@ namespace LASLoaderThreaded {
 								XYZRGBA point;
 								XYZI32 pos = xyz[i];
 
-								point.x = double(pos.x) * header.scaleX + header.offsetX - header.minX;
-								point.y = double(pos.y) * header.scaleY + header.offsetY - header.minY;
-								point.z = double(pos.z) * header.scaleZ + header.offsetZ - header.minZ;
+								point.x = float(double(pos.x) * header.scaleX + header.offsetX - header.minX);
+								point.y = float(double(pos.y) * header.scaleY + header.offsetY - header.minY);
+								point.z = float(double(pos.z) * header.scaleZ + header.offsetZ - header.minZ);
 
 								point.r = aRed.data->dataU16[i] / 256;
 								point.g = aGreen.data->dataU16[i] / 256;

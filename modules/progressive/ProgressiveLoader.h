@@ -11,6 +11,7 @@
 #include <iostream>
 #include <algorithm>
 #include <sstream>
+#include <type_traits>
 
 #include "GL\glew.h"
 #include "GLFW\glfw3.h"
@@ -93,9 +94,9 @@ public:
 	ProgressiveLoader(string path) {
 
 		loader = new LASLoader(path);
-		prime = previousPrimeCongruent3mod4(loader->header.numPoints);
+		prime = uint32_t(previousPrimeCongruent3mod4(loader->header.numPoints));
 
-		int numBuffers = (loader->header.numPoints / maxPointsPerBuffer) + 1;
+		uint64_t numBuffers = (loader->header.numPoints / maxPointsPerBuffer) + 1;
 		if ((loader->header.numPoints % maxPointsPerBuffer) == 0) {
 			numBuffers = numBuffers - 1;
 		}
@@ -103,8 +104,8 @@ public:
 		//GLbitfield usage = GL_DYNAMIC_DRAW;
 		GLbitfield usage = GL_STATIC_DRAW;
 
-		int pointsLeft = loader->header.numPoints;
-		for (int i = 0; i < numBuffers; i++) {
+		uint64_t pointsLeft = loader->header.numPoints;
+		for (uint64_t i = 0; i < numBuffers; i++) {
 			int numPointsInBuffer = pointsLeft > maxPointsPerBuffer ? maxPointsPerBuffer : pointsLeft;
 
 			GLuint ssVertexBuffer;
@@ -223,18 +224,18 @@ public:
 			//	int a = 10;
 			//}
 
-			int groups = ceil(double(chunkSize) / 32.0);
+			uint32_t groups = uint32_t(ceil(double(chunkSize) / 32.0));
 			glDispatchCompute(groups, 1, 1);
 
-			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
+glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
 
-			for (int i = 0; i < ssVertexBuffers.size(); i++) {
-				glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2 + i, 0);
-			}
-			
-			glUseProgram(0);
+for (int i = 0; i < ssVertexBuffers.size(); i++) {
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2 + i, 0);
+}
 
-			glMemoryBarrier(GL_ALL_BARRIER_BITS);
+glUseProgram(0);
+
+glMemoryBarrier(GL_ALL_BARRIER_BITS);
 		}
 
 		GLTimerQueries::mark("loader.uploadChunk-end");
@@ -284,7 +285,7 @@ public:
 			auto uOffset = csDistribute->uniformLocations["uOffset"];
 			glUniform1i(uOffset, targetOffset);
 
-			int groups = ceil(double(chunkSize) / 32.0);
+			uint32_t groups = uint32_t(ceil(double(chunkSize) / 32.0));
 			glDispatchCompute(groups, 1, 1);
 
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
@@ -302,20 +303,46 @@ public:
 	}
 
 	template<typename SourceType, typename TargetType>
-	static void transformAttribute(void* sourceBuffer, void *targetBuffer, int numPoints, double scale, double offset, int targetByteOffset) {
+	static void transformAttribute(void* sourceBuffer, void* targetBuffer, int numPoints, double scale, double offset, int targetByteOffset) {
 
 		SourceType* source = reinterpret_cast<SourceType*>(sourceBuffer);
 		int32_t* target = reinterpret_cast<int32_t*>(targetBuffer);
 
 		for (int i = 0; i < numPoints; i++) {
-			TargetType value = double(source[i]) * scale + offset;
-
-			//target[i] = *reinterpret_cast<int32_t*>(&value);
+			double v = source[i];
+			TargetType value = v * scale + offset;
 
 			auto ptr = &reinterpret_cast<uint8_t*>(targetBuffer)[4 * i + targetByteOffset];
 			reinterpret_cast<TargetType*>(ptr)[0] = value;
 		}
+	}
 
+	template<typename SourceType, typename TargetType>
+	static void transformAttributeRange(void* sourceBuffer, void* targetBuffer, int numPoints, double start, double end, int targetByteOffset) {
+
+		SourceType* source = reinterpret_cast<SourceType*>(sourceBuffer);
+		int32_t* target = reinterpret_cast<int32_t*>(targetBuffer);
+
+		double rangeWidth = end - start;
+		double rangeModifier = 1.0;
+
+		if (std::is_floating_point_v<TargetType>){
+			rangeModifier = 1.0;
+		} else {
+			rangeModifier = std::pow(256.0, double(sizeof(TargetType)));
+		}
+		rangeModifier = rangeModifier / rangeWidth;
+
+		for (int i = 0; i < numPoints; i++) {
+			double v = source[i];
+			v = v > end ? end : v;
+			v = v < start ? start : v;
+
+			TargetType value = (v - start) * rangeModifier;
+
+			auto ptr = &reinterpret_cast<uint8_t*>(targetBuffer)[4 * i + targetByteOffset];
+			reinterpret_cast<TargetType*>(ptr)[0] = value;
+		}
 	}
 
 };

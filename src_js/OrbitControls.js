@@ -58,7 +58,7 @@ class OrbitControls{
 	}
 
 	onMouseDown(e){
-		log("down");
+		//log("down");
 		
 		if(e.button === MouseButton.LEFT){
 			this.rotationEnabled = true;
@@ -68,7 +68,7 @@ class OrbitControls{
 	}
 
 	onMouseUp(e){
-		log("up");
+		//log("up");
 
 		if(e.button === MouseButton.LEFT){
 			this.rotationEnabled = false;
