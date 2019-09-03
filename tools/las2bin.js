@@ -43,8 +43,14 @@ const fs = require('fs');
 // let offsetRGB = 20;
 
 // MORRO BAY
-let file = "D:/dev/pointclouds/open_topography/ca13/morro_bay.las";
-let targetFile = "D:/dev/pointclouds/open_topography/ca13/morro_bay.bin";
+// let file = "D:/dev/pointclouds/open_topography/ca13/morro_bay.las";
+// let targetFile = "D:/dev/pointclouds/open_topography/ca13/morro_bay.bin";
+// let offsetXYZ = 0;
+// let offsetRGB = 28;
+
+// MORRO BAY 1 BILLION
+let file = "D:/dev/pointclouds/open_topography/ca13/morro_bay_1billion.las";
+let targetFile = "D:/dev/pointclouds/open_topography/ca13/morro_bay_1billion.bin";
 let offsetXYZ = 0;
 let offsetRGB = 28;
 

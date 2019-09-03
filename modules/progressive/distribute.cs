@@ -31,6 +31,22 @@ layout(std430, binding = 5) buffer ssTargetBuffer3{
 	Vertex targetBuffer3[];
 };
 
+layout(std430, binding = 6) buffer ssTargetBuffer4{
+	Vertex targetBuffer4[];
+};
+
+layout(std430, binding = 7) buffer ssTargetBuffer5{
+	Vertex targetBuffer5[];
+};
+
+layout(std430, binding = 8) buffer ssTargetBuffer6{
+	Vertex targetBuffer6[];
+};
+
+layout(std430, binding = 9) buffer ssTargetBuffer7{
+	Vertex targetBuffer7[];
+};
+
 
 
 
@@ -111,17 +127,29 @@ void main(){
 
 	Vertex v = inputBuffer[inputIndex];
 
-	if(targetIndex < 134000000){
+	if(targetIndex < 134000000u){
 		targetBuffer0[targetIndex] = v;
-	}else if(targetIndex < 2 * 134000000){
-		targetIndex = targetIndex - 134000000;
+	}else if(targetIndex < 2u * 134000000u){
+		targetIndex = targetIndex - 1u * 134000000u;
 		targetBuffer1[targetIndex] = v;
-	}else if(targetIndex < 3 * 134000000){
-		targetIndex = targetIndex - 2 * 134000000;
+	}else if(targetIndex < 3u * 134000000u){
+		targetIndex = targetIndex - 2u * 134000000u;
 		targetBuffer2[targetIndex] = v;
-	}else if(targetIndex < 4 * 134000000){
-		targetIndex = targetIndex - 3 * 134000000;
+	}else if(targetIndex < 4u * 134000000u){
+		targetIndex = targetIndex - 3u * 134000000u;
 		targetBuffer3[targetIndex] = v;
+	}else if(targetIndex < 5u * 134000000u){
+		targetIndex = targetIndex - 4u * 134000000u;
+		targetBuffer4[targetIndex] = v;
+	}else if(targetIndex < 6u * 134000000u){
+		targetIndex = targetIndex - 5u * 134000000u;
+		targetBuffer5[targetIndex] = v;
+	}else if(targetIndex < 7u * 134000000u){
+		targetIndex = targetIndex - 6u * 134000000u;
+		targetBuffer6[targetIndex] = v;
+	}else if(targetIndex < 8u * 134000000u){
+		targetIndex = targetIndex - 7u * 134000000u;
+		targetBuffer7[targetIndex] = v;
 	}
 }
 

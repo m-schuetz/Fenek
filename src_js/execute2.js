@@ -281,7 +281,7 @@ if(typeof setAttribute !== "undefined"){
 
 	{ // large-scale
 		
-		setAttribute([{name: "Range", range: [820619, 1004861]}]);
+		//setAttribute([{name: "Range", range: [820619, 1004861]}]);
 
 		// setAttribute([
 		// 	{name: "BeamVectorX", range: [-2000, 2500]},

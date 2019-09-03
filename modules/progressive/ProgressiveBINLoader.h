@@ -59,6 +59,7 @@ public:
 		{
 			auto size = fs::file_size(file);
 			numPoints = size / 16;
+			//numPoints = numPoints > 400'000'000 ? 400'000'000 : numPoints;
 		}
 
 		createBinaryLoaderThread();

@@ -409,8 +409,12 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 
 		gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 1, 0);
 		gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 2, 0);
-		gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 3, 0);
-		gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 4, 0);
+
+		pointcloud.glBuffers.forEach( (buffer, i) => {
+			gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 3 + i, 0);
+		});
+		//gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 3, 0);
+		//gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 4, 0);
 
 		GLTimerQueries.mark("render-progressive-ibo-end");
 		GLTimerQueries.measure("render.progressive.p3_vbo", "render-progressive-ibo-start", "render-progressive-ibo-end");

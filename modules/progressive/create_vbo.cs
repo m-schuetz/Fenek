@@ -49,6 +49,21 @@ layout(std430, binding = 6) buffer ssSource3{
 	VertexS vbo3[];
 };
 
+layout(std430, binding = 7) buffer ssSource4{
+	VertexS vbo4[];
+};
+
+layout(std430, binding = 8) buffer ssSource5{
+	VertexS vbo5[];
+};
+
+layout(std430, binding = 9) buffer ssSource6{
+	VertexS vbo6[];
+};
+
+layout(std430, binding = 10) buffer ssSource7{
+	VertexS vbo7[];
+};
 
 
 void main() {
@@ -70,14 +85,22 @@ void main() {
 
 	uint maxPointsPerBuffer = 134 * 1000 * 1000;
 	VertexS vs;
-	if(vertexID < maxPointsPerBuffer){
+	if(vertexID < 1u * maxPointsPerBuffer){
 		vs = vbo0[vertexID];
-	}else if(vertexID < 2 * maxPointsPerBuffer){
-		vs = vbo1[vertexID - maxPointsPerBuffer];
-	}else if(vertexID < 3 * maxPointsPerBuffer){
-		vs = vbo2[vertexID - 2 * maxPointsPerBuffer];
-	}else if(vertexID < 4 * maxPointsPerBuffer){
-		vs = vbo3[vertexID - 3 * maxPointsPerBuffer];
+	}else if(vertexID < 2u * maxPointsPerBuffer){
+		vs = vbo1[vertexID - 1u * maxPointsPerBuffer];
+	}else if(vertexID < 3u * maxPointsPerBuffer){
+		vs = vbo2[vertexID - 2u * maxPointsPerBuffer];
+	}else if(vertexID < 4u * maxPointsPerBuffer){
+		vs = vbo3[vertexID - 3u * maxPointsPerBuffer];
+	}else if(vertexID < 5u * maxPointsPerBuffer){
+		vs = vbo4[vertexID - 4u * maxPointsPerBuffer];
+	}else if(vertexID < 6u * maxPointsPerBuffer){
+		vs = vbo5[vertexID - 5u * maxPointsPerBuffer];
+	}else if(vertexID < 7u * maxPointsPerBuffer){
+		vs = vbo6[vertexID - 6u * maxPointsPerBuffer];
+	}else if(vertexID < 8u * maxPointsPerBuffer){
+		vs = vbo7[vertexID - 7u * maxPointsPerBuffer];
 	}
 
 	VertexT vt;
