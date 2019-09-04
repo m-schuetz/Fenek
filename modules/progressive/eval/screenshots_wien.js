@@ -57,7 +57,8 @@ if(!$("testcloud")){
 		0, s, 0, 0, 
 		0, 0, 0, 1, 
 	]);
-	//let s = 0.005;
+
+	// let s = 0.005;
 	// pc.transform.elements.set([
 	// 	s, 0, 0, 0, 
 	// 	0, 0, -s, 0, 
@@ -92,9 +93,9 @@ view.set(
 // window.width = 1920;
 // window.height = 1080;
 
-MSAA_SAMPLES = 16;
+MSAA_SAMPLES = 1;
 EDL_ENABLED = true;
 
 
-// vr.start()
+//vr.start()
 

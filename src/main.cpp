@@ -587,7 +587,7 @@ int main() {
 			}
 
 			// write state to self-refreshing html file
-			writeState();
+			//writeState();
 
 			tPreviousFPSMeasure = tCurrent;
 			fpsCounter = 0;
