@@ -87,7 +87,7 @@ getRenderProgressiveState = function(target){
 		}
 
 		let csCreateVBO = null;
-		{ // create IBO shader
+		{ // create VBO shader
 			let path = `${rootDir}/modules/progressive/create_vbo.cs`;
 			let shader = new Shader([{type: gl.COMPUTE_SHADER, path: path}]);
 			shader.watch();
