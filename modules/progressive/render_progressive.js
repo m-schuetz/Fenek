@@ -1,7 +1,7 @@
 
 fillToggle = 0;
 
-dynamicFillBudgetEnabled = false;
+dynamicFillBudgetEnabled = true;
 
 getRenderProgressiveState = function(target){
 
@@ -125,42 +125,20 @@ getRenderProgressiveState = function(target){
 	return renderProgressiveMap.get(target);
 };
 
-renderPointCloudProgressive = function(pointcloud, view, proj, target){
+renderPointCloudProgressive = (function(){
 
-	GLTimerQueries.mark("render-progressive-start");
+	const reproject = function(target, pointcloud, view, proj){
 
-	let state = getRenderProgressiveState(target);
-	let {shReproject, shFill, csCreateVBO} = state;
-	let {ssIndirectCommand, ssTimestamps, reprojectBuffer, fboPrev} = state;
+		let state = getRenderProgressiveState(target);
+		let {shReproject, shFill, csCreateVBO} = state;
+		let {ssIndirectCommand, ssTimestamps, reprojectBuffer, fboPrev} = state;
 
-	if(!pointcloud){
-		return;
-	}
+		const transform_m32 = new Float32Array(16);
+		const transform = new Matrix4();
+		const world = pointcloud.transform;
+		transform.multiply(proj).multiply(view).multiply(world);
+		transform_m32.set(transform.elements);
 
-	{ // write start timestamp to ssTimestamps
-		let qtStart = gl.createQuery();
-		gl.queryCounter(qtStart, gl.TIMESTAMP);
-		gl.bindBuffer(gl.QUERRY_BUFFER, ssTimestamps);
-		gl.getQueryObjectui64Indirect(qtStart, gl.QUERY_RESULT, 0);
-		gl.bindBuffer(gl.QUERRY_BUFFER, 0);
-		gl.deleteQuery(qtStart);
-	}
-
-	{ // second color attachment for indices
-		let buffers = new Uint32Array([
-			gl.COLOR_ATTACHMENT0, 
-			gl.COLOR_ATTACHMENT1,
-		]);
-		gl.drawBuffers(buffers.length, buffers);
-	}
-
-	const transform_m32 = new Float32Array(16);
-	const transform = new Matrix4();
-	const world = pointcloud.transform;
-	transform.multiply(proj).multiply(view).multiply(world);
-	transform_m32.set(transform.elements);
-
-	const reproject = () => { // REPROJECT
 		GLTimerQueries.mark("render-progressive-reproject-start");
 		gl.useProgram(shReproject.program);
 
@@ -183,90 +161,108 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 		GLTimerQueries.measure("render.progressive.p1_reproject", "render-progressive-reproject-start", "render-progressive-reproject-end");
 	}
 
-	const fillFixed = () => { // FILL PASS
-		{ 
-			GLTimerQueries.mark("render-progressive-add-start");
-			gl.useProgram(shFill.program);
+	const fillFixed = function(target, pointcloud, view, proj){ 
 
-			gl.activeTexture(gl.TEXTURE0);
-			gl.bindTexture(gradientTexture.type, gradientTexture.handle);
-			if(shFill.uniforms.uGradient){
-				gl.uniform1i(shFill.uniforms.uGradient, 0);
+		let state = getRenderProgressiveState(target);
+		let {shReproject, shFill, csCreateVBO} = state;
+		let {ssIndirectCommand, ssTimestamps, reprojectBuffer, fboPrev} = state;
+
+		const transform_m32 = new Float32Array(16);
+		const transform = new Matrix4();
+		const world = pointcloud.transform;
+		transform.multiply(proj).multiply(view).multiply(world);
+		transform_m32.set(transform.elements);
+
+		GLTimerQueries.mark("render-progressive-add-start");
+		gl.useProgram(shFill.program);
+
+		gl.activeTexture(gl.TEXTURE0);
+		gl.bindTexture(gradientTexture.type, gradientTexture.handle);
+		if(shFill.uniforms.uGradient){
+			gl.uniform1i(shFill.uniforms.uGradient, 0);
+		}
+
+		gl.uniformMatrix4fv(shFill.uniforms.uWorldViewProj, 1, gl.FALSE, transform_m32);
+
+		let buffers = pointcloud.glBuffers;
+
+		if(buffers.length === 1){
+			const buffer = buffers[0];
+
+			gl.bindVertexArray(buffer.vao);
+
+			let remainingBudget = 1000 * 1000;
+			let leftToEndOfBuffer = (pointcloud.numPoints - state.fillOffset);
+			
+			{ // draw towards end of buffer
+				let count = Math.min(remainingBudget, leftToEndOfBuffer);
+				gl.uniform1i(shFill.uniforms.uOffset, 0);
+				gl.drawArrays(gl.POINTS, state.fillOffset, count);
+				//log(`${state.fillOffset}, ${count}`);
+				state.fillOffset = (state.fillOffset + count) % pointcloud.numPoints;
+				remainingBudget = remainingBudget - count;
+
 			}
 
-			gl.uniformMatrix4fv(shFill.uniforms.uWorldViewProj, 1, gl.FALSE, transform_m32);
+			{ //log(`${state.fillOffset}, ${count}`); draw potential remaining budget from beginning of buffer
+				let count = remainingBudget;
+				gl.uniform1i(shFill.uniforms.uOffset, 0);
+				gl.drawArrays(gl.POINTS, state.fillOffset, count);
+				//log(`${state.fillOffset}, ${count}`);
+				state.fillOffset += count;
 
+			}
+
+		}else{
+
+			let remainingBudget = 1000 * 1000;
+			let maxChunkSize = 134 * 1000 * 1000;
 			let buffers = pointcloud.glBuffers;
+			let cumChunkOffsets = [0];
+			let cumChunkSizes = [buffers[0].count];
+			for(let i = 1; i < buffers.length; i++){
+				cumChunkOffsets.push(cumChunkOffsets[i - 1] + buffers[i - 1].count);
+				cumChunkSizes.push(cumChunkSizes[i - 1] + buffers[i].count);
+			}
 
-			if(buffers.length === 1){
-				const buffer = buffers[0];
+			while(remainingBudget > 0){
+
+				let offset = state.fillOffset;
+				let chunkIndex = parseInt(offset / maxChunkSize) % pointcloud.numPoints;
+				let count = Math.min(remainingBudget, cumChunkSizes[chunkIndex] - offset);
+				let buffer = buffers[chunkIndex];
+
+				//log(offset + ", " + maxChunkSize + ", " + count + ", " + pointcloud.numPoints);
+				//log(cumChunkOffsets[chunkIndex]);
 
 				gl.bindVertexArray(buffer.vao);
 
-				let remainingBudget = 10000000;
-				let leftToEndOfBuffer = (pointcloud.numPoints - state.fillOffset);
-				
-				{ // draw towards end of buffer
-					let count = Math.min(remainingBudget, leftToEndOfBuffer);
-					gl.uniform1i(shFill.uniforms.uOffset, 0);
-					gl.drawArrays(gl.POINTS, state.fillOffset, count);
-					//log(`${state.fillOffset}, ${count}`);
-					state.fillOffset = (state.fillOffset + count) % pointcloud.numPoints;
-					remainingBudget = remainingBudget - count;
+				gl.uniform1i(shFill.uniforms.uOffset, cumChunkOffsets[chunkIndex]);
+				gl.drawArrays(gl.POINTS, state.fillOffset - cumChunkOffsets[chunkIndex], count);
 
-				}
-
-				{ //log(`${state.fillOffset}, ${count}`); draw potential remaining budget from beginning of buffer
-					let count = remainingBudget;
-					gl.uniform1i(shFill.uniforms.uOffset, 0);
-					gl.drawArrays(gl.POINTS, state.fillOffset, count);
-					//log(`${state.fillOffset}, ${count}`);
-					state.fillOffset += count;
-
-				}
-
-			}else{
-
-				let remainingBudget = 30000000;
-				let maxChunkSize = 134 * 1000 * 1000;
-				let buffers = pointcloud.glBuffers;
-				let cumChunkOffsets = [0];
-				let cumChunkSizes = [buffers[0].count];
-				for(let i = 1; i < buffers.length; i++){
-					cumChunkOffsets.push(cumChunkOffsets[i - 1] + buffers[i - 1].count);
-					cumChunkSizes.push(cumChunkSizes[i - 1] + buffers[i].count);
-				}
-
-				while(remainingBudget > 0){
-
-					let offset = state.fillOffset;
-					let chunkIndex = parseInt(offset / maxChunkSize) % pointcloud.numPoints;
-					let count = Math.min(remainingBudget, cumChunkSizes[chunkIndex] - offset);
-					let buffer = buffers[chunkIndex];
-
-					//log(offset + ", " + maxChunkSize + ", " + count + ", " + pointcloud.numPoints);
-					//log(cumChunkOffsets[chunkIndex]);
-
-					gl.bindVertexArray(buffer.vao);
-
-					gl.uniform1i(shFill.uniforms.uOffset, cumChunkOffsets[chunkIndex]);
-					gl.drawArrays(gl.POINTS, state.fillOffset - cumChunkOffsets[chunkIndex], count);
-
-					remainingBudget -= count;
-					state.fillOffset = (state.fillOffset + count) % pointcloud.numPoints;
-				}
-
+				remainingBudget -= count;
+				state.fillOffset = (state.fillOffset + count) % pointcloud.numPoints;
 			}
 
-			gl.bindVertexArray(0);
-
-			GLTimerQueries.mark("render-progressive-add-end");
-			GLTimerQueries.measure("render.progressive.p2_fill.render_fixed", "render-progressive-add-start", "render-progressive-add-end");
 		}
 
+		gl.bindVertexArray(0);
+
+		GLTimerQueries.mark("render-progressive-add-end");
+		GLTimerQueries.measure("render.progressive.p2_fill.render_fixed", "render-progressive-add-start", "render-progressive-add-end");
 	}
 
-	const fillDynamic = () => { // FILL PASS
+	const fillDynamic = function(target, pointcloud, view, proj){
+
+		let state = getRenderProgressiveState(target);
+		let {shReproject, shFill, csCreateVBO} = state;
+		let {ssIndirectCommand, ssTimestamps, reprojectBuffer, fboPrev} = state;
+
+		const transform_m32 = new Float32Array(16);
+		const transform = new Matrix4();
+		const world = pointcloud.transform;
+		transform.multiply(proj).multiply(view).multiply(world);
+		transform_m32.set(transform.elements);
 
 		GLTimerQueries.mark("render-progressive-fill-start");
 
@@ -452,7 +448,11 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 	}
 
 
-	const createVBO = () => { // CREATE VBO
+	const createVBO = function(target, pointcloud, view, proj){ 
+		
+		let state = getRenderProgressiveState(target);
+		let {shReproject, shFill, csCreateVBO} = state;
+		let {ssIndirectCommand, ssTimestamps, reprojectBuffer, fboPrev} = state;
 
 		//const target = fboPrev;
 		GLTimerQueries.mark("render-progressive-ibo-start");
@@ -519,189 +519,118 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 		//	setDebugValue("gl.render.progressive.ibo", `${ms}ms`);
 		//});
 
-	}
+	};
+	
+	
+	return function(pointcloud, view, proj, target){
 
-	// log(1);
+		GLTimerQueries.mark("render-progressive-start");
 
-	reproject();
-	fillFixed();
-	//fillDynamic();
-	createVBO();
+		let state = getRenderProgressiveState(target);
+		let {shReproject, shFill, csCreateVBO} = state;
+		let {ssIndirectCommand, ssTimestamps, reprojectBuffer, fboPrev} = state;
 
-	//if(fillToggle === 0){
-	//	fill();
-	//	createVBO();
-	//	//fillToggle++;
-	//}else{
-	//	fill();
-	//	//createVBO();
-	//}
-
-
-	//let doLog = (frameCount % 1000) === 0 || (frameCount % 1000) === 1;
-	// print estimated point budget
-	if(true){
-		gl.memoryBarrier(gl.ALL_BARRIER_BITS);
-		// taken from https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
-		const numberWithCommas = (x) => {
-			return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+		if(!pointcloud){
+			return;
 		}
 
-		let resultBuffer = new ArrayBuffer(10 * 5 * 4);
-		gl.getNamedBufferSubData(state.ssFillCommands, 0, resultBuffer.byteLength, resultBuffer);
-		let view = new DataView(resultBuffer);
-
-		let estimate = view.getUint32(5 * 16, true);
-
-		if(typeof estimates === "undefined"){
-			estimates = [];
-		}
-		estimates.push({
-			estimate: estimate,
-			timestamp: now(),
-		});
-
-		//log(estimates.length);
-		estimates = estimates.filter(e => e.timestamp > now() - 1);
-		//log(estimates.length);
-
-		const values = estimates.map(e => e.estimate);
-		const sum = values.reduce( (a, i) => a + i, 0);
-		const max = Math.max(...values);
-		const min = Math.min(...values);
-		const median = estimates.length > 0 ? values.sort()[Math.ceil(estimates.length / 2)] : Infinity;
-		const mean = sum / estimates.length;
-
-		const sMin = (parseInt(min));
-		const sMax = (parseInt(max));
-		const sMean = (parseInt(mean));
-		const sMedian = (parseInt(median));
-		const msg = `{"mean": ${sMean}, "min": ${sMin}, "max": ${sMax}, "median": ${sMedian}}`;
-		//log();
-		setDebugValue("progressive dyn budget", msg);
-
-		//log(numberWithCommas(estimate));
-	}
-
-	{
-		const format = "${reproject}\t${fillFixed}\t${fillBudget}\t${fillRemaining}\t${fill}\t${vbo}\t${progressive}";
-		const html = `</pre>
-		<script>
-		function copyProgressive(){
-
-			const progressive = JSON.parse(getEntry("gl.render.progressive")).mean;
-			const reproject = JSON.parse(getEntry("gl.render.progressive.p1_reproject")).mean;
-			const fill = JSON.parse(getEntry("gl.render.progressive.p2_fill")).mean;
-			const fillFixed = JSON.parse(getEntry("gl.render.progressive.p2_fill.render_fixed")).mean;
-			const fillRemaining = JSON.parse(getEntry("gl.render.progressive.p2_fill.render_remaining")).mean;
-			const fillBudget = JSON.parse(getEntry("progressive dyn budget")).mean;
-			const vbo = JSON.parse(getEntry("gl.render.progressive.p3_vbo")).mean;
-			const msg = \`${format}\`;
-
-			clipboardCopy(msg);
-		}
-		</script>
-		<input type="button" value="copy benchmark to clipboard" onclick='copyProgressive()'></input>
-		<pre>`;
-
-		setDebugValue("z.bench.progressive", html);
-
-
-	}
-
-	if(false){
-		gl.memoryBarrier(gl.ALL_BARRIER_BITS);
-		// taken from https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
-		const numberWithCommas = (x) => {
-			return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+		{ // write start timestamp to ssTimestamps
+			let qtStart = gl.createQuery();
+			gl.queryCounter(qtStart, gl.TIMESTAMP);
+			gl.bindBuffer(gl.QUERRY_BUFFER, ssTimestamps);
+			gl.getQueryObjectui64Indirect(qtStart, gl.QUERY_RESULT, 0);
+			gl.bindBuffer(gl.QUERRY_BUFFER, 0);
+			gl.deleteQuery(qtStart);
 		}
 
-		let resultBuffer = new ArrayBuffer(16);
-		gl.getNamedBufferSubData(state.ssTimestamps, 0, resultBuffer.byteLength, resultBuffer);
-		let view = new DataView(resultBuffer);
+		{ // second color attachment for indices
+			let buffers = new Uint32Array([
+				gl.COLOR_ATTACHMENT0, 
+				gl.COLOR_ATTACHMENT1,
+			]);
+			gl.drawBuffers(buffers.length, buffers);
+		}
+		
+		reproject(target, pointcloud, view, proj);
+		//fillFixed(target, pointcloud, view, proj);
+		fillDynamic(target, pointcloud, view, proj);
+		createVBO(target, pointcloud, view, proj);
 
-		//log("====");
+		if(true){
+			gl.memoryBarrier(gl.ALL_BARRIER_BITS);
+			// taken from https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
+			const numberWithCommas = (x) => {
+				return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+			}
 
-		let estimate = view.getUint32(4, true);
-		log(estimate);
-	
+			let resultBuffer = new ArrayBuffer(10 * 5 * 4);
+			gl.getNamedBufferSubData(state.ssFillCommands, 0, resultBuffer.byteLength, resultBuffer);
+			let view = new DataView(resultBuffer);
 
-		//for(let i = 0; i < pointcloud.glBuffers.length; i++){
+			let estimate = view.getUint32(5 * 16, true);
 
-		//	let count =      view.getInt32(i * 4 * 4 + 0, true);
-		//	let primCount =  view.getInt32(i * 4 * 4 + 4, true);
-		//	let first =      view.getInt32(i * 4 * 4 + 8, true);
+			if(typeof estimates === "undefined"){
+				estimates = [];
+			}
+			estimates.push({
+				estimate: estimate,
+				timestamp: now(),
+			});
 
-		//	//if(count > 0){
-		//		log(`${i}: ${numberWithCommas(count)}, ${primCount}, ${numberWithCommas(first)}`);
-		//	//}
+			//log(estimates.length);
+			estimates = estimates.filter(e => e.timestamp > now() - 1);
+			//log(estimates.length);
 
-		//}
+			const values = estimates.map(e => e.estimate);
+			const sum = values.reduce( (a, i) => a + i, 0);
+			const max = Math.max(...values);
+			const min = Math.min(...values);
+			const median = estimates.length > 0 ? values.sort()[Math.ceil(estimates.length / 2)] : Infinity;
+			const mean = sum / estimates.length;
 
-		// let acceptedCount = new DataView(resultBuffer).getUint32(2 * 4, true);
-	
+			const sMin = (parseInt(min));
+			const sMax = (parseInt(max));
+			const sMean = (parseInt(mean));
+			const sMedian = (parseInt(median));
+			const msg = `{"mean": ${sMean}, "min": ${sMin}, "max": ${sMax}, "median": ${sMedian}}`;
+			//log();
+			setDebugValue("progressive dyn budget", msg);
 
-		// let key = `accepted (${pointcloud.name})`;
-		// log(key + ": " + numberWithCommas(acceptedCount));
-	}
-
-	if(false){
-		gl.memoryBarrier(gl.ALL_BARRIER_BITS);
-		// taken from https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
-		const numberWithCommas = (x) => {
-			return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+			//log(numberWithCommas(estimate));
 		}
 
-		let resultBuffer = new ArrayBuffer(10000 * 4);
-		let resI32 = new Uint32Array(resultBuffer);
-		gl.getNamedBufferSubData(22, 0, resultBuffer.byteLength, resultBuffer);
+		{
+			const format = "${reproject}\t${fillFixed}\t${fillBudget}\t${fillRemaining}\t${fill}\t${vbo}\t${progressive}";
+			const html = `</pre>
+			<script>
+			function copyProgressive(){
 
-		//log(resI32);
-		let a = Array.from(resI32);
+				const progressive = JSON.parse(getEntry("gl.render.progressive")).mean;
+				const reproject = JSON.parse(getEntry("gl.render.progressive.p1_reproject")).mean;
+				const fill = JSON.parse(getEntry("gl.render.progressive.p2_fill")).mean;
+				const fillFixed = JSON.parse(getEntry("gl.render.progressive.p2_fill.render_fixed")).mean;
+				const fillRemaining = JSON.parse(getEntry("gl.render.progressive.p2_fill.render_remaining")).mean;
+				const fillBudget = JSON.parse(getEntry("progressive dyn budget")).mean;
+				const vbo = JSON.parse(getEntry("gl.render.progressive.p3_vbo")).mean;
+				const msg = \`${format}\`;
 
-		let max = Math.max(...a);
-		let min = Math.min(...a);
+				clipboardCopy(msg);
+			}
+			</script>
+			<input type="button" value="copy benchmark to clipboard" onclick='copyProgressive()'></input>
+			<pre>`;
 
-		//log(a)
+			setDebugValue("z.bench.progressive", html);
 
-		//log(new Array(resI32));
 
-		log(`targetCounts - max: ${max}, min: ${min}`);
-	
-		let acceptedCount = new DataView(resultBuffer).getInt32(0, true);
-		//log("=====");
-		//log("accepted: " + numberWithCommas(acceptedCount));
+		}
+		
+		gl.useProgram(0);
 
-		let key = `accepted (${pointcloud.name})`;
-		//log(key + ": " + numberWithCommas(acceptedCount));
-		//setDebugValue("accepted", numberWithCommas(acceptedCount));
-		//log(numberWithCommas(acceptedCount));
+		GLTimerQueries.mark("render-progressive-end");
+		GLTimerQueries.measure("render.progressive", "render-progressive-start", "render-progressive-end");
 	}
 
-	
-	gl.useProgram(0);
-
-	// fboPrev.setSize(target.width, target.height);
-	// fboPrev.setNumColorAttachments(target.numColorAttachments);
-	// fboPrev.setSamples(target.samples);
-
-	
-	// gl.namedFramebufferReadBuffer(target.handle, gl.COLOR_ATTACHMENT1);
-	// gl.namedFramebufferDrawBuffer(fboPrev.handle, gl.COLOR_ATTACHMENT1);
-
-	// gl.blitNamedFramebuffer(target.handle, fboPrev.handle, 
-	// 	0, 0, target.width, target.height, 
-	// 	0, 0, fboPrev.width, fboPrev.height, 
-	// 	gl.COLOR_BUFFER_BIT, gl.LINEAR);
-
-	// gl.namedFramebufferReadBuffer(target.handle, 0);
-	// gl.namedFramebufferDrawBuffer(fboPrev.handle, 0);
-
- 
-
-	GLTimerQueries.mark("render-progressive-end");
-	GLTimerQueries.measure("render.progressive", "render-progressive-start", "render-progressive-end");
-
-};
+})();
 
 "render_progressive.js"
