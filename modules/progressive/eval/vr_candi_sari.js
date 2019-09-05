@@ -1,7 +1,8 @@
 
 if(!$("testcloud")){
 	
-	let las = loadLASProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v6_250M.las");
+	let las = loadBINProgressive("D:/dev/pointclouds/tuwien_baugeschichte/Candi Sari_las export/candi_sari.bin");
+	//let las = loadLASProgressive("D:/dev/pointclouds/tuwien_baugeschichte/Candi Sari_las export/candi_sari.las");
 
 	let pc = new PointCloudProgressive("testcloud", "blabla");
 
@@ -50,7 +51,7 @@ if(!$("testcloud")){
 
 	pc.glBuffers = glBuffers;
 
-	// let s = 1;
+	// let s = 1.0;
 	// pc.transform.elements.set([
 	// 	s, 0, 0, 0, 
 	// 	0, 0, -s, 0, 
@@ -58,15 +59,13 @@ if(!$("testcloud")){
 	// 	0, 0, 0, 1, 
 	// ]);
 
-	let s = 0.005;
+	let s = 1.0;
 	pc.transform.elements.set([
 		s, 0, 0, 0, 
 		0, 0, -s, 0, 
 		0, s, 0, 0, 
-		-1, 0.5, 5.2, 1, 
+		-147, -85, 163, 1, 
 	]);
-
-
 
 	scene.root.add(pc);
 
@@ -74,19 +73,22 @@ if(!$("testcloud")){
 		pc.numPoints = las.numPoints;
 	});
 
+}else{
+	const pc = $("testcloud");
+
+	let s = 1.0;
+	pc.transform.elements.set([
+		s, 0, 0, 0, 
+		0, 0, -s, 0, 
+		0, s, 0, 0, 
+		-147, -85, 163, 1, 
+	]);
 }
 
-// local-scale
 view.set(
-	[2293.161, 304.490, -1559.689], 
-	[2350.421, 215.178, -1474.114]
+	[130.730, 98.314, -147.144], 
+	[145.004, 86.113, -166.498]
 );
-
-// large-scale
-// view.set(
-// 	[-408.491, 1650.091, -953.084], 
-// 	[994.767, 5.151, -944.529]
-// );
 
 // window.x = 0;
 // window.y = 0;
@@ -96,6 +98,7 @@ view.set(
 MSAA_SAMPLES = 4;
 EDL_ENABLED = true;
 
+//renderDebug = renderPointCloudProgressive;
+//renderDebug = renderPointCloudBasic;
 
-//vr.start()
-
+vr.start();

@@ -18,6 +18,7 @@ monitorJS(`${rootDir}/modules/progressive/eval/benchmark_matterhorn.js`);
 monitorJS(`${rootDir}/modules/progressive/eval/benchmark_morro_bay.js`);
 monitorJS(`${rootDir}/modules/progressive/eval/benchmark_morro_bay_1billion.js`);
 monitorJS(`${rootDir}/modules/progressive/eval/screenshots_wien.js`);
-monitorJS(`${rootDir}/modules/progressive/eval/wien_vr.js`);
+monitorJS(`${rootDir}/modules/progressive/eval/vr_wien.js`);
+monitorJS(`${rootDir}/modules/progressive/eval/vr_candi_sari.js`);
 
 "module progressive";

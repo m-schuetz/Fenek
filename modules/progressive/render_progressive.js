@@ -1,5 +1,4 @@
 
-
 fillToggle = 0;
 
 dynamicFillBudgetEnabled = false;
@@ -110,7 +109,8 @@ getRenderProgressiveState = function(target){
 			csCreateVBO: csCreateVBO,
 
 			reprojectBuffer: reprojectBuffer,
-			round: 0, 
+			round: 0,
+			fillOffset: 0,
 			fboPrev: fboPrev,
 			pointclouds: new Map(),
 		};
@@ -183,11 +183,96 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 		GLTimerQueries.measure("render.progressive.p1_reproject", "render-progressive-reproject-start", "render-progressive-reproject-end");
 	}
 
-	const fill = () => { // FILL PASS
+	const fillFixed = () => { // FILL PASS
+		{ 
+			GLTimerQueries.mark("render-progressive-add-start");
+			gl.useProgram(shFill.program);
+
+			gl.activeTexture(gl.TEXTURE0);
+			gl.bindTexture(gradientTexture.type, gradientTexture.handle);
+			if(shFill.uniforms.uGradient){
+				gl.uniform1i(shFill.uniforms.uGradient, 0);
+			}
+
+			gl.uniformMatrix4fv(shFill.uniforms.uWorldViewProj, 1, gl.FALSE, transform_m32);
+
+			let buffers = pointcloud.glBuffers;
+
+			if(buffers.length === 1){
+				const buffer = buffers[0];
+
+				gl.bindVertexArray(buffer.vao);
+
+				let remainingBudget = 10000000;
+				let leftToEndOfBuffer = (pointcloud.numPoints - state.fillOffset);
+				
+				{ // draw towards end of buffer
+					let count = Math.min(remainingBudget, leftToEndOfBuffer);
+					gl.uniform1i(shFill.uniforms.uOffset, 0);
+					gl.drawArrays(gl.POINTS, state.fillOffset, count);
+					//log(`${state.fillOffset}, ${count}`);
+					state.fillOffset = (state.fillOffset + count) % pointcloud.numPoints;
+					remainingBudget = remainingBudget - count;
+
+				}
+
+				{ //log(`${state.fillOffset}, ${count}`); draw potential remaining budget from beginning of buffer
+					let count = remainingBudget;
+					gl.uniform1i(shFill.uniforms.uOffset, 0);
+					gl.drawArrays(gl.POINTS, state.fillOffset, count);
+					//log(`${state.fillOffset}, ${count}`);
+					state.fillOffset += count;
+
+				}
+
+			}else{
+
+				let remainingBudget = 30000000;
+				let maxChunkSize = 134 * 1000 * 1000;
+				let buffers = pointcloud.glBuffers;
+				let cumChunkOffsets = [0];
+				let cumChunkSizes = [buffers[0].count];
+				for(let i = 1; i < buffers.length; i++){
+					cumChunkOffsets.push(cumChunkOffsets[i - 1] + buffers[i - 1].count);
+					cumChunkSizes.push(cumChunkSizes[i - 1] + buffers[i].count);
+				}
+
+				while(remainingBudget > 0){
+
+					let offset = state.fillOffset;
+					let chunkIndex = parseInt(offset / maxChunkSize) % pointcloud.numPoints;
+					let count = Math.min(remainingBudget, cumChunkSizes[chunkIndex] - offset);
+					let buffer = buffers[chunkIndex];
+
+					//log(offset + ", " + maxChunkSize + ", " + count + ", " + pointcloud.numPoints);
+					//log(cumChunkOffsets[chunkIndex]);
+
+					gl.bindVertexArray(buffer.vao);
+
+					gl.uniform1i(shFill.uniforms.uOffset, cumChunkOffsets[chunkIndex]);
+					gl.drawArrays(gl.POINTS, state.fillOffset - cumChunkOffsets[chunkIndex], count);
+
+					remainingBudget -= count;
+					state.fillOffset = (state.fillOffset + count) % pointcloud.numPoints;
+				}
+
+			}
+
+			gl.bindVertexArray(0);
+
+			GLTimerQueries.mark("render-progressive-add-end");
+			GLTimerQueries.measure("render.progressive.p2_fill.render_fixed", "render-progressive-add-start", "render-progressive-add-end");
+		}
+
+	}
+
+	const fillDynamic = () => { // FILL PASS
 
 		GLTimerQueries.mark("render-progressive-fill-start");
 
+
 		{ // COMPUTE FILL FIXED
+			// const tStart = now();
 			GLTimerQueries.mark("render-progressive-fill-compute-fixed-start");
 			let csFillFixed = state.csFillFixed;
 			let ssFillFixed = state.ssFillFixed;
@@ -224,11 +309,15 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 			gl.dispatchCompute(1, 1, 1);
 			gl.memoryBarrier(gl.ALL_BARRIER_BITS);
 
-
 			gl.useProgram(0);
+
 
 			GLTimerQueries.mark("render-progressive-fill-compute-fixed-end");
 			GLTimerQueries.measure("render.progressive.p2_fill.compute_fixed", "render-progressive-fill-compute-fixed-start", "render-progressive-fill-compute-fixed-end");
+
+			// const tEnd = now();
+			// const duration = ((tEnd - tStart) * 1000).toFixed(3);
+			// log(duration);
 		}
 
 		{ // FILL FIXED
@@ -299,6 +388,7 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 
 		// COMPUTE FILL REMAINING 
 		if(dynamicFillBudgetEnabled){ 
+			// const tStart = now();
 			GLTimerQueries.mark("render-progressive-fill-compute-remaining-start");
 			let csFillRemaining = state.csFillRemaining;
 			let ssFillFixed = state.ssFillFixed;
@@ -318,6 +408,10 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 
 			GLTimerQueries.mark("render-progressive-fill-compute-remaining-end");
 			GLTimerQueries.measure("render.progressive.p2_fill.compute_remaining", "render-progressive-fill-compute-remaining-start", "render-progressive-fill-compute-remaining-end");
+
+			// const tEnd = now();
+			// const duration = ((tEnd - tStart) * 1000).toFixed(3);
+			// log(duration);
 		}
 
 		// FILL REMAINING
@@ -359,6 +453,8 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 
 
 	const createVBO = () => { // CREATE VBO
+
+		//const target = fboPrev;
 		GLTimerQueries.mark("render-progressive-ibo-start");
 
 		gl.useProgram(csCreateVBO.program);
@@ -425,9 +521,13 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 
 	}
 
+	// log(1);
+
 	reproject();
-	fill();
+	fillFixed();
+	//fillDynamic();
 	createVBO();
+
 	//if(fillToggle === 0){
 	//	fill();
 	//	createVBO();
@@ -581,30 +681,26 @@ renderPointCloudProgressive = function(pointcloud, view, proj, target){
 	
 	gl.useProgram(0);
 
-	fboPrev.setSize(target.width, target.height);
-	fboPrev.setNumColorAttachments(target.numColorAttachments);
+	// fboPrev.setSize(target.width, target.height);
+	// fboPrev.setNumColorAttachments(target.numColorAttachments);
+	// fboPrev.setSamples(target.samples);
 
-	gl.blitNamedFramebuffer(target.handle, fboPrev.handle, 
-		0, 0, target.width, target.height, 
-		0, 0, fboPrev.width, fboPrev.height, 
-		gl.COLOR_BUFFER_BIT, gl.LINEAR);
+	
+	// gl.namedFramebufferReadBuffer(target.handle, gl.COLOR_ATTACHMENT1);
+	// gl.namedFramebufferDrawBuffer(fboPrev.handle, gl.COLOR_ATTACHMENT1);
 
-	// let [x, y] = [900, 600];
-	// let [w, h] = [200, 200];
-	// gl.blitNamedFramebuffer(fboPrev.handle, target.handle, 
-	// 	x, y, x + w, y + h, 
-	// 	0, 0, 800, 800, 
-	// 	gl.COLOR_BUFFER_BIT, gl.NEAREST);
+	// gl.blitNamedFramebuffer(target.handle, fboPrev.handle, 
+	// 	0, 0, target.width, target.height, 
+	// 	0, 0, fboPrev.width, fboPrev.height, 
+	// 	gl.COLOR_BUFFER_BIT, gl.LINEAR);
+
+	// gl.namedFramebufferReadBuffer(target.handle, 0);
+	// gl.namedFramebufferDrawBuffer(fboPrev.handle, 0);
+
+ 
 
 	GLTimerQueries.mark("render-progressive-end");
 	GLTimerQueries.measure("render.progressive", "render-progressive-start", "render-progressive-end");
-	//GLTimerQueries.measure("render.progressive", "render-progressive-start", "render-progressive-end", (duration) => {
-	//	let ms = (duration * 1000).toFixed(3);
-	//	setDebugValue("gl.render.progressive", `${ms}ms`);
-	//});
-
-	//state.round++;
-
 
 };
 

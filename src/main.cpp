@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <iomanip>
 #include <random>
+#include <thread>
 
 #include "GL\glew.h"
 #include "GLFW\glfw3.h"
@@ -25,6 +26,7 @@ using std::endl;
 using std::chrono::high_resolution_clock;
 using std::chrono::duration;
 using std::chrono::duration_cast;
+using std::thread;
 
 using namespace LASLoaderThreaded;
 
@@ -265,6 +267,26 @@ function getEntry(key){
 	//t.detach();
 }
 
+
+
+void createWriteStateThread() {
+	thread* writeStateThread = new thread([]() {
+		
+		while (true) {
+
+			writeState();
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(500));
+		}
+
+		
+
+	});
+
+	writeStateThread->detach();
+}
+
+
 int main() {
 
 	cout << std::setprecision(3) << std::fixed;
@@ -356,6 +378,7 @@ int main() {
 
 	V8Helper::instance()->window = window;
 	V8Helper::instance()->setupV8();
+	createWriteStateThread();
 
 	cout << "<V8 has been set up> " << "(" << now() << ")" << endl;
 
