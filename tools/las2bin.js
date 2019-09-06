@@ -30,6 +30,12 @@ const fs = require('fs');
 // let offsetXYZ = 0;
 // let offsetRGB = 30;
 
+// Wien v6 500 
+let file = "D:/dev/pointclouds/tu_photogrammetry/wienCity_v6_500M.las";
+let targetFile = "D:/dev/pointclouds/tu_photogrammetry/wienCity_v6_500M.bin";
+let offsetXYZ = 0;
+let offsetRGB = 30;
+
 // MATTERHORN
 // let file = "D:/dev/pointclouds/pix4d/matterhorn.las";
 // let targetFile = "D:/dev/pointclouds/pix4d/matterhorn.bin";
@@ -37,10 +43,10 @@ const fs = require('fs');
 // let offsetRGB = 20;
 
 // CANDI SARI
-let file = "D:/dev/pointclouds/tuwien_baugeschichte/Candi Sari_las export/candi_sari.las";
-let targetFile = "D:/dev/pointclouds/tuwien_baugeschichte/Candi Sari_las export/candi_sari.bin";
-let offsetXYZ = 0;
-let offsetRGB = 20;
+// let file = "D:/dev/pointclouds/tuwien_baugeschichte/Candi Sari_las export/candi_sari.las";
+// let targetFile = "D:/dev/pointclouds/tuwien_baugeschichte/Candi Sari_las export/candi_sari.bin";
+// let offsetXYZ = 0;
+// let offsetRGB = 20;
 
 // MORRO BAY
 // let file = "D:/dev/pointclouds/open_topography/ca13/morro_bay.las";
@@ -129,7 +135,7 @@ let fd = fs.openSync(file);
 let fo = fs.openSync(targetFile, "w");
 
 //let pointsLeft = 200 * 1000 * 1000;
-let pointsLeft = header.numberOfPoints;
+let pointsLeft = Math.min(header.numberOfPoints, 500_000_000);
 let batchSize = 1000 * 1000;
 let pointsRead = 0;
 const bytesPerPoint = header.pointDataRecordLength;

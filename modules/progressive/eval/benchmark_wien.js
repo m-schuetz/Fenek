@@ -1,7 +1,8 @@
 
 if(!$("testcloud")){
 	
-	let las = loadLASProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v3.las");
+	//let las = loadLASProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v3.las");
+	let las = loadBINProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v6_500M.bin");
 
 	let pc = new PointCloudProgressive("testcloud", "blabla");
 

@@ -215,7 +215,7 @@ renderPointCloudProgressive = (function(){
 
 		}else{
 
-			let remainingBudget = 1000 * 1000;
+			let remainingBudget = 4000 * 1000;
 			let maxChunkSize = 134 * 1000 * 1000;
 			let buffers = pointcloud.glBuffers;
 			let cumChunkOffsets = [0];
@@ -552,8 +552,8 @@ renderPointCloudProgressive = (function(){
 		}
 		
 		reproject(target, pointcloud, view, proj);
-		//fillFixed(target, pointcloud, view, proj);
-		fillDynamic(target, pointcloud, view, proj);
+		fillFixed(target, pointcloud, view, proj);
+		//fillDynamic(target, pointcloud, view, proj);
 		createVBO(target, pointcloud, view, proj);
 
 		if(true){
