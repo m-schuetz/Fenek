@@ -1,5 +1,7 @@
 
-watchJS(`${rootDir}/modules/progressive/render_progressive.js`);
+//watchJS(`${rootDir}/modules/progressive/render_progressive.js`);
+watchJS(`${rootDir}/modules/progressive/render_progressive_single_compute.js`);
+//watchJS(`${rootDir}/modules/progressive/render_progressive_from_previous.js`);
 watchJS(`${rootDir}/modules/progressive/PointCloudProgressive.js`);
 
 monitorJS(`${rootDir}/modules/progressive/runtime/execute3.js`);
