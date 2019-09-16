@@ -180,9 +180,11 @@ void setAttribute(vector<SetAttributeDescriptor> attributes) {
 
 			if (chunkIndex >= loader->chunks.size()) {
 
-				double duration = now() - tStart;
+				schedule([tStart](){
+					double duration = now() - tStart;
 
-				cout << "attribute upload duration: " << duration << "s" << endl;
+					cout << "attribute upload duration: " << duration << "s" << endl;
+				});
 
 				mtx->unlock();
 				break;
@@ -285,6 +287,7 @@ void setAttribute(vector<SetAttributeDescriptor> attributes) {
 
 			schedule([data, target, offset, chunkSize, tStart]() {
 				loader->uploadChunkAttribute(target, offset, chunkSize);
+				//cout << "uploaded a chunk" << endl;
 
 				free(data);
 			});

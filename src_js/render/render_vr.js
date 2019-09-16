@@ -69,8 +69,13 @@ var renderVR = function(){
 	fboLeft.setSamples(samples);
 	fboRight.setSamples(samples);
 
+
+	//let st1 = now();
 	vr.updatePose();
 	vr.processEvents();
+	//let td = (1000 *  (now() - st1)).toFixed(3);
+	//log(td);
+
 
 	GLTimerQueries.mark("render-vr-start");
 	let startWithoutWait = now();
@@ -87,7 +92,6 @@ var renderVR = function(){
 	gl.disable(gl.BLEND);
 	//gl.blendFunc(gl.ONE, gl.ONE);
 
-
 	let [near, far] = [0.1, 1000];
 	let leftProj = new Matrix4().set(vr.getLeftProjection(near, far));
 	let rightProj = new Matrix4().set(vr.getRightProjection(near, far));
@@ -99,24 +103,12 @@ var renderVR = function(){
 		gl.clearColor(0, 0, 0, 0);
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-
 		let view = new Matrix4().multiplyMatrices(hmdPose, leftPose).getInverse();
 		let proj = leftProj;
 
-		//log(proj.elements);
-
-		//log(proj.elements);
-
-		//log(hmdPose);
-
-		//log("lala");
-		//return;
 		renderBuffers(view, proj, fboLeft);
-		//if($("procedural") && true){
-		//	renderCompute($("procedural"), view, proj, fboLeft);
-		//}
-	}
 
+	}
 
 	//EDL_ENABLED = true;
 	if(EDL_ENABLED){
@@ -177,7 +169,6 @@ var renderVR = function(){
 			gl.COLOR_BUFFER_BIT, gl.LINEAR);
 
 	}
-
 
 	{ // RIGHT
 		gl.bindFramebuffer(gl.FRAMEBUFFER, fboRight.handle);
@@ -249,22 +240,25 @@ var renderVR = function(){
 			gl.COLOR_BUFFER_BIT, gl.LINEAR);
 
 	}
-	
-
-	//gl.blitNamedFramebuffer(fboRight.handle, fboResolveRight.handle, 
-	//	0, 0, fboRight.width, fboRight.height, 
-	//	0, 0, fboResolveRight.width, fboResolveRight.height, 
-	//	gl.COLOR_BUFFER_BIT, gl.NEAREST);
-
 
 	vr.submit(fboResolveLeft.textures[0], fboResolveRight.textures[0]);
+
+	vr.postPresentHandoff();
+
 	
 	gl.blitNamedFramebuffer(fboResolveLeft.handle, 0, 
 		0, 0, fboResolveLeft.width, fboResolveLeft.height, 
 		0, 0, window.width + 10, window.height, 
 		gl.COLOR_BUFFER_BIT, gl.LINEAR);
 
+
 	GLTimerQueries.mark("render-vr-end");
+
+	// let st1 = now();
+	// vr.updatePose();
+	// let td = (1000 *  (now() - st1)).toFixed(3);
+	// log(td);
+	// vr.processEvents();
 
 	//gl.blitNamedFramebuffer(fboResolveRight.handle, 0, 
 	//	0, 0, fboResolveRight.width, fboResolveRight.height, 

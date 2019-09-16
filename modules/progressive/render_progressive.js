@@ -215,7 +215,7 @@ renderPointCloudProgressive = (function(){
 
 		}else{
 
-			let remainingBudget = 4000 * 1000;
+			let remainingBudget = 1000 * 1000;
 			let maxChunkSize = 134 * 1000 * 1000;
 			let buffers = pointcloud.glBuffers;
 			let cumChunkOffsets = [0];
@@ -524,6 +524,8 @@ renderPointCloudProgressive = (function(){
 	
 	return function(pointcloud, view, proj, target){
 
+		//let t1 = now();
+
 		GLTimerQueries.mark("render-progressive-start");
 
 		let state = getRenderProgressiveState(target);
@@ -550,11 +552,16 @@ renderPointCloudProgressive = (function(){
 			]);
 			gl.drawBuffers(buffers.length, buffers);
 		}
+
+		
 		
 		reproject(target, pointcloud, view, proj);
 		//fillFixed(target, pointcloud, view, proj);
 		fillDynamic(target, pointcloud, view, proj);
 		createVBO(target, pointcloud, view, proj);
+
+		// let td = (1000 *  (now() - t1)).toFixed(3);
+		// log(td);
 
 		if(true){
 			gl.memoryBarrier(gl.ALL_BARRIER_BITS);
@@ -599,6 +606,8 @@ renderPointCloudProgressive = (function(){
 			//log(numberWithCommas(estimate));
 		}
 
+		
+
 		{
 			const format = "${reproject}\t${fillFixed}\t${fillBudget}\t${fillRemaining}\t${fill}\t${vbo}\t${progressive}";
 			const html = `</pre>
@@ -625,10 +634,12 @@ renderPointCloudProgressive = (function(){
 
 		}
 		
+		
 		gl.useProgram(0);
 
 		GLTimerQueries.mark("render-progressive-end");
 		GLTimerQueries.measure("render.progressive", "render-progressive-start", "render-progressive-end");
+
 	}
 
 })();

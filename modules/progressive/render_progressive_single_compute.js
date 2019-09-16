@@ -517,8 +517,8 @@ renderPointCloudProgressive = (function(){
 		}
 		
 		reproject(target, pointcloud, view, proj);
-		//fillFixed(target, pointcloud, view, proj);
-		fillDynamic(target, pointcloud, view, proj);
+		fillFixed(target, pointcloud, view, proj);
+		//fillDynamic(target, pointcloud, view, proj);
 		createVBO(target, pointcloud, view, proj);
 
 		if(true){

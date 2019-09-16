@@ -598,7 +598,7 @@ var render = function(){
 		renderVR();
 	}else{
 		renderRegular();
-	}
+	}	
 
 	if(desktopMirrorEnabled){
 		let desktopTexture = acquireDesktopTexture();
@@ -725,113 +725,23 @@ var render = function(){
 
 	scene.drawQueue = [];
 
-	//log(`echo "test"`);
-
-	//GLTimerQueries.mark = () => {};
-
 	GLTimerQueries.mark("render-end");
 	GLTimerQueries.measure("render", "render-start", "render-end");
-	//GLTimerQueries.measure("render", "render-start", "render-end", (duration) => {
-	//	let ms = (duration * 1000).toFixed(3);
-	//	setDebugValue("gl.render", `${ms}ms`);
-	//});
+
+	//GLTimerQueries.enabled = true;
 	GLTimerQueries.resolve();
-	//GLTimerQueries.resolve( (result) => {
+	
+	//log(GLTimerQueries.measures.length);
 
-	//	let computeMillies = (startName, endName) => {
-	//		let start = result.get(startName);
-	//		let end = result.get(endName);
-
-	//		if(start === undefined || end === undefined){
-	//			return null;
-	//		}
-
-	//		let nanos = end - start;
-	//		let millies = nanos / (1000 * 1000);
-
-	//		return millies;
-	//	};
-
-	//	let debugMillies = (debugName, startName, endName) => {
-	//		let millies = computeMillies(startName, endName);
-	//		
-	//		if(millies !== null){
-	//			setDebugValue(debugName, `${millies.toFixed(3)} ms`);
-	//		}else{
-	//			//removeDebugValue(debugName);
-	//		}
-	//	};
-
-
-	//	debugMillies("duration.gl.render", 
-	//		"render-start", 
-	//		"render-end");
-
-	//	debugMillies("duration.gl.render-progressive", 
-	//		"render-progressive-start", 
-	//		"render-progressive-end");
-
-	//	debugMillies("duration.gl.render-progressive-reproject", 
-	//		"render-progressive-reproject-start", 
-	//		"render-progressive-reproject-end");
-
-	//	debugMillies("duration.gl.render-progressive-add", 
-	//		"render-progressive-add-start", 
-	//		"render-progressive-add-end");
-
-	//	debugMillies("duration.gl.render-progressive-ibo", 
-	//		"render-progressive-ibo-start", 
-	//		"render-progressive-ibo-end");
-
-	//	debugMillies("duration.gl.render-vr", 
-	//		"render-vr-start", 
-	//		"render-vr-end");
-
-	//	debugMillies("duration.gl.render-compute", 
-	//		"render-compute-start", 
-	//		"render-compute-end");
-
-	//	debugMillies("duration.gl.render-compute-renderpass", 
-	//		"render-compute-renderpass-start", 
-	//		"render-compute-renderpass-end");
-
-	//	debugMillies("duration.gl.render-compute-resolvepass", 
-	//		"render-compute-resolvepass-start", 
-	//		"render-compute-resolvepass-end");
-
-	//	debugMillies("duration.gl.render-octree", 
-	//		"render-octree-start", 
-	//		"render-octree-end");
-
-	//	debugMillies("duration.gl.filter", 
-	//		"filter-start", 
-	//		"filter-end");
-
-	//	debugMillies("duration.gl.edl-left", 
-	//		"edl-left-start", 
-	//		"edl-left-end");
-
-	//	debugMillies("duration.gl.edl", 
-	//		"edl-start", 
-	//		"edl-end");
-
-	//	debugMillies("duration.gl.clod", 
-	//		"clod-start", 
-	//		"clod-end");
-
-	//	debugMillies("subsample", 
-	//		"subsample-start", 
-	//		"subsample-end");
-
-	//});
+	//log(GLTimerQueries.measures[40000].start.handle)
+	//log(GLTimerQueries.measures[40000].end.timestamp)
 
 	let duration = now() - start;
 	let durationMS = (duration * 1000).toFixed(3);
 	setDebugValue("duration.cp.render", `${durationMS}ms`);
 
-	//if(frameCount > 10){
-	//	GLTimerQueries.enabled = false;
-	//}
+	
+
 
 }
 

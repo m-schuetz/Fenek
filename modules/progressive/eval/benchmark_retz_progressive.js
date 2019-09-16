@@ -79,7 +79,7 @@ window.y = 0;
 window.width = 1920;
 window.height = 1080;
 
-MSAA_SAMPLES = 1;
+MSAA_SAMPLES = 4;
 EDL_ENABLED = false;
 
 //renderDebug = renderPointCloudProgressive;

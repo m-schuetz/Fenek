@@ -116,6 +116,7 @@ class GLTimerQueries{
 			handle: query,
 			refCount: 0,
 			timestamp: null,
+			cpuTime: now(),
 		};
 
 		gl.queryCounter(mark.handle, gl.TIMESTAMP);
@@ -207,14 +208,17 @@ class GLTimerQueries{
 				}
 
 			}else{
-				unresolvedMeasures.push(measure);
+
+				let outdated = now() - measure.start.cpuTime > 1.0;
+
+				if(outdated){
+					gl.deleteQuery(measure.start.handle);
+					gl.deleteQuery(measure.end.handle);
+				}else{
+					unresolvedMeasures.push(measure);
+				}
 			}
 		}
-
-		let colWidth = 50;
-		//for(let [name, history] of GLTimerQueries.history){
-		//	colWidth = Math.max(colWidth, name.length);
-		//}
 
 		for(let [name, history] of GLTimerQueries.history){
 			let sum = history.reduce( (a, i) => a + i, 0);
@@ -225,8 +229,6 @@ class GLTimerQueries{
 			let msAvg = (avg * 1000).toFixed(3);
 			let msMin = (min * 1000).toFixed(3);
 			let msMax = (max * 1000).toFixed(3);
-
-
 
 			//setDebugValue(`gl.${name}`, `${msAvg}ms / ${msMin}ms / ${msMax}ms`);
 			setDebugValue(`gl.${name}`, `{"mean": ${msAvg}, "min": ${msMin}, "max": ${msMax}}`);

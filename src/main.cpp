@@ -125,8 +125,11 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 //	return string(*utf8_value);
 //}
 
-double startUpload = 0.0;
-double endUpload = 0.0;
+//double startUpload = 0.0;
+//double endUpload = 0.0;
+
+uint64_t frameCount = 0;
+
 
 void writeState() {
 
@@ -573,6 +576,8 @@ int main() {
 
 	while (!glfwWindowShouldClose(window)){
 
+		//cout << frameCount << endl;
+
 		// ----------------
 		// TIME
 		// ----------------
@@ -673,9 +678,9 @@ int main() {
 		//	cout << "tslf: " << timeSinceLastFrame << endl;
 		//}
 
-		//if (timeSinceLastFrame > 0.016) {
-			//cout << "too slow! time since last frame: " << int(timeSinceLastFrame * 1000.0) << "ms" << endl;
-		//}
+		if (timeSinceLastFrame > 0.016) {
+			cout << "too slow! time since last frame: " << int(timeSinceLastFrame * 1000.0) << "ms" << endl;
+		}
 
 		{
 			static double toggle = now();
@@ -719,7 +724,7 @@ int main() {
 		glfwPollEvents();
 
 		fpsCounter++;
-
+		frameCount++;
 	}
 
 	glfwDestroyWindow(window);

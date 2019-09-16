@@ -153,6 +153,10 @@ void OpenVRHelper::updatePose() {
 
 }
 
+void OpenVRHelper::postPresentHandoff() {
+	VRCompositor()->PostPresentHandoff();
+};
+
 Pose OpenVRHelper::getPose(int deviceID) {
 
 	if (deviceID < 0) {
