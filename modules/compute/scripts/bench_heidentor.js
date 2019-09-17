@@ -92,3 +92,6 @@ view.set(
 
 camera.fov = 100;
 camera.near = 0.1;
+
+
+MSAA_SAMPLES = 4;

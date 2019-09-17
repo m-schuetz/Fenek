@@ -87,7 +87,8 @@ getRenderProgressiveState = function(target){
 
 		let csCreateVBO = null;
 		{ // create VBO shader
-			let path = `${rootDir}/modules/progressive/create_vbo.cs`;
+			//let path = `${rootDir}/modules/progressive/create_vbo.cs`;
+			let path = `${rootDir}/modules/progressive/create_vbo_simple_duplicate_prevention.cs`;
 			let shader = new Shader([{type: gl.COMPUTE_SHADER, path: path}]);
 			shader.watch();
 			csCreateVBO = shader;
@@ -186,12 +187,13 @@ renderPointCloudProgressive = (function(){
 
 		let buffers = pointcloud.glBuffers;
 
+		let remainingBudget = 1 * 1000 * 1000;
+
 		if(buffers.length === 1){
 			const buffer = buffers[0];
 
 			gl.bindVertexArray(buffer.vao);
 
-			let remainingBudget = 1000 * 1000;
 			let leftToEndOfBuffer = (pointcloud.numPoints - state.fillOffset);
 			
 			{ // draw towards end of buffer
@@ -215,7 +217,6 @@ renderPointCloudProgressive = (function(){
 
 		}else{
 
-			let remainingBudget = 1000 * 1000;
 			let maxChunkSize = 134 * 1000 * 1000;
 			let buffers = pointcloud.glBuffers;
 			let cumChunkOffsets = [0];
@@ -496,6 +497,9 @@ renderPointCloudProgressive = (function(){
 			groups[0] *= 4;
 			groups[1] *= 4;
 		}
+
+		groups[0] /= 2;
+		groups[1] /= 2;
 
 		//log(groups);
 
