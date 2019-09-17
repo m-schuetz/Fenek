@@ -50,8 +50,8 @@ void main() {
 	gl_PointSize = 2.0;
 
 
-	//vColor = getColorFromV3();
-	vColor = getColorFromV1();
+	vColor = getColorFromV3();
+	//vColor = getColorFromV1();
 
 	//float gray = (vColor.x + vColor.y + vColor.z) / 3.0;
 

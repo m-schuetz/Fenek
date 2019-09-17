@@ -250,7 +250,7 @@ if(typeof setAttribute !== "undefined"){
 		//setAttribute([{name: "Anisotropy", range: [9200, 10100]}]);
 		//setAttribute([{name: "Eigenentropy", range: [-1000, 1000]}]);
 		//setAttribute([{name: "vRange", range: [-20, 5000]}]);
-		//setAttribute([{name: "vRank", range: [-100, 12000]}]);
+		setAttribute([{name: "vRank", range: [-100, 12000]}]);
 		//setAttribute([{name: "incidenceAngle", range: [0, 12000]}]);
 		//setAttribute([{name: "returnNumber", range: [0, 80]}]);
 

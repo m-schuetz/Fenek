@@ -80,7 +80,7 @@ view.set(
 // window.height = 1080;
 
 camera.near = 0.5;
-MSAA_SAMPLES = 1;
+MSAA_SAMPLES = 4;
 EDL_ENABLED = true;
 
 //renderDebug = renderPointCloudProgressive;

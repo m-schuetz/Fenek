@@ -556,8 +556,8 @@ renderPointCloudProgressive = (function(){
 		
 		
 		reproject(target, pointcloud, view, proj);
-		//fillFixed(target, pointcloud, view, proj);
-		fillDynamic(target, pointcloud, view, proj);
+		fillFixed(target, pointcloud, view, proj);
+		//fillDynamic(target, pointcloud, view, proj);
 		createVBO(target, pointcloud, view, proj);
 
 		// let td = (1000 *  (now() - t1)).toFixed(3);

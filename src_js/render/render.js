@@ -690,8 +690,6 @@ var render = function(){
 			}else{
 				gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 			}
-			//gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-			//gl.blendFunc(gl.ONE, gl.ONE);
 
 			gl.bindVertexArray(buffer.vao);
 			gl.drawArrays(material.glDrawMode, 0, buffer.count);
@@ -702,20 +700,10 @@ var render = function(){
 			gl.enable(gl.DEPTH_TEST);
 			gl.depthMask(true);
 
-			//gl.namedFramebufferReadBuffer(fboDesktop.handle, gl.COLOR_ATTACHMENT0);
-			//gl.bindTexture(gl.TEXTURE_2D, desktopTextureCopy);
-			//
-			//gl.copyTextureSubImage2D(desktopTextureCopy, 0, 0, 0, 0, 0, 1280, 720);
-			//gl.generateMipmap(gl.TEXTURE_2D);
-
 			gl.blitNamedFramebuffer(state.fboDesktop.handle, state.fboDesktopCopy.handle, 
 				0, 0, 1280, 720, 
 				0, 0, 1280, 720, 
 				gl.COLOR_BUFFER_BIT, gl.NEAREST);
-
-
-
-
 
 			gl.bindFramebuffer(gl.FRAMEBUFFER, 0);
 
