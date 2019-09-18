@@ -88,6 +88,29 @@ getRenderProgressiveState = function(target){
 			csCreateVBO = shader;
 		}
 
+		{ // create copy progressive stats button in state.html
+			const format = "${reproject}\t${fillFixed}\t${fillBudget}\t${fillRemaining}\t${fill}\t${vbo}\t${progressive}";
+			const html = `</pre>
+			<script>
+			function copyProgressive(){
+
+				const progressive = JSON.parse(getEntry("gl.render.progressive")).mean;
+				const reproject = JSON.parse(getEntry("gl.render.progressive.p1_reproject")).mean;
+				const fill = JSON.parse(getEntry("gl.render.progressive.p2_fill")).mean;
+				const fillFixed = JSON.parse(getEntry("gl.render.progressive.p2_fill.render_fixed")).mean;
+				const fillRemaining = JSON.parse(getEntry("gl.render.progressive.p2_fill.render_remaining")).mean;
+				const fillBudget = JSON.parse(getEntry("progressive dyn budget")).mean;
+				const vbo = JSON.parse(getEntry("gl.render.progressive.p3_vbo")).mean;
+				const msg = \`${format}\`;
+
+				clipboardCopy(msg);
+			}
+			</script>
+			<input type="button" value="copy benchmark to clipboard" onclick='copyProgressive()'></input>
+			<pre>`;
+
+			setDebugValue("z.bench.progressive", html);
+		}
 
 
 		let state = {
@@ -111,10 +134,6 @@ getRenderProgressiveState = function(target){
 		};
 
 		renderProgressiveMap.set(target, state);
-
-		// const tEnd = now();
-		// const duration = (tEnd - tStart).toFixed(3);
-		// log(duration);
 	}
 
 	return renderProgressiveMap.get(target);
@@ -181,7 +200,7 @@ renderPointCloudProgressive = (function(){
 
 		let buffers = pointcloud.glBuffers;
 
-		let remainingBudget = 1 * 1000 * 1000;
+		let remainingBudget = 3 * 1000 * 1000;
 
 		if(buffers.length === 1){
 			const buffer = buffers[0];
@@ -521,23 +540,16 @@ renderPointCloudProgressive = (function(){
 			]);
 			gl.drawBuffers(buffers.length, buffers);
 		}
-
-		
 		
 		reproject(target, pointcloud, view, proj);
-		//fillFixed(target, pointcloud, view, proj);
-		fillDynamic(target, pointcloud, view, proj);
+		fillFixed(target, pointcloud, view, proj);
+		//fillDynamic(target, pointcloud, view, proj);
 		createVBO(target, pointcloud, view, proj);
 
-		// let td = (1000 *  (now() - t1)).toFixed(3);
-		// log(td);
+		gl.useProgram(0);
 
-		if(true){
-			gl.memoryBarrier(gl.ALL_BARRIER_BITS);
-			// taken from https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
-			const numberWithCommas = (x) => {
-				return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-			}
+		if(false){
+			//gl.memoryBarrier(gl.ALL_BARRIER_BITS);
 
 			let resultBuffer = new ArrayBuffer(10 * 5 * 4);
 			gl.getNamedBufferSubData(state.ssFillFixedCommands, 0, resultBuffer.byteLength, resultBuffer);
@@ -553,9 +565,7 @@ renderPointCloudProgressive = (function(){
 				timestamp: now(),
 			});
 
-			//log(estimates.length);
 			estimates = estimates.filter(e => e.timestamp > now() - 1);
-			//log(estimates.length);
 
 			const values = estimates.map(e => e.estimate);
 			const sum = values.reduce( (a, i) => a + i, 0);
@@ -564,47 +574,14 @@ renderPointCloudProgressive = (function(){
 			const median = estimates.length > 0 ? values.sort()[Math.ceil(estimates.length / 2)] : Infinity;
 			const mean = sum / estimates.length;
 
-			const sMin = addCommas(parseInt(min));
-			const sMax = addCommas(parseInt(max));
-			const sMean = addCommas(parseInt(mean));
-			const sMedian = addCommas(parseInt(median));
+			const sMin = (parseInt(min));
+			const sMax = (parseInt(max));
+			const sMean = (parseInt(mean));
+			const sMedian = (parseInt(median));
 			const msg = `{"mean": ${sMean}, "min": ${sMin}, "max": ${sMax}, "median": ${sMedian}}`;
-			//log();
+			
 			setDebugValue("progressive dyn budget", msg);
-
-			//log(numberWithCommas(estimate));
 		}
-
-		
-
-		{
-			const format = "${reproject}\t${fillFixed}\t${fillBudget}\t${fillRemaining}\t${fill}\t${vbo}\t${progressive}";
-			const html = `</pre>
-			<script>
-			function copyProgressive(){
-
-				const progressive = JSON.parse(getEntry("gl.render.progressive")).mean;
-				const reproject = JSON.parse(getEntry("gl.render.progressive.p1_reproject")).mean;
-				const fill = JSON.parse(getEntry("gl.render.progressive.p2_fill")).mean;
-				const fillFixed = JSON.parse(getEntry("gl.render.progressive.p2_fill.render_fixed")).mean;
-				const fillRemaining = JSON.parse(getEntry("gl.render.progressive.p2_fill.render_remaining")).mean;
-				const fillBudget = JSON.parse(getEntry("progressive dyn budget")).mean;
-				const vbo = JSON.parse(getEntry("gl.render.progressive.p3_vbo")).mean;
-				const msg = \`${format}\`;
-
-				clipboardCopy(msg);
-			}
-			</script>
-			<input type="button" value="copy benchmark to clipboard" onclick='copyProgressive()'></input>
-			<pre>`;
-
-			setDebugValue("z.bench.progressive", html);
-
-
-		}
-		
-		
-		gl.useProgram(0);
 
 		GLTimerQueries.mark("render-progressive-end");
 		GLTimerQueries.measure("render.progressive", "render-progressive-start", "render-progressive-end");
