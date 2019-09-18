@@ -69,17 +69,17 @@ if(!$("testcloud")){
 
 }
 
-view.set(
-	[629.908, 82.148, -799.211], 
-	[569.602, 41.695, -857.466]
-);
+// view.set(
+// 	[629.908, 82.148, -799.211], 
+// 	[569.602, 41.695, -857.466]
+// );
 
 window.x = 0;
 window.y = 0;
 window.width = 1920;
 window.height = 1080;
 
-MSAA_SAMPLES = 4;
+MSAA_SAMPLES = 16;
 EDL_ENABLED = false;
 
 //renderDebug = renderPointCloudProgressive;

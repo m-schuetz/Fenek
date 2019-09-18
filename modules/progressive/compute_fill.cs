@@ -46,7 +46,7 @@ int[10] getCummulativeBatchSizes(){
 	return cummulative;
 }
 
-#define BUDGET_MILLIES 2.0
+#define BUDGET_MILLIES 8.0
 
 #define NUM_FIXED 1000000.0
 

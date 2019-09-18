@@ -81,7 +81,8 @@ getRenderProgressiveState = function(target){
 
 		let csCreateVBO = null;
 		{ // create VBO shader
-			let path = `${rootDir}/modules/progressive/create_vbo.cs`;
+			//let path = `${rootDir}/modules/progressive/create_vbo.cs`;
+			let path = `${rootDir}/modules/progressive/create_vbo_simple_duplicate_prevention.cs`;
 			let shader = new Shader([{type: gl.COMPUTE_SHADER, path: path}]);
 			shader.watch();
 			csCreateVBO = shader;
@@ -462,6 +463,9 @@ renderPointCloudProgressive = (function(){
 			groups[1] *= 4;
 		}
 
+		groups[0] /= 2;
+		groups[1] /= 2;
+
 		//log(groups);
 
 		gl.memoryBarrier(gl.ALL_BARRIER_BITS);
@@ -517,8 +521,8 @@ renderPointCloudProgressive = (function(){
 		}
 		
 		reproject(target, pointcloud, view, proj);
-		fillFixed(target, pointcloud, view, proj);
-		//fillDynamic(target, pointcloud, view, proj);
+		//fillFixed(target, pointcloud, view, proj);
+		fillDynamic(target, pointcloud, view, proj);
 		createVBO(target, pointcloud, view, proj);
 
 		if(true){
