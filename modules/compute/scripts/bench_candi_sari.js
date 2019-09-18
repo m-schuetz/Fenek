@@ -91,6 +91,7 @@ view.set(
 );
 
 camera.fov = 80;
+camera.near = 0.1;
 
 
 

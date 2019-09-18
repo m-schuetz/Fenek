@@ -1,7 +1,8 @@
 
 if(!$("testcloud")){
 	
-	let las = loadLASProgressive("D:/dev/pointclouds/archpro/heidentor.las");
+	let las = loadBINProgressive("D:/dev/pointclouds/archpro/heidentor.bin");
+	//let las = loadLASProgressive("D:/dev/pointclouds/archpro/heidentor.las");
 
 	let pc = new PointCloudProgressive("testcloud", "blabla");
 
@@ -73,13 +74,14 @@ view.set(
 	[5.123214356964963, 4.573860054923273, -7.986573283576178],
 );
 
-window.x = 200;
-window.y = 200;
-window.width = 1920;
-window.height = 1080;
+// window.x = 200;
+// window.y = 200;
+// window.width = 1920;
+// window.height = 1080;
 
 MSAA_SAMPLES = 1;
 EDL_ENABLED = false;
+camera.near = 0.1;
 
 //renderDebug = renderPointCloudProgressive;
 //renderDebug = renderPointCloudBasic;

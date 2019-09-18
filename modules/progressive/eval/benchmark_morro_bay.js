@@ -1,7 +1,7 @@
 
 if(!$("testcloud")){
 	
-	//let las = loadLASProgressive("D:/dev/pointclouds/open_topography/ca13/morro_bay.bin");
+	//let las = loadLASProgressive("D:/dev/pointclouds/open_topography/ca13/morro_bay.las");
 	let las = loadBINProgressive("D:/dev/pointclouds/open_topography/ca13/morro_bay.bin");
 
 	let pc = new PointCloudProgressive("testcloud", "blabla");

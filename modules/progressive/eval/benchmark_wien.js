@@ -1,8 +1,8 @@
 
 if(!$("testcloud")){
 	
-	//let las = loadLASProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v3.las");
-	let las = loadBINProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v6_500M.bin");
+	let las = loadLASProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v6_250M.las");
+	//let las = loadBINProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v6_250M.bin");
 
 	let pc = new PointCloudProgressive("testcloud", "blabla");
 
@@ -82,5 +82,5 @@ window.height = 1080;
 MSAA_SAMPLES = 1;
 EDL_ENABLED = false;
 
-renderDebug = renderPointCloudProgressive;
+//renderDebug = renderPointCloudProgressive;
 //renderDebug = renderPointCloudBasic;

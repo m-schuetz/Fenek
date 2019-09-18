@@ -6,17 +6,22 @@ const fs = require('fs');
 //let file = "D:/dev/pointclouds/Riegl/niederweiden.las";
 //let targetFile = "D:/dev/pointclouds/Riegl/test.bin";
 
+// let file = "D:/dev/pointclouds/archpro/heidentor.las";
+// let targetFile = "D:/dev/pointclouds/archpro/heidentor.bin";
+// let offsetXYZ = 0;
+// let offsetRGB = 20;
+
 //RETZ
 // let file = "D:/dev/pointclouds/riegl/Retz_Airborne_Terrestrial_Combined_1cm.las";
 // let targetFile = "D:/dev/pointclouds/riegl/retz.bin";
 // let offsetXYZ = 0;
 // let offsetRGB = 28;
 
-// Wien v6 250M
-// let file = "D:/dev/pointclouds/tu_photogrammetry/wienCity_v6_250M.las";
-// let targetFile = "D:/dev/pointclouds/tu_photogrammetry/wien_v6_250.bin";
-// let offsetXYZ = 0;
-// let offsetRGB = 30;
+//Wien v6 250M
+let file = "D:/dev/pointclouds/tu_photogrammetry/wienCity_v6_250M.las";
+let targetFile = "D:/dev/pointclouds/tu_photogrammetry/wienCity_v6_250M.bin";
+let offsetXYZ = 0;
+let offsetRGB = 30;
 
 // Wien v6 125
 // let file = "D:/dev/pointclouds/tu_photogrammetry/wienCity_v6_125M.las";
@@ -31,10 +36,10 @@ const fs = require('fs');
 // let offsetRGB = 30;
 
 // Wien v6 500 
-let file = "D:/dev/pointclouds/tu_photogrammetry/wienCity_v6_500M.las";
-let targetFile = "D:/dev/pointclouds/tu_photogrammetry/wienCity_v6_500M.bin";
-let offsetXYZ = 0;
-let offsetRGB = 30;
+// let file = "D:/dev/pointclouds/tu_photogrammetry/wienCity_v6_500M.las";
+// let targetFile = "D:/dev/pointclouds/tu_photogrammetry/wienCity_v6_500M.bin";
+// let offsetXYZ = 0;
+// let offsetRGB = 30;
 
 // MATTERHORN
 // let file = "D:/dev/pointclouds/pix4d/matterhorn.las";

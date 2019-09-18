@@ -200,7 +200,7 @@ renderPointCloudProgressive = (function(){
 
 		let buffers = pointcloud.glBuffers;
 
-		let remainingBudget = 3 * 1000 * 1000;
+		let remainingBudget = 1 * 1000 * 1000;
 
 		if(buffers.length === 1){
 			const buffer = buffers[0];
@@ -542,13 +542,27 @@ renderPointCloudProgressive = (function(){
 		}
 		
 		reproject(target, pointcloud, view, proj);
-		fillFixed(target, pointcloud, view, proj);
-		//fillDynamic(target, pointcloud, view, proj);
-		createVBO(target, pointcloud, view, proj);
+
+		if(typeof SINGLE_PROGRESS_STEP !== "undefined" && SINGLE_PROGRESS_STEP){
+
+			if(doStep === true){
+				fillFixed(target, pointcloud, view, proj);
+				//fillDynamic(target, pointcloud, view, proj);
+				createVBO(target, pointcloud, view, proj);
+			}
+
+			doStep = false;
+		}else{
+			fillFixed(target, pointcloud, view, proj);
+			//fillDynamic(target, pointcloud, view, proj);
+			createVBO(target, pointcloud, view, proj);
+		}
+
 
 		gl.useProgram(0);
 
-		if(false){
+		// read debug values (#adaptive points) and write them to the state report
+		if(true){
 			//gl.memoryBarrier(gl.ALL_BARRIER_BITS);
 
 			let resultBuffer = new ArrayBuffer(10 * 5 * 4);

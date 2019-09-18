@@ -53,6 +53,7 @@ void main() {
 	vColor = getColorFromV3();
 	//vColor = getColorFromV1();
 
+
 	//float gray = (vColor.x + vColor.y + vColor.z) / 3.0;
 
 	//float gamma = 0.6;
@@ -63,7 +64,7 @@ void main() {
 	//vColor = 1.2 * vColor;
 	
 
-	//vColor = vec3(0, 1, 0);
+	//vColor = vec3(1, 1, 1);
 
 	//float a = 0.3;
 	//vColor = vec3(
