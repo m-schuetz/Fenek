@@ -1,7 +1,7 @@
 
-GLTimerQueries.enabled = false;
+GLTimerQueries.enabled = true;
 
-vr.start();
+//vr.start();
 //vr.stop();
 // allows you to adjust the mirror depending on your VR room setup
 if($("desktop_mirror")){
@@ -15,13 +15,16 @@ if($("desktop_mirror")){
 
 DEBUG_USER_FILTER_CAM = false;
 
-reportState(true);
+reportState(false);
 
 CLOD_RANGE = [0.4, 1.2];
 CLOD_BATCH_SIZE = 50 * 1000 * 1000;
 
-MSAA_SAMPLES = 2; // MSAA 1 only works if EDL is disable
-EDL_ENABLED = true; // Eye-Dome-Lighting. Only currently available form of illumination
+POINT_BUDGET = 5 * 1000 * 1000;
+POINT_BUDGET_RANGE = [POINT_BUDGET, POINT_BUDGET];
+
+//MSAA_SAMPLES = 4;
+EDL_ENABLED = true; 
 RENDER_DEFAULT_ENABLED = false;
 desktopMirrorEnabled = false;
 
@@ -139,73 +142,172 @@ desktopMirrorEnabled = false;
 
 
 
-log(view.position);
-log(view.getPivot());
-
-var setRange = () => {
-	let scale = 0.001;
-	let offset = 0;
-	setAttribute("Range", scale, offset);
-};
-
-var setEchoRatio = () => {
-	let scale = 0.001 * 20;
-	let offset = 0;
-	setAttribute("EchoRatio", scale, offset);
-};
-
-var setLinearity = () => {
-	let scale = 0.0001 * 200;
-	let offset = 0;
-	setAttribute("Linearity", scale, offset);
-};
-
-var setPlanarity = () => {
-	let scale = 0.0001 * 250;
-	let offset = 0;
-	setAttribute("Planarity", scale, offset);
-};
-
-var setSphericity = () => {
-	let scale = 0.0001 * 500;
-	let offset = 0;
-	setAttribute("Sphericity", scale, offset);
-};
-
-var setOmnivariance = () => {
-	let scale = 0.0001 * 500;
-	let offset = 0;
-	setAttribute("Omnivariance", scale, offset);
-};
+// log(view.position);
+// log(view.getPivot());
 
 
 if(typeof setAttribute !== "undefined"){
-	let scale = 1;
-	let offset = 0;
-	//setAttribute("BeamVectorX", scale, offset);
-	//setAttribute("Range", scale, offset);
-	
-	//setEchoRatio();
-	//setOmnivariance();
-	//setRange();
-	//setPlanarity();
 
 	if(typeof attributeToggle === "undefined"){
 		attributeToggle = 0;
 	}
 
-	//if(attributeToggle === 0){
-	//	setRange();
-	//}else if(attributeToggle === 1){
-	//	setEchoRatio();
-	//}
 
-	//attributeToggle = (attributeToggle + 1) % 2;
+	let toggles = [
+		() => {
+			let range = [0, 10000];
+			let width = range[1] - range[0];
+			let scale = 1 / width;
+			let offset = range[0] / width;
+			setAttribute([{name: "vRank", scale: scale, offset: offset}]);
+		},
+		() => {
+			let range = [10, 10000];
+			let width = range[1] - range[0];
+			let scale = 1 / width;
+			let offset = range[0] / width;
+			setAttribute([{name: "EchoRatio", scale: scale, offset: offset}]);
+		}
+	];
+
+	let ai = (attributeToggle % toggles.length)
+	//toggles[ai]();
+
+	// {
+	// 	let range = [700000, 1000000];
+	// 		let width = range[1] - range[0];
+	// 		let scale = 1 / width;
+	// 		let offset = range[0] / width;
+	// 		setAttribute([{name: "Range", scale: scale, offset: offset}]);
+	// }
+
+	// {
+	// 	setAttribute([
+	// 		{name: "BeamVectorX", scale: 1 / 500, offset: 100},
+	// 		{name: "BeamVectorY", scale: 1 / 500, offset: 100},
+	// 		{name: "BeamVectorZ", scale: 1 / 500, offset: 100},
+	// 	]);
+	// }
+
+	// {
+	// 	setAttribute([
+	// 		{name: "Red",   scale: 1 / (256 ** 1), offset: 0},
+	// 		{name: "Green", scale: 1 / (256 ** 1), offset: 0},
+	// 		{name: "Blue",  scale: 1 / (256 ** 1), offset: 0},
+	// 	]);
+	// }
+
+	//setAttribute([{name: "intensity", scale: 1 / 60000, offset: 0}]);
+
+	// {
+	// 	let range = [0, 64000];
+	// 	let width = range[1] - range[0];
+	// 	let scale = 1 / width;
+	// 	let offset = range[0] / width;
+	// 	setAttribute([{name: "Amplitude", scale: scale, offset: offset}]);
+	// }
+
+	// {
+	// 	let range = [0, 469];
+	// 	let width = range[1] - range[0];
+	// 	let scale = 1 / width;
+	// 	let offset = range[0] / width;
+	// 	setAttribute([{name: "Deviation", scale: scale, offset: offset}]);
+	// }
+
+	// {
+	// 	let range = [710619, 1024861];
+	// 	let width = range[1] - range[0];
+	// 	let scale = 1 / width;
+	// 	let offset = range[0] / width;
+	// 	setAttribute([{name: "Range", scale: scale, offset: offset}]);
+	// }
+
+	{
+		//setAttribute([{name: "Range", range: [710619, 1024861]}]);
+		//setAttribute([{name: "Amplitude", range: [0, 32000]}]);
+		//setAttribute([{name: "EchoRatio", range: [10, 10000]}]);
+	}
+
+	// {
+	// 	let range = [0, 1];
+	// 	let width = range[1] - range[0];
+	// 	let scale = 1 / width;
+	// 	let offset = range[0] / width;
+	// 	setAttribute([{name: "EchoRatio", scale: scale, offset: offset}]);
+	// }
+	
+	{ // local-scale
+		
+		setAttribute([{name: "EchoRatio", range: [10, 10000]}]);
+		//setAttribute([{name: "Amplitude", range: [100, 1800]}]);
+		//setAttribute([{name: "Deviation", range: [-10, 60]}]);
+		//setAttribute([{name: "NormalSigma0", range: [0, 200]}]);
+		//setAttribute([{name: "Linearity", range: [5000, 10000]}]);
+		//setAttribute([{name: "Planarity", range: [6000, 9000]}]);
+		//setAttribute([{name: "Sphericity", range: [1, 6000]}]);
+		//setAttribute([{name: "Omnivariance", range: [0, 1000]}]);
+		//setAttribute([{name: "Anisotropy", range: [9200, 10100]}]);
+		//setAttribute([{name: "Eigenentropy", range: [-1000, 1000]}]);
+		//setAttribute([{name: "vRange", range: [-20, 5000]}]);
+		//setAttribute([{name: "vRank", range: [-100, 12000]}]);
+		//setAttribute([{name: "incidenceAngle", range: [0, 12000]}]);
+		//setAttribute([{name: "returnNumber", range: [0, 80]}]);
+
+		// setAttribute([
+		// 	{name: "Red",   scale: 1 / (256 ** 1), offset: 0},
+		// 	{name: "Green", scale: 1 / (256 ** 1), offset: 0},
+		// 	{name: "Blue",  scale: 1 / (256 ** 1), offset: 0},
+		// ]);
+
+		// setAttribute([
+		// 	{name: "Red",   range: [0, 255 ** 2]},
+		// 	{name: "Green", range: [0, 255 ** 2]},
+		// 	{name: "Blue",  range: [0, 255 ** 2]},
+		// ]);
+
+		// setAttribute([
+		// 	{name: "NormalX", range: [-10000, 10000]},
+		// 	{name: "NormalY", range: [-10000, 10000]},
+		// 	{name: "NormalZ", range: [-10000, 10000]},
+		// ]);
+
+		// setAttribute([
+		// 	{name: "NormalEv1", range: [-2000, 8000]},
+		// 	{name: "NormalEv2", range: [-1000, 3000]},
+		// 	{name: "NormalEv3", range: [-200, 500]},
+		// ]);
+	}
+
+	{ // large-scale
+		
+		//setAttribute([{name: "Range", range: [820619, 1004861]}]);
+
+		// setAttribute([
+		// 	{name: "BeamVectorX", range: [-2000, 2500]},
+		// 	{name: "BeamVectorY", range: [-2000, 2500]},
+		// 	{name: "BeamVectorZ", range: [-2000, 2500]},
+		// ]);
+
+		//setAttribute([{name: "SourceID", range: [10000, 11255]}]);
+	}
+
+	
+
+	// setAttribute([
+	// 	{name: "Red",   scale: 1 / (256 ** 1), offset: 0},
+	// 	{name: "Green", scale: 1 / (256 ** 1), offset: 0},
+	// 	{name: "Blue",  scale: 1 / (256 ** 1), offset: 0},
+	// ]);
+	
+	
+	attributeToggle++;
 		
 }
 
+camera.near = 2;
 
-
+//dtarget = 2000;
 
 
 

@@ -234,18 +234,6 @@ class PotreeLoader{
 		if(node.hasHierarchyToLoad){
 			await this.loadHierarchy(node);
 			additionalHierarchy = node;
-
-			//log(node.name);
-			//log(node.boundingBox);
-			//
-			//for(let child of node.children){
-			//	if(child !== null){
-			//		log(child.name);
-			//		log(child.boundingBox);
-			//	}
-			//}
-
-			//exit();
 		}
 
 

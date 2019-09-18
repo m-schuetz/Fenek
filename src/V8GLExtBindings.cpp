@@ -7008,8 +7008,8 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			void *bdata = view->Buffer()->GetContents().Data();
 			data = reinterpret_cast<void*>(bdata);
 		} else {
-			cout << "ERROR(glClearNamedBufferData): array must be of type ArrayBuffer" << endl;
-			exit(1);
+			//cout << "ERROR(glClearNamedBufferData): array must be of type ArrayBuffer" << endl;
+			//exit(1);
 		}
 
 
@@ -8911,7 +8911,14 @@ void V8Helper::setupV8GLExtBindings(Local<ObjectTemplate>& tpl){
 			auto buffer = view->Buffer();
 			void *bdata = view->Buffer()->GetContents().Data();
 			indirect = reinterpret_cast<void*>(bdata);
-		} else {
+		} else if(args[1]->IsNumber()){
+			int offset = args[1]->Uint32Value();
+			
+			char* ptr = nullptr;
+			ptr = ptr + offset;
+			indirect = (void*)ptr;
+
+			//indirect = (void*)(((char*)nullptr) + offset);
 			//cout << "ERROR(glDrawArraysIndirect): array must be of type ArrayBuffer" << endl;
 			//exit(1);
 		}

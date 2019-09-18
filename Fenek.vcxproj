@@ -22,7 +22,7 @@
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{8DD0E032-93EF-4E9C-8463-21CB2DC10134}</ProjectGuid>
     <RootNamespace>Fenek</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -47,7 +47,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>false</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
@@ -92,7 +92,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)include;$(SolutionDir)libs\glfw\include;$(SolutionDir)libs\glew\include;$(SolutionDir)libs\v8\include;$(SolutionDir)libs\openvr\headers;$(SolutionDir)libs\glm;$(SolutionDir)libs\stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)include;$(SolutionDir)libs\glfw\include;$(SolutionDir)libs\glew\include;$(SolutionDir)libs\v8\include;$(SolutionDir)libs\openvr\headers;$(SolutionDir)libs\glm;$(SolutionDir)libs\stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>GLEW_STATIC;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
@@ -124,7 +124,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)include;$(SolutionDir)libs\glfw\include;$(SolutionDir)libs\glew\include;$(SolutionDir)libs\v8\include;$(SolutionDir)libs\openvr\headers;$(SolutionDir)libs\glm;$(SolutionDir)libs\stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)include;$(SolutionDir)libs\glfw\include;$(SolutionDir)libs\glew\include;$(SolutionDir)libs\v8\include;$(SolutionDir)libs\openvr\headers;$(SolutionDir)libs\glm;$(SolutionDir)libs\stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>GLEW_STATIC;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -138,6 +138,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="libs\glew\glew.c" />
+    <ClCompile Include="modules\progressive\progressive.cpp" />
     <ClCompile Include="src\Application.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\OpenVRHelper.cpp" />
@@ -152,16 +153,21 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Application.h" />
+    <ClInclude Include="include\BArray.h" />
     <ClInclude Include="include\ComputeShader.h" />
-    <ClInclude Include="include\LASLoader.h" />
+    <ClInclude Include="include\GLTimerQueries.h" />
     <ClInclude Include="include\OpenVRHelper.h" />
-    <ClInclude Include="include\ProgressiveLoader.h" />
     <ClInclude Include="include\Shader.h" />
     <ClInclude Include="include\utils.h" />
     <ClInclude Include="include\V8ComputeShader.h" />
     <ClInclude Include="include\v8File.h" />
     <ClInclude Include="include\V8Helper.h" />
     <ClInclude Include="include\V8Shader.h" />
+    <ClInclude Include="modules\CppUtils\CppUtils.h" />
+    <ClInclude Include="modules\progressive\LASLoader.h" />
+    <ClInclude Include="modules\progressive\progressive.h" />
+    <ClInclude Include="modules\progressive\ProgressiveBINLoader.h" />
+    <ClInclude Include="modules\progressive\ProgressiveLoader.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

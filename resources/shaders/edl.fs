@@ -4,8 +4,8 @@ layout(location = 0) out vec4 out_color;
 
 in vec2 vUV;
 
-layout(binding = 0) uniform sampler2DMS uColor;
-layout(binding = 1) uniform sampler2DMS uDepth;
+layout(binding = 0) uniform sampler2D uColor;
+layout(binding = 1) uniform sampler2D uDepth;
 
 layout(std140, binding = 4) uniform shader_data{
 	mat4 transform;
@@ -39,16 +39,16 @@ float linearize(float depth){
 }
 
 
-float response(ivec2 pos, int msaaSampleNr){
+float response(ivec2 pos){
 
-	float d = texelFetch(uDepth, pos, msaaSampleNr).r;
+	float d = texelFetch(uDepth, pos, 0).r;
 	float depth = log2(linearize(d));
 
 	float sum = 0.0;
 	
 	for(int i = 0; i < numSamples; i++){
 		ivec2 samplePos = pos + sampleLocations[i];
-		float neighborDepth = texelFetch(uDepth, samplePos, msaaSampleNr).r;
+		float neighborDepth = texelFetch(uDepth, samplePos, 0).r;
 		neighborDepth = log2(linearize(neighborDepth));
 		sum += max(0.0, depth - neighborDepth);
 	}
@@ -59,19 +59,12 @@ float response(ivec2 pos, int msaaSampleNr){
 void main() {
 	ivec2 pos = ivec2(gl_FragCoord.xy);
 	
-	vec4 col = vec4(0, 0, 0, 0);
-	float sumShade = 0.0;
-	for(int msaaSampleNr = 0; msaaSampleNr < ssArgs.msaaSampleCount; msaaSampleNr++){
-		float res = response(pos, msaaSampleNr);
-		float shade = exp(-res * 300.0 * ssArgs.edlStrength * 2.0);
+	float res = response(pos);
+	float shade = exp(-res * 300.0 * ssArgs.edlStrength * 0.8);
+	vec2 uv = out_color.xy = pos / 1600.0;
 
-		sumShade += shade;
-		col += texelFetch(uColor, pos, msaaSampleNr);
-	}
-	float avgShade = sumShade / ssArgs.msaaSampleCount;
-	col = col / ssArgs.msaaSampleCount;
+	vec4 col = texelFetch(uColor, pos, 0);
 
-	out_color = col * avgShade;
-	//out_color = vec4(1, 1, 1, 1) * avgShade;
-
+	//out_color = 0.01 * col * shade + vec4(1, 1, 1, 1) * shade;
+	out_color = col * shade;
 }

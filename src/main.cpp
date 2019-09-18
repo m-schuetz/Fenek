@@ -7,12 +7,16 @@
 #include <cstdlib>
 #include <iomanip>
 #include <random>
+#include <thread>
 
 #include "GL\glew.h"
 #include "GLFW\glfw3.h"
 
-#include "LASLoader.h"
-#include "ProgressiveLoader.h"
+#include "modules/progressive/ProgressiveLoader.h"
+#include "modules/progressive/progressive.h"
+#include "modules/progressive/ProgressiveBINLoader.h"
+
+#include "GLTimerQueries.h"
 
 
 using std::unordered_map;
@@ -22,6 +26,7 @@ using std::endl;
 using std::chrono::high_resolution_clock;
 using std::chrono::duration;
 using std::chrono::duration_cast;
+using std::thread;
 
 using namespace LASLoaderThreaded;
 
@@ -29,9 +34,10 @@ namespace fs = std::experimental::filesystem;
 
 static long long start_time = std::chrono::high_resolution_clock::now().time_since_epoch().count();
 
-int numPointsUploaded = 0;
+//int numPointsUploaded = 0;
 
-ProgressiveLoader* loader = nullptr;
+//ProgressiveLoader* loader = nullptr;
+//ProgressiveBINLoader* binLoader = nullptr;
 
 double now() {
 	auto now = std::chrono::high_resolution_clock::now();
@@ -119,45 +125,169 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 //	return string(*utf8_value);
 //}
 
-double startUpload = 0.0;
-double endUpload = 0.0;
+//double startUpload = 0.0;
+//double endUpload = 0.0;
+
+uint64_t frameCount = 0;
 
 
-void uploadHook(ProgressiveLoader* loader, v8::Persistent<Object, v8::CopyablePersistentTraits<v8::Object>> pObjLAS) {
+void writeState() {
 
+	stringstream text;
+
+	text << R"V0G0N(
+
+<html>
+<head>
+	<meta http-equiv="refresh" content = "1">
+<style>
+tr:nth-child(even) {background: rgb(245, 245, 245)}
+tr:nth-child(odd) {background: #FFF}
+table{
+	border-collapse: collapse;
+}
+td{
+	border: 1px solid rgb(200, 200, 200);
+	font-family: "Consolas";
+	padding: 6px 13px 6px 13px;
+	margin: 0px;
+}
+pre{
+	font-family: "Consolas";
+}
+</style>
+</head>
+<body>
+<script>
+// see https://stackoverflow.com/questions/400212/how-do-i-copy-to-the-clipboard-in-javascript
+function clipboardCopy(text){
+	let textArea = document.createElement("textarea");
+
+	textArea.style.position = 'fixed';
+	textArea.style.top = 0;
+	textArea.style.left = 0;
+	textArea.style.width = '2em';
+	textArea.style.height = '2em';
+	textArea.style.padding = 0;
+	textArea.style.border = 'none';
+	textArea.style.outline = 'none';
+	textArea.style.boxShadow = 'none';
+	textArea.style.background = 'transparent';
+	textArea.value = text;
+
+	document.body.appendChild(textArea);
+
+	textArea.select();
+
+	 try {
+		let success = document.execCommand('copy');
+			if(success){
+				console.log("copied text to clipboard");
+			}else{
+				console.log("copy to clipboard failed");
+			}
+	} catch (err) {
+		console.log("error while trying to copy to clipboard");
+	}
+
+	document.body.removeChild(textArea);
+}
+
+function getEntry(key){
+	const trs = Array.from(document.querySelectorAll("tr"));
 	
-	//cout << "chunks.size(): " << loader->loader->chunks.size() << endl;
-
-	loader->uploadNextAvailableChunk();
-	loader->uploadNextAvailableChunk();
-	loader->uploadNextAvailableChunk();
-	loader->uploadNextAvailableChunk();
-	loader->uploadNextAvailableChunk();
-	loader->uploadNextAvailableChunk();
-	loader->uploadNextAvailableChunk();
-	loader->uploadNextAvailableChunk();
-	loader->uploadNextAvailableChunk();
-	loader->uploadNextAvailableChunk();
-	loader->uploadNextAvailableChunk();
-
-
-	auto isolate = Isolate::GetCurrent();
-	Local<Object> objLAS = Local<Object>::New(isolate, pObjLAS);
-
-	auto lNumPoints = v8::Integer::New(isolate, loader->pointsUploaded);
-	objLAS->Set(String::NewFromUtf8(isolate, "numPoints"), lNumPoints);
-
-	schedule([loader, pObjLAS]() {
-
-		if (!loader->isDone()) {
-			uploadHook(loader, pObjLAS);
-		} else {
-			endUpload = now();
-			double duration = endUpload - startUpload;
-			cout << "upload duration: " << duration << "s" << endl;
+	for(const tr of trs){
+		const tds = tr.querySelectorAll("td");
+		if(tds[1].textContent === key){
+			return tds[2].textContent;
 		}
+	}
+
+	return null;
+}
+
+</script>
+
+	)V0G0N";
+
+
+	text << "<table>" << endl;
+	
+	//cout << "============" << endl;
+	for (auto& entry : V8Helper::instance()->debugValue) {
+
+		text << "	<tr>" << endl;
+		text << "		<td>" << entry.first << "</td>" << endl;
+		text << "		<td><pre>" << entry.second << "</pre></td>" << endl;
+		text << "	</tr>" << endl;
+		//text << entry.first << ": " << entry.second << endl;
+	}
+	//cout << "== end of frame ==" << endl;
+
+	text << "</table>" << endl;
+
+	text << R"V0G0N(
+
+<script>
+	{ // add copy buttons
+		const rows = document.querySelectorAll("tr");
+		for(const row of rows){
+			const el = document.createElement("td");
+			el.innerHTML = "&#128203;"; 
+			const cells = row.querySelectorAll("td");
+			const last = cells[cells.length - 1];
+			const content = last.textContent;
+
+			el.onclick = (function(text){
+				return function(){
+					clipboardCopy(text);
+				}
+			})(content);
+
+			row.insertBefore(el, row.firstChild);
+		}
+	}
+</script>
+
+</body>
+</html>
+
+)V0G0N";
+
+	string strText = text.str();
+
+	//thread t([strText]() {
+		string path = "./state.html";
+
+		std::ofstream file;
+		file.open(path);
+
+		file << strText << endl;
+
+		file.close();
+	//});
+
+	//t.detach();
+}
+
+
+
+void createWriteStateThread() {
+	thread* writeStateThread = new thread([]() {
+		
+		while (true) {
+
+			writeState();
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(500));
+		}
+
+		
+
 	});
-};
+
+	writeStateThread->detach();
+}
 
 
 int main() {
@@ -181,6 +311,7 @@ int main() {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
 	//glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+	glfwWindowHint(GLFW_FLOATING, GLFW_TRUE);
 
 	int numMonitors;
 	GLFWmonitor** monitors = glfwGetMonitors(&numMonitors);
@@ -238,15 +369,19 @@ int main() {
 	glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
 	glDebugMessageCallback(debugCallback, NULL);
 
-	high_resolution_clock::time_point start = high_resolution_clock::now();
-	high_resolution_clock::time_point previous = start;
+	//high_resolution_clock::time_point start = high_resolution_clock::now();
+	//high_resolution_clock::time_point previous = start;
 
 	int fpsCounter = 0;
-	high_resolution_clock::time_point lastFPSTime = start;
+	//high_resolution_clock::time_point lastFPSTime = start;
+	double start = now();
+	double tPrevious = start;
+	double tPreviousFPSMeasure = start;
 
 
 	V8Helper::instance()->window = window;
 	V8Helper::instance()->setupV8();
+	createWriteStateThread();
 
 	cout << "<V8 has been set up> " << "(" << now() << ")" << endl;
 
@@ -285,134 +420,7 @@ int main() {
 
 		//	updateBuffer.data = malloc(10'000'000 * 16);
 		//}
-		
-
 	}
-
-	V8Helper::_instance->registerFunction("setAttribute", [](const FunctionCallbackInfo<Value>& args) {
-		if (args.Length() != 3) {
-			V8Helper::_instance->throwException("setAttribute requires 1 arguments");
-			return;
-		}
-
-		if (loader == nullptr) {
-			return;
-		}
-
-		String::Utf8Value nameUTF8(args[0]);
-		string name = *nameUTF8;
-
-		double scale = args[1]->NumberValue();
-		double offset = args[2]->NumberValue();
-
-		static atomic<int> pointsUploaded = 0;
-		static atomic<int> chunkIndex = 0;
-
-		pointsUploaded = 0;
-		chunkIndex = 0;
-	
-
-		// TODO baaad
-		mutex* mtx = new mutex();
-		
-
-		auto setAttributeTask = [name, scale, offset, mtx]() {
-			auto lasloader = loader->loader;
-
-			auto findAttribute = [lasloader](string name, Points* chunk) {
-
-				auto attributes = chunk->attributes;
-
-				auto it = std::find_if(attributes.begin(), attributes.end(), [name](Attribute& a) {
-					return a.name == name;
-					});
-
-				if (it == attributes.end()) {
-					return attributes[0];
-				}
-				else {
-					return *it;
-				}
-			};
-
-//			for (auto chunk : loader->chunks) {
-
-			
-			//int index = chunkIndex;
-
-			while(true){
-
-				mtx->lock();
-
-				if (chunkIndex >= loader->chunks.size()) {
-					break;
-				}
-
-				auto chunk = loader->chunks[chunkIndex];
-				chunkIndex++;
-				mtx->unlock();
-
-				auto attribute = findAttribute(name, chunk);
-
-				int chunkSize = chunk->size;
-				void* data = malloc(chunkSize * 16);
-				XYZRGBA* target = reinterpret_cast<XYZRGBA*>(data);
-
-				auto source = attribute.data->data;
-
-				for (int i = 0; i < chunkSize; i++) {
-
-					target[i] = chunk->xyzrgba[i];
-
-					int32_t* targeti32 = reinterpret_cast<int32_t*>(&target[i].r);
-
-					if (attribute.bytes == 1) {
-						int32_t val = reinterpret_cast<uint8_t*>(source)[i];
-
-						targeti32[0] = val;
-					}
-					else if (attribute.bytes == 2) {
-						int32_t val = reinterpret_cast<int16_t*>(source)[i];
-
-						targeti32[0] = val;
-					}
-					else if (attribute.bytes == 4) {
-						int32_t val = reinterpret_cast<uint32_t*>(source)[i];
-
-						targeti32[0] = val;
-					}
-				}
-
-				int offset = pointsUploaded;
-
-				schedule([data, target, offset, chunkSize]() {
-					loader->uploadChunk(target, offset, chunkSize);
-
-					free(data);
-				});
-
-				pointsUploaded += chunkSize;
-
-			}
-
-			//mtx->unlock();
-			//delete mtx;
-
-		};
-
-		thread t1(setAttributeTask);
-		//thread t2(setAttributeTask);
-		//thread t3(setAttributeTask);
-		
-		t1.detach();
-		//t2.detach();
-		//t3.detach();
-
-		
-
-
-	});
-
 
 	V8Helper::_instance->registerFunction("loadLASProgressive", [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 1) {
@@ -423,44 +431,169 @@ int main() {
 		String::Utf8Value fileUTF8(args[0]);
 		string file = *fileUTF8;
 
-		startUpload = now();
-
-		loader = new ProgressiveLoader(file);
-		//ProgressiveLoader* loader = new ProgressiveLoader(file);
+		auto loadData = loadLasProgressive(file);
+		auto loader = loadData->loader;
 
 		auto isolate = Isolate::GetCurrent();
 		Local<ObjectTemplate> lasTempl = ObjectTemplate::New(isolate);
 		auto objLAS = lasTempl->NewInstance();
 
-		auto lHandle = v8::Integer::New(isolate, loader->ssVertexBuffer);
-		auto lNumPoints = v8::Integer::New(isolate, 0);
+		auto lNumPoints = v8::Integer::New(isolate, loader->loader->header.numPoints);
 
-		objLAS->Set(String::NewFromUtf8(isolate, "handle"), lHandle);
+		auto lHandles = Array::New(isolate, loader->ssVertexBuffers.size());
+		for (int i = 0; i < loader->ssVertexBuffers.size(); i++) {
+			auto lHandle = v8::Integer::New(isolate, loader->ssVertexBuffers[i]);
+			lHandles->Set(i, lHandle);
+		}
+		objLAS->Set(String::NewFromUtf8(isolate, "handles"), lHandles);
+		objLAS->Set(String::NewFromUtf8(isolate, "numPoints"), lNumPoints);
+
+		{
+			Local<ObjectTemplate> boxTempl = ObjectTemplate::New(isolate);
+			auto objBox = lasTempl->NewInstance();
+
+			auto& header = loader->loader->header;
+
+			auto lMin = Array::New(isolate, 3);
+			lMin->Set(0, v8::Number::New(isolate, header.minX));
+			lMin->Set(1, v8::Number::New(isolate, header.minY));
+			lMin->Set(2, v8::Number::New(isolate, header.minZ));
+
+			auto lMax = Array::New(isolate, 3);
+			lMax->Set(0, v8::Number::New(isolate, header.maxX));
+			lMax->Set(1, v8::Number::New(isolate, header.maxY));
+			lMax->Set(2, v8::Number::New(isolate, header.maxZ));
+
+			objBox->Set(String::NewFromUtf8(isolate, "min"), lMin);
+			objBox->Set(String::NewFromUtf8(isolate, "max"), lMax);
+
+			objLAS->Set(String::NewFromUtf8(isolate, "boundingBox"), objBox);
+		}
+
+		auto pObjLAS = Persistent<Object, CopyablePersistentTraits<Object>>(isolate, objLAS);
+
+		args.GetReturnValue().Set(objLAS);
+	});
+
+	V8Helper::_instance->registerFunction("setAttribute", [](const FunctionCallbackInfo<Value>& args) {
+		if (args.Length() != 1) {
+			V8Helper::_instance->throwException("setAttribute requires 1 arguments");
+			return;
+		}
+
+		Isolate* isolate = Isolate::GetCurrent();
+
+		auto obj = args[0]->ToObject(isolate);
+		auto length = obj->Get(String::NewFromUtf8(isolate, "length"))->Uint32Value();
+		auto array = Local<Array>::Cast(args[0]);
+
+		vector<SetAttributeDescriptor> requestedAttributes;
+
+		for (int i = 0; i < length; i++) {
+			auto obji = array->Get(i)->ToObject(isolate);
+			auto strName = String::NewFromUtf8(isolate, "name", NewStringType::kNormal).ToLocalChecked();
+			auto strScale = String::NewFromUtf8(isolate, "scale", NewStringType::kNormal).ToLocalChecked();
+			auto strOffset = String::NewFromUtf8(isolate, "offset", NewStringType::kNormal).ToLocalChecked();
+			auto strRange = String::NewFromUtf8(isolate, "range", NewStringType::kNormal).ToLocalChecked();
+
+			Local<Value> bla = obji->Get(strName);
+			String::Utf8Value utf8Name(isolate, bla);
+
+			string name = *utf8Name;
+
+			bool hasScale = obji->Has(strScale);
+			bool hasRange = obji->Has(strRange);
+			
+			if (hasScale) {
+				double scale = obji->Get(strScale)->NumberValue();
+				double offset = obji->Get(strOffset)->NumberValue();
+
+				SetAttributeDescriptor a;
+				a.name = name;
+				a.useScaleOffset = true;
+				a.scale = scale;
+				a.offset = offset;
+				requestedAttributes.emplace_back(a);
+			} else if (hasRange) {
+
+				auto rangeArray = obji->Get(strRange).As<v8::Array>();
+
+				double rangeStart = rangeArray->Get(0)->NumberValue();
+				double rangeEnd = rangeArray->Get(1)->NumberValue();
+
+				SetAttributeDescriptor a;
+				a.name = name;
+				a.useRange = true;
+				a.rangeStart = rangeStart;
+				a.rangeEnd = rangeEnd;
+				requestedAttributes.emplace_back(a);
+			}
+
+			
+		}
+
+		setAttribute(requestedAttributes);
+	});
+
+	V8Helper::_instance->registerFunction("loadBINProgressive", [](const FunctionCallbackInfo<Value>& args) {
+		if (args.Length() != 1) {
+			V8Helper::_instance->throwException("loadLBINProgressive requires 1 arguments");
+			return;
+		}
+
+		String::Utf8Value fileUTF8(args[0]);
+		string file = *fileUTF8;
+
+		auto load = loadBinProgressive(file);
+		auto loader = load->loader;
+
+		auto isolate = Isolate::GetCurrent();
+		Local<ObjectTemplate> lasTempl = ObjectTemplate::New(isolate);
+		auto objLAS = lasTempl->NewInstance();
+
+		auto lNumPoints = v8::Integer::New(isolate, loader->loader->numPoints);
+
+		auto lHandles = Array::New(isolate, loader->ssVertexBuffers.size());
+		for (int i = 0; i < loader->ssVertexBuffers.size(); i++) {
+			auto lHandle = v8::Integer::New(isolate, loader->ssVertexBuffers[i]);
+			lHandles->Set(i, lHandle);
+		}
+		objLAS->Set(String::NewFromUtf8(isolate, "handles"), lHandles);
 		objLAS->Set(String::NewFromUtf8(isolate, "numPoints"), lNumPoints);
 
 		auto pObjLAS = v8::Persistent<Object, v8::CopyablePersistentTraits<v8::Object>>(isolate, objLAS);
 
-		uploadHook(loader, pObjLAS);
+		// TODO might have to initialize point size right away since upload hook 
+		// doesn't update js object anymore
+		//binaryUploadHook(loader, pObjLAS);
 
 		args.GetReturnValue().Set(objLAS);
 	});
+
+
 
 	cout << "<entering first render loop> " << "(" << now() << ")" << endl;
 
 	while (!glfwWindowShouldClose(window)){
 
+		//cout << frameCount << endl;
+
 		// ----------------
 		// TIME
 		// ----------------
 
-		high_resolution_clock::time_point now = high_resolution_clock::now();
-		double nanosecondsSinceLastFrame = double((now - previous).count());
-		double nanosecondsSinceLastFPSMeasure = double((now - lastFPSTime).count());
+		//high_resolution_clock::time_point now = high_resolution_clock::now();
+		//double nanosecondsSinceLastFrame = double((now - previous).count());
+		//double nanosecondsSinceLastFPSMeasure = double((now - lastFPSTime).count());
+		//
+		//double timeSinceLastFrame = nanosecondsSinceLastFrame / 1'000'000'000;
+		//double timeSinceLastFPSMeasure = nanosecondsSinceLastFPSMeasure / 1'000'000'000;
 
-		double timeSinceLastFrame = nanosecondsSinceLastFrame / 1'000'000'000;
-		double timeSinceLastFPSMeasure = nanosecondsSinceLastFPSMeasure / 1'000'000'000;
+		double tCurrent = now();
+		double timeSinceLastFrame = tCurrent - tPrevious;
+		tPrevious = tCurrent;
 
-		previous = now;
+		double timeSinceLastFPSMeasure = tCurrent - tPreviousFPSMeasure;
 
 		if(timeSinceLastFPSMeasure >= 1.0){
 			double fps = double(fpsCounter) / timeSinceLastFPSMeasure;
@@ -481,7 +614,10 @@ int main() {
 				cout << "== end of frame ==" << endl;
 			}
 
-			lastFPSTime = now;
+			// write state to self-refreshing html file
+			//writeState();
+
+			tPreviousFPSMeasure = tCurrent;
 			fpsCounter = 0;
 		}
 		V8Helper::instance()->timeSinceLastFrame = timeSinceLastFrame;
@@ -490,9 +626,86 @@ int main() {
 
 		EventQueue::instance->process();
 
+		if(false){ // GL TIMER MEASUREMENS
+			GLTimerQueries::resolve();
+
+			for (auto it : GLTimerQueries::getMeanMinMax()) {
+
+				string name = it.first;
+				double avg = it.second[0];
+				double mi = it.second[1];
+				double ma = it.second[2];
+
+				stringstream ssAvg;
+				stringstream ssMin;
+				stringstream ssMax;
+				ssAvg << std::setprecision(3) << std::setw(8) << (avg * 1000);
+				ssMin << std::setprecision(3) << std::setw(8) << (mi * 1000);
+				ssMax << std::setprecision(3) << std::setw(8) << (ma * 1000);
+
+				string msg = ssAvg.str() + "ms / " + ssMin.str() + "ms / " + ssMax.str() + "ms";
+			
+				V8Helper::instance()->debugValue[name] = msg;
+			}
+
+			for (auto it : GLTimerQueries::getHistory()) {
+
+				string name = it.first;
+				deque<double>& values = it.second;
+
+				stringstream ss;
+				ss << std::setprecision(3);
+				int i = 0;
+				for (double value : values) {
+					ss << (value * 1000) << ", ";
+
+					i++;
+					if (i > 20) {
+						ss << " ...";
+						break;
+					}
+				}
+
+				string key = name + ".history";
+				string msg = ss.str();
+				V8Helper::instance()->debugValue[key] = msg;
+
+			}
+		}
+
+
+		//if (loadingLAS) {
+		//	cout << "tslf: " << timeSinceLastFrame << endl;
+		//}
+
 		if (timeSinceLastFrame > 0.016) {
 			cout << "too slow! time since last frame: " << int(timeSinceLastFrame * 1000.0) << "ms" << endl;
 		}
+
+		{
+			static double toggle = now();
+			static int missedFrames = 0;
+
+			if (timeSinceLastFrame > 0.016) {
+				missedFrames++;
+			}
+
+			if(now() - toggle >= 1.0){
+
+				string msg = "";
+				if (missedFrames == 0) {
+					msg = std::to_string(missedFrames);
+				} else {
+					msg = "<b style=\"color:red\">" + std::to_string(missedFrames) + "</b>";
+				}
+				V8Helper::instance()->debugValue["#missed frames"] = msg;
+
+				missedFrames = 0;
+				toggle = now();
+			}
+
+		}
+
 
 		// ----------------
 		// RENDER WITH JAVASCRIPT
@@ -511,7 +724,7 @@ int main() {
 		glfwPollEvents();
 
 		fpsCounter++;
-
+		frameCount++;
 	}
 
 	glfwDestroyWindow(window);

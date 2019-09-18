@@ -79,6 +79,24 @@ function debugSphere(parent, position, scale){
 	return sphere;
 }
 
+/**
+ * add separators to large numbers
+ *
+ * @param nStr
+ * @returns
+ */
+addCommas = function(nStr) {
+	nStr += '';
+	let x = nStr.split('.');
+	let x1 = x[0];
+	let x2 = x.length > 1 ? '.' + x[1] : '';
+	let rgx = /(\d+)(\d{3})/;
+	while (rgx.test(x1)) {
+		x1 = x1.replace(rgx, '$1' + ',' + '$2');
+	}
+	return x1 + x2;
+};
+
 class GLTimerQueries{
 
 	constructor(){
@@ -92,64 +110,139 @@ class GLTimerQueries{
 		}
 
 		let query = gl.createQuery();
+		//log(`created query: ${query}`);
 
-		gl.queryCounter(query, gl.TIMESTAMP);
+		let mark = {
+			handle: query,
+			refCount: 0,
+			timestamp: null,
+			cpuTime: now(),
+		};
 
-		GLTimerQueries.marks.set(name, query);
+		gl.queryCounter(mark.handle, gl.TIMESTAMP);
+
+		GLTimerQueries.marks.set(name, mark);
 	}
 
-	static resolve(callback){
+	static measure(name, start, end, callback){
 
 		if(!this.enabled){
 			return;
 		}
 
+		let qStart = GLTimerQueries.marks.get(start);
+		let qEnd = GLTimerQueries.marks.get(end);
 
-		GLTimerQueries.queue.push({
-			marks: GLTimerQueries.marks,
+		qStart.refCount++;
+		qEnd.refCount++;
+
+		let measure = {
+			name: name,
+			start: qStart,
+			end: qEnd,
 			callback: callback,
-		});
+		};
+
+		//GLTimerQueries.measures.set(name, measure);
+		GLTimerQueries.measures.push(measure);
+
+	}
+
+	static resolve(){
+		if(!this.enabled){
+			return;
+		}
+
+		// resolve gl queries
+		for(let [name, mark] of GLTimerQueries.marks){
+			GLTimerQueries.marksToResolve.push(mark);
+		}
 
 		GLTimerQueries.marks = new Map();
 
-		let newQueue = [];
+		let stillToResolve = [];
+		for(let mark of GLTimerQueries.marksToResolve){
+			
+			let timestampAvailable = gl.getQueryObjectui64(mark.handle, gl.QUERY_RESULT_AVAILABLE) === gl.TRUE;
 
-		for(let entry of GLTimerQueries.queue){
-
-			let timestamps = new Map();
-
-			for(let [name, query] of entry.marks){
-				let timestampAvailable = gl.getQueryObjectui64(query, gl.QUERY_RESULT_AVAILABLE) === gl.TRUE;
-
-				if(timestampAvailable){
-					let timestamp = gl.getQueryObjectui64(query, gl.QUERY_RESULT);
-					
-					timestamps.set(name, timestamp);
-				}
-			}
-
-			if(timestamps.size === entry.marks.size){
-				// all queries fullfilled
-
-				for(let [name, query] of entry.marks){
-					gl.deleteQuery(query);
-				}
-
-				entry.callback(timestamps);
+			if(timestampAvailable){
+				let timestamp = gl.getQueryObjectui64(mark.handle, gl.QUERY_RESULT);
+				
+				mark.timestamp = timestamp;
+				gl.deleteQuery(mark.handle);
 			}else{
-				newQueue.push(entry);
+				stillToResolve.push(mark);
 			}
+		}
+		GLTimerQueries.marksToResolve = stillToResolve;
+		//log(GLTimerQueries.marksToResolve.length);
 
+		if(GLTimerQueries.marksToResolve.length > 100){
+			log(`WARNING: more than 100 queries active`);
 		}
 
-		GLTimerQueries.queue = newQueue;
+		let unresolvedMeasures = [];
+		for(let measure of GLTimerQueries.measures){
 
+			let {start, end} = measure;
+
+			let resolved = start.timestamp !== null && end.timestamp !== null;
+
+			if(resolved){
+				let nanos = end.timestamp - start.timestamp;
+				let seconds = nanos / (1000000000);
+
+				if(measure.callback){
+					measure.callback(seconds);
+				}
+
+				if(!GLTimerQueries.history.has(measure.name)){
+					GLTimerQueries.history.set(measure.name, []);
+				}
+
+				let history = GLTimerQueries.history.get(measure.name);
+				history.push(seconds);
+
+				if(history.length > 10){
+					history.shift();
+				}
+
+			}else{
+
+				let outdated = now() - measure.start.cpuTime > 1.0;
+
+				if(outdated){
+					gl.deleteQuery(measure.start.handle);
+					gl.deleteQuery(measure.end.handle);
+				}else{
+					unresolvedMeasures.push(measure);
+				}
+			}
+		}
+
+		for(let [name, history] of GLTimerQueries.history){
+			let sum = history.reduce( (a, i) => a + i, 0);
+			let avg = sum / history.length;
+			let min = Math.min(...history);
+			let max = Math.max(...history);
+
+			let msAvg = (avg * 1000).toFixed(3);
+			let msMin = (min * 1000).toFixed(3);
+			let msMax = (max * 1000).toFixed(3);
+
+			//setDebugValue(`gl.${name}`, `${msAvg}ms / ${msMin}ms / ${msMax}ms`);
+			setDebugValue(`gl.${name}`, `{"mean": ${msAvg}, "min": ${msMin}, "max": ${msMax}}`);
+		}
+
+		GLTimerQueries.measures = unresolvedMeasures;
 	}
 
 };
 
-
+GLTimerQueries.history = new Map();
 GLTimerQueries.marks = new Map();
+GLTimerQueries.marksToResolve = [];
+GLTimerQueries.measures = [];
 GLTimerQueries.queue = [];
 
 

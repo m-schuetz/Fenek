@@ -1,15 +1,11 @@
 
 
+const rootDir = "../../";
 const jsDir = "../../src_js";
 const resourceDir = "../../resources";
 
-watchJS(`${jsDir}/math/Vector3.js`);
-watchJS(`${jsDir}/math/Vector4.js`);
-watchJS(`${jsDir}/math/Matrix4.js`);
-watchJS(`${jsDir}/math/Plane.js`);
 watchJS(`${jsDir}/defines.js`);
-watchJS(`${jsDir}/math/Box3.js`);
-watchJS(`${jsDir}/math/Ray.js`);
+runJSFile(`${rootDir}/modules/math/module.js`);
 watchJS(`${jsDir}/PointAttributes.js`);
 watchJS(`${jsDir}/PotreeLoader.js`);
 watchJS(`${jsDir}/scene/SceneNode.js`);
@@ -31,19 +27,12 @@ watchJS(`${jsDir}/scene/BrushNode.js`);
 watchJS(`${jsDir}/render/render.js`);
 watchJS(`${jsDir}/render/render_vr.js`);
 watchJS(`${jsDir}/render/render_regular.js`);
-watchJS(`${jsDir}/render/render_pointcloud_octree.js`);
-watchJS(`${jsDir}/render/render_progressive.js`);
-watchJS(`${jsDir}/render/render_compute.js`);
-watchJS(`${jsDir}/render/render_clod.js`);
-
-watchJS(`${jsDir}/scene/PointCloudOctree.js`);
-watchJS(`${jsDir}/scene/PointCloudProgressive.js`);
+watchJS(`${jsDir}/render/render_pointcloud_basic.js`);
 watchJS(`${jsDir}/scene/PointCloudBasic.js`);
-watchJS(`${jsDir}/scene/PointCloudExp.js`);
-
-watchJS(`${jsDir}/math/Intersections.js`);
 
 watchJS(`${jsDir}/Shader.js`);
+
+
 
 let fbo = new Framebuffer();
 fbo.setNumColorAttachments(2);
@@ -64,6 +53,12 @@ let desktopMirrorEnabled = true;
 
 let gradientImage = loadImage(`../../resources/images/gradient_spectral_2d.png`);
 let gradientTexture = new GLTexture(gradientImage.width, gradientImage.height, gradientImage.data);
+{
+	gl.bindTexture(gl.TEXTURE_2D, gradientTexture.handle);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+	gl.bindTexture(gl.TEXTURE_2D, 0);
+}
 
 let listeners = {
 	update: [],
@@ -73,7 +68,7 @@ let listeners = {
 
 runJSFile(`${jsDir}/scripts/createDefaultScene.js`);
 //runJSFile(`${jsDir}/scripts/createScene.js`);
-runJSFile(`${jsDir}/scripts/createPointCloudScene.js`);
+//runJSFile(`${jsDir}/scripts/createPointCloudScene.js`);
 //runJSFile(`${jsDir}/scripts/createControllers.js`);
 
 //runJSFile(`${jsDir}/scripts/createSpot.js`);
@@ -84,10 +79,17 @@ watchJS(`${jsDir}/update.js`);
 
 watchJS(`${jsDir}/execute.js`);
 watchJS(`${jsDir}/execute2.js`);
-// watchJS(`${jsDir}/subsample/subsample.js`);
-// watchJS(`${jsDir}/subsample/subsample_exec.js`);
-watchJS(`${jsDir}/execute_drawperf.js`);
-monitorJS(`${jsDir}/execute3.js`);
+
+
+
+runJSFile(`${rootDir}/modules/compute/module.js`);
+watchJS(`${rootDir}/modules/compute_ll/render.js`);
+watchJS(`${rootDir}/modules/compute_hqs/render.js`);
+runJSFile(`${rootDir}/modules/progressive/module.js`);
+runJSFile(`${rootDir}/modules/octree/module.js`);
+runJSFile(`${rootDir}/modules/clod/module.js`);
+runJSFile(`${rootDir}/modules/build/module.js`);
+
 
 
 

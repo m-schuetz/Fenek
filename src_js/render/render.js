@@ -276,11 +276,12 @@ var renderDefault = function(node, view, proj, target){
 	//log("lala");
 	//return;
 
-
 	let buffers = node.getComponents(GLBuffer);
 	let material = node.getComponent(GLMaterial, {or: GLMaterial.DEFAULT});
 	let shader = material.shader;
 	let shader_data = shader.uniformBlocks.shader_data;
+
+	//log(shader.program);
 
 	let transform = new Matrix4();
 
@@ -332,6 +333,8 @@ var renderDefault = function(node, view, proj, target){
 
 		// FIXME shouldn't need to bind/unbind vbo from vao. trying bc. of compute shader
 		gl.bindBuffer(gl.ARRAY_BUFFER, buffer.vbo);
+
+		
 		
 		if(buffer.indirect){
 
@@ -354,6 +357,8 @@ var renderDefault = function(node, view, proj, target){
 				//gl.blendColor(0, 1, 1, 1);
 				//gl.blendFunc(gl.CONSTANT_COLOR, gl.ONE);
 				//gl.blendEquation(gl.FUNC_REVERSE_SUBTRACT);
+
+				
 
 				gl.drawArrays(material.glDrawMode, 0, buffer.count);
 			}
@@ -429,12 +434,20 @@ var renderBuffers = function(view, proj, target){
 		//log(node.name);
 
 		if(node instanceof PointCloudOctree){
-			renderPointCloudOctree(node, view, proj);
+			renderPointCloudOctree(node, view, proj, target);
 		}
 		else if(node instanceof PointCloudProgressive){
+
+			if(typeof renderDebug !== "undefined"){
+				renderDebug(node, view, proj, target);
+			}else{
+			//renderComputeLL(node, view, proj, target);
 			//renderPointCloudCompute(node, view, proj, target);
+			//renderComputeHQS(node, view, proj, target);
 			renderPointCloudProgressive(node, view, proj, target);
+			//renderPointCloudBasic(node, view, proj, target);
 			//renderDefault(node, view, proj, target);
+			}
 		}
 		else if(node instanceof PointCloudBasic){
 			//renderPointCloudCompute(node, view, proj, target);
@@ -585,7 +598,7 @@ var render = function(){
 		renderVR();
 	}else{
 		renderRegular();
-	}
+	}	
 
 	if(desktopMirrorEnabled){
 		let desktopTexture = acquireDesktopTexture();
@@ -677,8 +690,6 @@ var render = function(){
 			}else{
 				gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 			}
-			//gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-			//gl.blendFunc(gl.ONE, gl.ONE);
 
 			gl.bindVertexArray(buffer.vao);
 			gl.drawArrays(material.glDrawMode, 0, buffer.count);
@@ -689,20 +700,10 @@ var render = function(){
 			gl.enable(gl.DEPTH_TEST);
 			gl.depthMask(true);
 
-			//gl.namedFramebufferReadBuffer(fboDesktop.handle, gl.COLOR_ATTACHMENT0);
-			//gl.bindTexture(gl.TEXTURE_2D, desktopTextureCopy);
-			//
-			//gl.copyTextureSubImage2D(desktopTextureCopy, 0, 0, 0, 0, 0, 1280, 720);
-			//gl.generateMipmap(gl.TEXTURE_2D);
-
 			gl.blitNamedFramebuffer(state.fboDesktop.handle, state.fboDesktopCopy.handle, 
 				0, 0, 1280, 720, 
 				0, 0, 1280, 720, 
 				gl.COLOR_BUFFER_BIT, gl.NEAREST);
-
-
-
-
 
 			gl.bindFramebuffer(gl.FRAMEBUFFER, 0);
 
@@ -712,101 +713,23 @@ var render = function(){
 
 	scene.drawQueue = [];
 
-	//GLTimerQueries.mark = () => {};
-
 	GLTimerQueries.mark("render-end");
-	GLTimerQueries.resolve( (result) => {
+	GLTimerQueries.measure("render", "render-start", "render-end");
 
-		let computeMillies = (startName, endName) => {
-			let start = result.get(startName);
-			let end = result.get(endName);
+	//GLTimerQueries.enabled = true;
+	GLTimerQueries.resolve();
+	
+	//log(GLTimerQueries.measures.length);
 
-			if(start === undefined || end === undefined){
-				return null;
-			}
-
-			let nanos = end - start;
-			let millies = nanos / (1000 * 1000);
-
-			return millies;
-		};
-
-		let debugMillies = (debugName, startName, endName) => {
-			let millies = computeMillies(startName, endName);
-			
-			if(millies !== null){
-				setDebugValue(debugName, `${millies.toFixed(3)} ms`);
-			}else{
-				//removeDebugValue(debugName);
-			}
-		};
-
-
-		debugMillies("duration.gl.render", 
-			"render-start", 
-			"render-end");
-
-		debugMillies("duration.gl.render-progressive", 
-			"render-progressive-start", 
-			"render-progressive-end");
-
-		debugMillies("duration.gl.render-progressive-reproject", 
-			"render-progressive-reproject-start", 
-			"render-progressive-reproject-end");
-
-		debugMillies("duration.gl.render-progressive-add", 
-			"render-progressive-add-start", 
-			"render-progressive-add-end");
-
-		debugMillies("duration.gl.render-progressive-ibo", 
-			"render-progressive-ibo-start", 
-			"render-progressive-ibo-end");
-
-		debugMillies("duration.gl.render-vr", 
-			"render-vr-start", 
-			"render-vr-end");
-
-		debugMillies("duration.gl.render-compute", 
-			"render-compute-start", 
-			"render-compute-end");
-
-		debugMillies("duration.gl.render-compute-renderpass", 
-			"render-compute-renderpass-start", 
-			"render-compute-renderpass-end");
-
-		debugMillies("duration.gl.render-compute-resolvepass", 
-			"render-compute-resolvepass-start", 
-			"render-compute-resolvepass-end");
-
-		debugMillies("duration.gl.render-octree", 
-			"render-octree-start", 
-			"render-octree-end");
-
-		debugMillies("duration.gl.filter", 
-			"filter-start", 
-			"filter-end");
-
-		debugMillies("duration.gl.edl-left", 
-			"edl-left-start", 
-			"edl-left-end");
-
-		debugMillies("duration.gl.edl", 
-			"edl-start", 
-			"edl-end");
-
-		debugMillies("duration.gl.clod", 
-			"clod-start", 
-			"clod-end");
-
-		debugMillies("subsample", 
-			"subsample-start", 
-			"subsample-end");
-
-	});
+	//log(GLTimerQueries.measures[40000].start.handle)
+	//log(GLTimerQueries.measures[40000].end.timestamp)
 
 	let duration = now() - start;
 	let durationMS = (duration * 1000).toFixed(3);
 	setDebugValue("duration.cp.render", `${durationMS}ms`);
+
+	
+
 
 }
 

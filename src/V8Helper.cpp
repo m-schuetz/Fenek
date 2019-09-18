@@ -2,6 +2,7 @@
 #include "V8Helper.h"
 
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <chrono>
 #include <regex>
@@ -207,6 +208,8 @@ void V8Helper::setupGL() {
 	
 	setupV8GLExtBindings(tpl);
 	//setupV8GLExtBindings(tpl, constants);
+
+	CREATE_CONSTANT_ACCESSOR("QUERRY_BUFFER", GL_QUERY_BUFFER);
 
 	CREATE_CONSTANT_ACCESSOR("VERSION_1_1", 1);
 	CREATE_CONSTANT_ACCESSOR("ZERO", 0);
@@ -1689,6 +1692,30 @@ void V8Helper::setupGL() {
 		glDrawArrays(mode, first, count);
 	}));
 
+	tpl->Set(String::NewFromUtf8(isolate, "getProgramInfoLogString"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+		if (args.Length() != 1) {
+			V8Helper::_instance->throwException("drawArrays requires 1 arguments");
+			return;
+		}
+
+		int program = args[0]->NumberValue();
+
+		GLint maxLength = 0;
+		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &maxLength);
+
+		// The maxLength includes the NULL character
+		std::vector<GLchar> infoLog(maxLength);
+		glGetProgramInfoLog(program, maxLength, &maxLength, &infoLog[0]);
+
+		string str(infoLog.begin(), infoLog.end());
+
+		//Local<String> v8String = String::NewFromUtf8(isolate, cppStr.c_str(), v8::String::kNormalString);
+		Local<String> v8String = String::NewFromUtf8(v8::Isolate::GetCurrent(), str.c_str(), v8::String::kNormalString);
+
+		args.GetReturnValue().Set(v8String);
+		
+	}));
+
 	tpl->Set(String::NewFromUtf8(isolate, "createQuery"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 0) {
 			V8Helper::_instance->throwException("createQuery requires 0 arguments");
@@ -1721,12 +1748,27 @@ void V8Helper::setupGL() {
 		int query = args[0]->Int32Value();
 		GLenum pname = args[1]->Uint32Value();
 
-		unsigned long long params;
+		unsigned long long params = 123;
+		//glBindBuffer(GL_QUERY_BUFFER, 0);
 		glGetQueryObjectui64v(query, pname, &params);
 
 		double val = (double)params;
 
 		args.GetReturnValue().Set(val);
+	}));
+
+	tpl->Set(String::NewFromUtf8(isolate, "getQueryObjectui64Indirect"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+		if (args.Length() != 3) {
+			V8Helper::_instance->throwException("getQueryObjectui64Indirect requires 3 arguments");
+			return;
+		}
+
+		int query = args[0]->Int32Value();
+		GLenum pname = args[1]->Uint32Value();
+		uint64_t offset = args[2]->Uint32Value();
+
+		glGetQueryObjectui64v(query, pname, (GLuint64*) + offset);
+
 	}));
 
 	tpl->Set(String::NewFromUtf8(isolate, "depthMask"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
@@ -1973,6 +2015,35 @@ void V8Helper::setupV8() {
 		auto v8str = v8::String::NewFromUtf8(Isolate::GetCurrent(), text.c_str());
 
 		args.GetReturnValue().Set(v8str);
+	});
+
+	V8Helper::_instance->registerFunction("writeTextFile", [](const FunctionCallbackInfo<Value>& args) {
+		if (args.Length() != 2) {
+			V8Helper::_instance->throwException("writeTextFile requires 2 arguments");
+			return;
+		}
+
+		String::Utf8Value fileUTF8(args[0]);
+		string file = *fileUTF8;
+
+		String::Utf8Value textUTF8(args[1]);
+		string text = *textUTF8;
+
+		// see https://stackoverflow.com/questions/2602013/read-whole-ascii-file-into-c-stdstring
+		std::ofstream t(file);
+
+		t << text;
+
+		t.close();
+
+
+		//std::stringstream buffer;
+		//buffer << t.rdbuf();
+		//string text = buffer.str();
+
+		//auto v8str = v8::String::NewFromUtf8(Isolate::GetCurrent(), text.c_str());
+
+		//args.GetReturnValue().Set(v8str);
 	});
 
 	V8Helper::_instance->registerFunction("openFile", [](const FunctionCallbackInfo<Value>& args) {
@@ -2281,6 +2352,31 @@ void V8Helper::setupV8() {
 		args.GetReturnValue().Set(resolver->GetPromise());
 
 	});
+
+	//V8Helper::_instance->registerFunction("writeState", [](const FunctionCallbackInfo<Value>& args) {
+	//	if (args.Length() != 0) {
+	//		V8Helper::_instance->throwException("writeState requires 0 arguments");
+	//		return;
+	//	}
+	//
+	//	auto isolate = Isolate::GetCurrent();
+	//	
+	//	thread t([isolate]() {
+	//		string text = "abc";
+	//		string path = "./state.html";
+	//
+	//		std::ofstream file;
+	//		file.open(path);
+	//
+	//		file << text << endl;
+	//
+	//		file.close();
+	//
+	//	});
+	//		
+	//	t.detach();
+	//
+	//});
 
 
 	struct IPoint {

@@ -70,6 +70,8 @@ public:
 
 	void updatePose();
 
+	void postPresentHandoff();
+
 	Pose getPose(int deviceID);
 
 	Pose getLeftControllerPose();

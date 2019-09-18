@@ -7,13 +7,17 @@ if( typeof getRenderRegularState === "undefined"){
 		if( typeof renderRegularState === "undefined"){
 			let fboEDL = new Framebuffer();
 
-			//let path = "../../resources/shaders/edl.cs";
-			//let shader = new Shader([{type: gl.COMPUTE_SHADER, path: path}]);
-			//shader.watch();
-			//let edlShader = shader;
-
+			
 			let vsPath = "../../resources/shaders/edl.vs";
 			let fsPath = "../../resources/shaders/edl.fs";
+			let fsPathMSAA = "../../resources/shaders/edlMSAA.fs";
+
+			let edlShaderMSAA = new Shader([
+				{type: gl.VERTEX_SHADER, path: vsPath},
+				{type: gl.FRAGMENT_SHADER, path: fsPathMSAA},
+			]);
+			edlShaderMSAA.watch();
+
 			let edlShader = new Shader([
 				{type: gl.VERTEX_SHADER, path: vsPath},
 				{type: gl.FRAGMENT_SHADER, path: fsPath},
@@ -23,6 +27,7 @@ if( typeof getRenderRegularState === "undefined"){
 			renderRegularState = {
 				fboEDL: fboEDL,
 				edlShader: edlShader,
+				edlShaderMSAA: edlShaderMSAA,
 			};
 		}
 
@@ -46,6 +51,7 @@ var renderRegular = function() {
 	gl.clearDepth(0);
 	gl.enable(gl.DEPTH_TEST);
 	gl.depthFunc(gl.GREATER);
+	//gl.depthFunc(gl.GEQUAL);
 
 	fbo.setSize(window.width, window.height);
 	fbo.setSamples(MSAA_SAMPLES);
@@ -83,7 +89,10 @@ var renderRegular = function() {
 		
 		let state = getRenderRegularState();
 		let fboEDL = state.fboEDL;
-		let shader = state.edlShader;
+
+		let samples = fbo.samples;
+
+		let shader = (samples === 1) ? state.edlShader : state.edlShaderMSAA;
 		let shader_data = shader.uniformBlocks.shader_data;
 
 		fboEDL.setSize(fbo.width, fbo.height);
@@ -94,7 +103,8 @@ var renderRegular = function() {
 
 		gl.useProgram(shader.program);
 
-		let textureType = gl.TEXTURE_2D_MULTISAMPLE;
+		let textureType = (samples === 1) ? gl.TEXTURE_2D : gl.TEXTURE_2D_MULTISAMPLE;
+		
 		gl.activeTexture(gl.TEXTURE0);
 		gl.bindTexture(textureType, fbo.textures[0]);
 		gl.uniform1i(shader.uniforms.uColor, 0);
@@ -121,12 +131,6 @@ var renderRegular = function() {
 		gl.drawArrays(gl.TRIANGLES, 0, buffer.count);
 		gl.bindVertexArray(0);
 
-		GLTimerQueries.mark("edl-end");
-
-		//log(buffer.attributes);
-
-		//log(fboEDL.height);
-
 		gl.enable(gl.DEPTH_TEST);
 		gl.depthMask(true);
 		
@@ -134,6 +138,13 @@ var renderRegular = function() {
 			0, 0, fboEDL.width, fboEDL.height, 
 			0, 0, window.width, window.height, 
 			gl.COLOR_BUFFER_BIT, gl.LINEAR);
+
+		GLTimerQueries.mark("edl-end");
+		GLTimerQueries.measure("render.edl", "edl-start", "edl-end");
+		//GLTimerQueries.measure("render.edl", "edl-start", "edl-end", (duration) => {
+		//	let ms = (duration * 1000).toFixed(3);
+		//	setDebugValue("gl.render.edl", `${ms}ms`);
+		//});
 
 		//gl.blitNamedFramebuffer(fboEDL.handle, 0, 
 		//	600, 400, 600 + 128, 400 + 128, 

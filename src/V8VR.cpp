@@ -154,6 +154,15 @@ void V8Helper::setupVR(){
 		OpenVRHelper::instance()->updatePose();
 	}));
 
+	tpl->Set(String::NewFromUtf8(isolate, "postPresentHandoff"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
+		if (args.Length() != 0) {
+			V8Helper::_instance->throwException("updatePose requires 0 arguments");
+			return;
+		}
+
+		OpenVRHelper::instance()->postPresentHandoff();
+		}));
+
 	tpl->Set(String::NewFromUtf8(isolate, "getRecommmendedRenderTargetSize"), FunctionTemplate::New(isolate, [](const FunctionCallbackInfo<Value>& args) {
 		if (args.Length() != 0) {
 			V8Helper::_instance->throwException("getRecommmendedRenderTargetSize requires 0 arguments");

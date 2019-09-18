@@ -123,6 +123,18 @@ Shader.prototype.compile = function(){
 	gl.getProgramiv(this.program, gl.LINK_STATUS, isLinked);
 	if(isLinked[0] === gl.FALSE){
 		log("TODO: PROGRAM LINK ERROR HANDLING!!!");
+
+		let msg = gl.getProgramInfoLogString(this.program);
+
+		log(msg);
+		
+		// // We don't need the program anymore.
+		// glDeleteProgram(program);
+		// // Don't leak shaders either.
+		// glDeleteShader(vertexShader);
+		// glDeleteShader(fragmentShader);
+
+
 	}
 
 	for(let compiledComponent of compiledComponents){

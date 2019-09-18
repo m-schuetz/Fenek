@@ -19,15 +19,24 @@ if( typeof getRenderVRState === "undefined"){
 
 			let vsPath = "../../resources/shaders/edl.vs";
 			let fsPath = "../../resources/shaders/edl.fs";
-			let shader = new Shader([
+			let fsPathMSAA = "../../resources/shaders/edlMSAA.fs";
+
+			let edlShaderMSAA = new Shader([
+				{type: gl.VERTEX_SHADER, path: vsPath},
+				{type: gl.FRAGMENT_SHADER, path: fsPathMSAA},
+			]);
+			edlShaderMSAA.watch();
+
+			let edlShader = new Shader([
 				{type: gl.VERTEX_SHADER, path: vsPath},
 				{type: gl.FRAGMENT_SHADER, path: fsPath},
 			]);
-			shader.watch();
+			edlShader.watch();
 
 			renderVRState = {
 				fboEDL: fboEDL,
-				edlShader: shader,
+				edlShader: edlShader,
+				edlShaderMSAA: edlShaderMSAA,
 				fboLeft: fboLeft,
 				fboRight: fboRight,
 				fboResolveLeft: fboResolveLeft,
@@ -60,8 +69,13 @@ var renderVR = function(){
 	fboLeft.setSamples(samples);
 	fboRight.setSamples(samples);
 
+
+	//let st1 = now();
 	vr.updatePose();
 	vr.processEvents();
+	//let td = (1000 *  (now() - st1)).toFixed(3);
+	//log(td);
+
 
 	GLTimerQueries.mark("render-vr-start");
 	let startWithoutWait = now();
@@ -78,7 +92,6 @@ var renderVR = function(){
 	gl.disable(gl.BLEND);
 	//gl.blendFunc(gl.ONE, gl.ONE);
 
-
 	let [near, far] = [0.1, 1000];
 	let leftProj = new Matrix4().set(vr.getLeftProjection(near, far));
 	let rightProj = new Matrix4().set(vr.getRightProjection(near, far));
@@ -86,27 +99,16 @@ var renderVR = function(){
 	{ // LEFT
 		gl.bindFramebuffer(gl.FRAMEBUFFER, fboLeft.handle);
 		gl.viewport(0, 0, fboLeft.width, fboLeft.height);
-		gl.clearColor(1, 1, 1, 1);
+		//gl.clearColor(1, 1, 1, 1);
+		gl.clearColor(0, 0, 0, 0);
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
 
 		let view = new Matrix4().multiplyMatrices(hmdPose, leftPose).getInverse();
 		let proj = leftProj;
 
-		//log(proj.elements);
-
-		//log(proj.elements);
-
-		//log(hmdPose);
-
-		//log("lala");
-		//return;
 		renderBuffers(view, proj, fboLeft);
-		//if($("procedural") && true){
-		//	renderCompute($("procedural"), view, proj, fboLeft);
-		//}
-	}
 
+	}
 
 	//EDL_ENABLED = true;
 	if(EDL_ENABLED){
@@ -117,14 +119,17 @@ var renderVR = function(){
 		let isquad = $("image_space_quad");
 		let buffer = isquad.getComponent(GLBuffer);
 
-		let shader = state.edlShader;
+		let samples = fbo.samples;
+
+		let shader = (samples === 1) ? state.edlShader : state.edlShaderMSAA;
 		let shader_data = shader.uniformBlocks.shader_data;
 
 		gl.bindFramebuffer(gl.FRAMEBUFFER, fboResolveLeft.handle);
 
 		gl.useProgram(shader.program);
 
-		let textureType = gl.TEXTURE_2D_MULTISAMPLE;
+		//let textureType = gl.TEXTURE_2D_MULTISAMPLE;
+		let textureType = (samples === 1) ? gl.TEXTURE_2D : gl.TEXTURE_2D_MULTISAMPLE;
 		gl.activeTexture(gl.TEXTURE0);
 		gl.bindTexture(textureType, fbo.textures[0]);
 		gl.uniform1i(shader.uniforms.uColor, 0);
@@ -165,7 +170,6 @@ var renderVR = function(){
 
 	}
 
-
 	{ // RIGHT
 		gl.bindFramebuffer(gl.FRAMEBUFFER, fboRight.handle);
 		gl.viewport(0, 0, fboRight.width, fboRight.height);
@@ -187,14 +191,16 @@ var renderVR = function(){
 		let isquad = $("image_space_quad");
 		let buffer = isquad.getComponent(GLBuffer);
 
-		let shader = state.edlShader;
+		let samples = fbo.samples;
+
+		let shader = (samples === 1) ? state.edlShader : state.edlShaderMSAA;
 		let shader_data = shader.uniformBlocks.shader_data;
 
 		gl.bindFramebuffer(gl.FRAMEBUFFER, fboResolveRight.handle);
 
 		gl.useProgram(shader.program);
 
-		let textureType = gl.TEXTURE_2D_MULTISAMPLE;
+		let textureType = (samples === 1) ? gl.TEXTURE_2D : gl.TEXTURE_2D_MULTISAMPLE;
 		gl.activeTexture(gl.TEXTURE0);
 		gl.bindTexture(textureType, fbo.textures[0]);
 		gl.uniform1i(shader.uniforms.uColor, 0);
@@ -234,22 +240,25 @@ var renderVR = function(){
 			gl.COLOR_BUFFER_BIT, gl.LINEAR);
 
 	}
-	
-
-	//gl.blitNamedFramebuffer(fboRight.handle, fboResolveRight.handle, 
-	//	0, 0, fboRight.width, fboRight.height, 
-	//	0, 0, fboResolveRight.width, fboResolveRight.height, 
-	//	gl.COLOR_BUFFER_BIT, gl.NEAREST);
-
 
 	vr.submit(fboResolveLeft.textures[0], fboResolveRight.textures[0]);
+
+	vr.postPresentHandoff();
+
 	
 	gl.blitNamedFramebuffer(fboResolveLeft.handle, 0, 
 		0, 0, fboResolveLeft.width, fboResolveLeft.height, 
 		0, 0, window.width + 10, window.height, 
 		gl.COLOR_BUFFER_BIT, gl.LINEAR);
 
+
 	GLTimerQueries.mark("render-vr-end");
+
+	// let st1 = now();
+	// vr.updatePose();
+	// let td = (1000 *  (now() - st1)).toFixed(3);
+	// log(td);
+	// vr.processEvents();
 
 	//gl.blitNamedFramebuffer(fboResolveRight.handle, 0, 
 	//	0, 0, fboResolveRight.width, fboResolveRight.height, 
