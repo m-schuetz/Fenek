@@ -89,17 +89,18 @@ getRenderProgressiveState = function(target){
 		}
 
 		{ // create copy progressive stats button in state.html
-			const format = "${reproject}\t${fillFixed}\t${fillBudget}\t${fillRemaining}\t${fill}\t${vbo}\t${progressive}";
+			//const format = "${reproject}\t${fillFixed}\t${fillBudget}\t${fillRemaining}\t${fill}\t${vbo}\t${progressive}";
+			const format = "${reproject}\t${fillFixed}\t${vbo}\t${progressive}";
 			const html = `</pre>
 			<script>
 			function copyProgressive(){
 
 				const progressive = JSON.parse(getEntry("gl.render.progressive")).mean;
 				const reproject = JSON.parse(getEntry("gl.render.progressive.p1_reproject")).mean;
-				const fill = JSON.parse(getEntry("gl.render.progressive.p2_fill")).mean;
+				//const fill = JSON.parse(getEntry("gl.render.progressive.p2_fill")).mean;
 				const fillFixed = JSON.parse(getEntry("gl.render.progressive.p2_fill.render_fixed")).mean;
-				const fillRemaining = JSON.parse(getEntry("gl.render.progressive.p2_fill.render_remaining")).mean;
-				const fillBudget = JSON.parse(getEntry("progressive dyn budget")).mean;
+				//const fillRemaining = JSON.parse(getEntry("gl.render.progressive.p2_fill.render_remaining")).mean;
+				//const fillBudget = JSON.parse(getEntry("progressive dyn budget")).mean;
 				const vbo = JSON.parse(getEntry("gl.render.progressive.p3_vbo")).mean;
 				const msg = \`${format}\`;
 
@@ -209,6 +210,7 @@ renderPointCloudProgressive = (function(){
 
 			let leftToEndOfBuffer = (pointcloud.numPoints - state.fillOffset);
 			
+			//log("===");
 			{ // draw towards end of buffer
 				let count = Math.min(remainingBudget, leftToEndOfBuffer);
 				gl.uniform1i(shFill.uniforms.uOffset, 0);
@@ -557,7 +559,6 @@ renderPointCloudProgressive = (function(){
 			//fillDynamic(target, pointcloud, view, proj);
 			createVBO(target, pointcloud, view, proj);
 		}
-
 
 		gl.useProgram(0);
 

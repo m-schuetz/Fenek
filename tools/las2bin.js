@@ -18,10 +18,10 @@ const fs = require('fs');
 // let offsetRGB = 28;
 
 //Wien v6 250M
-let file = "D:/dev/pointclouds/tu_photogrammetry/wienCity_v6_250M.las";
-let targetFile = "D:/dev/pointclouds/tu_photogrammetry/wienCity_v6_250M.bin";
-let offsetXYZ = 0;
-let offsetRGB = 30;
+// let file = "D:/dev/pointclouds/tu_photogrammetry/wienCity_v6_250M.las";
+// let targetFile = "D:/dev/pointclouds/tu_photogrammetry/wienCity_v6_250M.bin";
+// let offsetXYZ = 0;
+// let offsetRGB = 30;
 
 // Wien v6 125
 // let file = "D:/dev/pointclouds/tu_photogrammetry/wienCity_v6_125M.las";
@@ -46,6 +46,12 @@ let offsetRGB = 30;
 // let targetFile = "D:/dev/pointclouds/pix4d/matterhorn.bin";
 // let offsetXYZ = 0;
 // let offsetRGB = 20;
+
+// MATTERHORN
+let file = "D:/dev/pointclouds/pix4d/eclepens.las";
+let targetFile = "D:/dev/pointclouds/pix4d/eclepens.bin";
+let offsetXYZ = 0;
+let offsetRGB = 20;
 
 // CANDI SARI
 // let file = "D:/dev/pointclouds/tuwien_baugeschichte/Candi Sari_las export/candi_sari.las";

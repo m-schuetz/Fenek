@@ -74,14 +74,14 @@ view.set(
 	[5.123214356964963, 4.573860054923273, -7.986573283576178],
 );
 
-// window.x = 200;
-// window.y = 200;
-// window.width = 1920;
-// window.height = 1080;
+window.x = 200;
+window.y = 200;
+window.width = 1920;
+window.height = 1080;
 
 MSAA_SAMPLES = 1;
 EDL_ENABLED = false;
 camera.near = 0.1;
 
 //renderDebug = renderPointCloudProgressive;
-//renderDebug = renderPointCloudBasic;
+renderDebug = renderPointCloudBasic;
