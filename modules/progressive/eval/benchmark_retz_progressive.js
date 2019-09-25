@@ -1,8 +1,8 @@
 
 if(!$("testcloud")){
 	
-	//let las = loadBINProgressive("D:/dev/pointclouds/riegl/retz.bin");
-	let las = loadLASProgressive("D:/dev/pointclouds/riegl/Retz_Airborne_Terrestrial_Combined_1cm.las");
+	let las = loadBINProgressive("D:/dev/pointclouds/riegl/retz.bin");
+	//let las = loadLASProgressive("D:/dev/pointclouds/riegl/Retz_Airborne_Terrestrial_Combined_1cm.las");
 
 	let pc = new PointCloudProgressive("testcloud", "blabla");
 
@@ -69,18 +69,25 @@ if(!$("testcloud")){
 
 }
 
-// view.set(
-// 	[629.908, 82.148, -799.211], 
-// 	[569.602, 41.695, -857.466]
-// );
+view.set(
+	[629.908, 82.148, -799.211], 
+	[569.602, 41.695, -857.466]
+);
+
+view.set(
+	[882.534, 376.912, -520.001], 
+	[569.602, 41.695, -857.466]
+);
 
 window.x = 0;
 window.y = 0;
-window.width = 1920;
-window.height = 1080;
+// window.width = 1920;
+// window.height = 1080;
 
-MSAA_SAMPLES = 16;
-EDL_ENABLED = false;
 
+MSAA_SAMPLES = 1;
+EDL_ENABLED = true;
+
+camera.near = 200;
 //renderDebug = renderPointCloudProgressive;
 //renderDebug = renderPointCloudBasic;

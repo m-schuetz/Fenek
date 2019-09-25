@@ -43,6 +43,47 @@ void main() {
 		float((vertexID >> 24) & 0xFF) / 255.0
 	);
 
+	// {
+	// 	//float t = float(aIndex / 100) / 500000.0;
+		
+	// 	//float t = float(aIndex / 100) / 1800000.0 + 0.1;
+	// 	float t = float(gl_VertexID) / (5 * 1000 * 1000);
+	// 	//float t = float(aIndex / 100) / 900000.0 - 0.2;
+
+	// 	vec3 c = texture(uGradient, vec2(t, 0.0)).xyz;
+	// 	vColor = c;
+	// }
+
+	// {
+	// 	//float t = float(aIndex / 100) / 500000.0;
+		
+	// 	//float t = float(aIndex / 100) / 1800000.0 + 0.1;
+	// 	float t = float(gl_VertexID / 277) / 1000000;
+	// 	//float t = float(aIndex / 100) / 900000.0 - 0.2;
+
+	// 	vec3 c = texture(uGradient, vec2(t, 0.0)).xyz;
+	// 	vColor = c;
+	// }
+
+	// for progression figure in paper using retz data set
+	// if(aPosition.x < 480 || aPosition.x > 620 || aPosition.y < 800 || aPosition.y > 950){
+	// 	gl_Position.w = 0;
+	// }
+
+	{
+		
+		//float t = float(aIndex / 13) / (1000 * 1000) - 0.2;
+		float t = float(gl_VertexID / 1000) / (14.5 * 1000.0);
+
+		uint classes = gl_VertexID / 100000;
+		t = float(classes) / 140;
+		
+
+		vec3 c = texture(uGradient, vec2(t, 0.0)).xyz;
+		vColor = c;
+	}
+
+
 }
 
 

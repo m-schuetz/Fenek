@@ -1,9 +1,9 @@
 
 if(!$("testcloud")){
 	
-	let las = loadBINProgressive("D:/dev/pointclouds/archpro/heidentor.bin");
-	//let las = loadLASProgressive("D:/dev/pointclouds/archpro/heidentor.las");
-	//let las = loadBINProgressive("D:\\dev\\pointclouds\\tuwien_baugeschichte\\Museum Affandi_las export\\batch_0.bin");
+	//let las = loadBINProgressive("D:/dev/pointclouds/riegl/retz.bin");
+	let las = loadLASProgressive("D:/dev/pointclouds/riegl/retz_townhall.las");
+	//let las = loadLASProgressive("D:/dev/pointclouds/riegl/Retz_Airborne_Terrestrial_Combined_1cm.las");
 
 	let pc = new PointCloudProgressive("testcloud", "blabla");
 
@@ -71,18 +71,62 @@ if(!$("testcloud")){
 }
 
 view.set(
-	[-10.345953680165964, 10.620905761903753, -0.02535870577455146],
-	[5.123214356964963, 4.573860054923273, -7.986573283576178],
+	[629.908, 82.148, -799.211], 
+	[569.602, 41.695, -857.466]
 );
 
-window.x = 200;
-window.y = 200;
+view.set(
+	[882.534, 376.912, -520.001], 
+	[569.602, 41.695, -857.466]
+);
+
+
+window.x = 0;
+window.y = 0;
 window.width = 1920;
 window.height = 1080;
 
-MSAA_SAMPLES = 4;
-EDL_ENABLED = false;
-camera.near = 0.1;
 
-renderDebug = renderPointCloudProgressive;
+MSAA_SAMPLES = 4;
+EDL_ENABLED = true;
+
+camera.near = 2;
+//renderDebug = renderPointCloudProgressive;
 //renderDebug = renderPointCloudBasic;
+
+view.set(
+	[105.308, 75.081, 71.490], 
+	[19.111, 23.322, -20.537]
+);
+
+
+view.set(
+	[-37.133, 80.082, -130.958], 
+	[19.111, 23.322, -20.537]
+);
+
+view.set(
+	[106.401, 73.184, -112.581], 
+	[19.111, 23.322, -20.537]
+);
+
+
+
+
+
+
+
+
+
+
+
+view.set(
+	[77.541, 46.509, -66.133], 
+	[26.270, 24.544, -13.141]
+);
+
+// view.set(
+// 	[-7.623, 45.771, -78.868], 
+// 	[26.270, 24.544, -13.141]
+// );
+

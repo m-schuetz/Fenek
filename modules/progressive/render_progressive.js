@@ -201,8 +201,27 @@ renderPointCloudProgressive = (function(){
 
 		let buffers = pointcloud.glBuffers;
 
-		let remainingBudget = 1 * 1000 * 1000;
+		let remainingBudget = 0.2 * 1000 * 1000;
+		//let remainingBudget = 25836417;
 
+		if(false){
+			const buffer = buffers[0];
+			gl.bindVertexArray(buffer.vao);
+			gl.uniform1i(shFill.uniforms.uOffset, 0);
+			//gl.drawArrays(gl.POINTS, state.fillOffset, 1000 * 1000);
+			//gl.drawArrays(gl.POINTS, 15 * 1000 * 1000, 100 * 1000 * 1000);
+
+			//gl.drawArrays(gl.POINTS, 15 * 1000 * 1000, 20 * 1000 * 1000);
+			//gl.drawArrays(gl.POINTS, 35 * 1000 * 1000, 10 * 1000 * 1000);
+			//gl.drawArrays(gl.POINTS, 45 * 1000 * 1000, 10 * 1000 * 1000);
+			//gl.drawArrays(gl.POINTS, 55 * 1000 * 1000, 10 * 1000 * 1000);
+			//gl.drawArrays(gl.POINTS, 65 * 1000 * 1000, 5 * 1000 * 1000);
+
+			//gl.drawArrays(gl.POINTS, 1000 * 1000, 0.1 * 1000 * 1000);
+			gl.drawArrays(gl.POINTS, 0, buffer.count);
+			//gl.bindVertexArray(buffers[1].vao);
+			//gl.drawArrays(gl.POINTS, 0 * 1000 * 1000, 6 * 1000 * 1000);
+		}else 
 		if(buffers.length === 1){
 			const buffer = buffers[0];
 
@@ -542,7 +561,7 @@ renderPointCloudProgressive = (function(){
 			]);
 			gl.drawBuffers(buffers.length, buffers);
 		}
-		
+		//gl.depthFunc(gl.GEQUAL);
 		reproject(target, pointcloud, view, proj);
 
 		if(typeof SINGLE_PROGRESS_STEP !== "undefined" && SINGLE_PROGRESS_STEP){

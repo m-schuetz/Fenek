@@ -312,6 +312,7 @@ int main() {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
 	//glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
 	//glfwWindowHint(GLFW_FLOATING, GLFW_TRUE);
+	glfwWindowHint(GLFW_DECORATED, false);
 
 	int numMonitors;
 	GLFWmonitor** monitors = glfwGetMonitors(&numMonitors);

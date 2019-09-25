@@ -2,7 +2,7 @@
 
 
 
-SINGLE_PROGRESS_STEP = false;
+SINGLE_PROGRESS_STEP = true;
 doStep = true;
 
 // view.set(
@@ -12,5 +12,5 @@ doStep = true;
 
 // view.set(
 // 	[618.552, 304.189, -1221.013], 
-// 	[473.978, 193.308, -1343.453]
+// 	[473.978, 193.308, -1343.453]s
 // );

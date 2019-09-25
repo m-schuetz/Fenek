@@ -60,8 +60,8 @@ void main() {
 	ivec2 pos = ivec2(gl_FragCoord.xy);
 	
 	float res = response(pos);
-	float shade = exp(-res * 300.0 * ssArgs.edlStrength * 0.8);
-	vec2 uv = out_color.xy = pos / 1600.0;
+	float shade = exp(-res * 300.0 * ssArgs.edlStrength * 3.8);
+	//vec2 uv = out_color.xy = pos / 1600.0;
 
 	vec4 col = texelFetch(uColor, pos, 0);
 

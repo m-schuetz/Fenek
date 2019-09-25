@@ -65,6 +65,7 @@ let listeners = {
 	render: [],
 };
 
+GLTimerQueries.enabled = false;
 
 runJSFile(`${jsDir}/scripts/createDefaultScene.js`);
 //runJSFile(`${jsDir}/scripts/createScene.js`);

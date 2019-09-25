@@ -122,10 +122,17 @@ void main() {
 	uint vertexID2 = vVertexID2.r | (vVertexID2.g << 8) | (vVertexID2.b << 16) | (vVertexID2.a << 24);
 	uint vertexID3 = vVertexID3.r | (vVertexID3.g << 8) | (vVertexID3.b << 16) | (vVertexID3.a << 24);
 
-	vertexID0 = (vVertexID0.r + vVertexID0.g + vVertexID0.b) == 0 ? 0 : vertexID0;
-	vertexID1 = (vVertexID1.r + vVertexID1.g + vVertexID1.b) == 0 ? 0 : vertexID1;
-	vertexID2 = (vVertexID2.r + vVertexID2.g + vVertexID2.b) == 0 ? 0 : vertexID2;
-	vertexID3 = (vVertexID3.r + vVertexID3.g + vVertexID3.b) == 0 ? 0 : vertexID3;
+	// ignore white background
+	vertexID0 = (vVertexID0.r + vVertexID0.g + vVertexID0.b) == (255 * 3) ? 0 : vertexID0;
+	vertexID1 = (vVertexID1.r + vVertexID1.g + vVertexID1.b) == (255 * 3) ? 0 : vertexID1;
+	vertexID2 = (vVertexID2.r + vVertexID2.g + vVertexID2.b) == (255 * 3) ? 0 : vertexID2;
+	vertexID3 = (vVertexID3.r + vVertexID3.g + vVertexID3.b) == (255 * 3) ? 0 : vertexID3;
+
+	// ignore black background
+	// vertexID0 = (vVertexID0.r + vVertexID0.g + vVertexID0.b) == 0 ? 0 : vertexID0;
+	// vertexID1 = (vVertexID1.r + vVertexID1.g + vVertexID1.b) == 0 ? 0 : vertexID1;
+	// vertexID2 = (vVertexID2.r + vVertexID2.g + vVertexID2.b) == 0 ? 0 : vertexID2;
+	// vertexID3 = (vVertexID3.r + vVertexID3.g + vVertexID3.b) == 0 ? 0 : vertexID3;
 
 	uint vCount = 0;
 	bool v0Visible = false;

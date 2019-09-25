@@ -48,8 +48,14 @@ const fs = require('fs');
 // let offsetRGB = 20;
 
 // MATTERHORN
-let file = "D:/dev/pointclouds/pix4d/eclepens.las";
-let targetFile = "D:/dev/pointclouds/pix4d/eclepens.bin";
+// let file = "D:/dev/pointclouds/pix4d/eclepens.las";
+// let targetFile = "D:/dev/pointclouds/pix4d/eclepens.bin";
+// let offsetXYZ = 0;
+// let offsetRGB = 20;
+
+// MATTERHORN
+let file = "D:\\dev\\pointclouds\\tuwien_baugeschichte\\Museum Affandi_las export\\batch_0.las";
+let targetFile = "D:\\dev\\pointclouds\\tuwien_baugeschichte\\Museum Affandi_las export\\batch_0.bin";
 let offsetXYZ = 0;
 let offsetRGB = 20;
 
@@ -146,7 +152,7 @@ let fd = fs.openSync(file);
 let fo = fs.openSync(targetFile, "w");
 
 //let pointsLeft = 200 * 1000 * 1000;
-let pointsLeft = Math.min(header.numberOfPoints, 500_000_000);
+let pointsLeft = Math.min(header.numberOfPoints, 300_000_000);
 let batchSize = 1000 * 1000;
 let pointsRead = 0;
 const bytesPerPoint = header.pointDataRecordLength;
