@@ -83,11 +83,9 @@ window.x = 0;
 window.y = 0;
 window.width = 1920;
 window.height = 1080;
-// window.width = 2560;
-// window.height = 1440;
 
-MSAA_SAMPLES = 1;
-EDL_ENABLED = false;
+MSAA_SAMPLES = 4;
+EDL_ENABLED = true;
 //renderDebug = renderPointCloudProgressive;
 //renderDebug = renderPointCloudBasic;
 

@@ -83,10 +83,10 @@ if(typeof e4called === "undefined"){
 
 }
 
-window.width = 1920;
-window.height = 1080;
-window.x = 0;
-window.y = 0;
+// window.width = 1920;
+// window.height = 1080;
+// window.x = 0;
+// window.y = 0;
 
 view.set(
 	[662.984, 385.111, -148.009], 

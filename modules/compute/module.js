@@ -10,3 +10,5 @@ monitorJS(`${rootDir}/modules/compute/scripts/bench_morro_bay.js`);
 monitorJS(`${rootDir}/modules/compute/scripts/video_candi_sari.js`);
 monitorJS(`${rootDir}/modules/compute/scripts/video_retz.js`);
 monitorJS(`${rootDir}/modules/compute/scripts/video_morro_bay.js`);
+
+monitorJS(`${rootDir}/modules/compute/scripts/figure_heidentor.js`);

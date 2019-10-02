@@ -81,8 +81,8 @@ getRenderProgressiveState = function(target){
 
 		let csCreateVBO = null;
 		{ // create VBO shader
-			//let path = `${rootDir}/modules/progressive/create_vbo.cs`;
-			let path = `${rootDir}/modules/progressive/create_vbo_simple_duplicate_prevention.cs`;
+			let path = `${rootDir}/modules/progressive/create_vbo.cs`;
+			//let path = `${rootDir}/modules/progressive/create_vbo_simple_duplicate_prevention.cs`;
 			let shader = new Shader([{type: gl.COMPUTE_SHADER, path: path}]);
 			shader.watch();
 			csCreateVBO = shader;
@@ -159,8 +159,15 @@ renderPointCloudProgressive = (function(){
 
 		gl.activeTexture(gl.TEXTURE0);
 		gl.bindTexture(gradientTexture.type, gradientTexture.handle);
-		if(shReproject.uniforms.uGradient){
+		if(Number.isInteger(shReproject.uniforms.uGradient)){
 			gl.uniform1i(shReproject.uniforms.uGradient, 0);
+		}
+
+		if(typeof ATTRIBUTE_MODE === "undefined"){
+			ATTRIBUTE_MODE = 1;
+		}
+		if(Number.isInteger(shReproject.uniforms.uAttributeMode)){
+			gl.uniform1i(shReproject.uniforms.uAttributeMode, ATTRIBUTE_MODE);
 		}
 
 		gl.uniformMatrix4fv(shReproject.uniforms.uWorldViewProj, 1, gl.FALSE, transform_m32);
@@ -193,16 +200,31 @@ renderPointCloudProgressive = (function(){
 
 		gl.activeTexture(gl.TEXTURE0);
 		gl.bindTexture(gradientTexture.type, gradientTexture.handle);
-		if(shFill.uniforms.uGradient){
+		if(Number.isInteger(shFill.uniforms.uGradient)){
 			gl.uniform1i(shFill.uniforms.uGradient, 0);
 		}
+
+		gl.uniform1i(shReproject.uniforms.uAttributeMode, ATTRIBUTE_MODE);
 
 		gl.uniformMatrix4fv(shFill.uniforms.uWorldViewProj, 1, gl.FALSE, transform_m32);
 
 		let buffers = pointcloud.glBuffers;
 
-		let remainingBudget = 0.2 * 1000 * 1000;
+		//let remainingBudget = 3 * 1000 * 1000;
+		let remainingBudget = 10 * 1000 * 1000;
+		//remainingBudget = 100 * 1000;
 		//let remainingBudget = 25836417;
+
+		// if(typeof progToggle === "undefined"){
+		// 	progToggle = 0;
+		// }
+
+		// if(progToggle === 0){
+		// 	remainingBudget = 10 * 1000 * 1000;
+		// }else if(progToggle === 1){
+		// 	remainingBudget = 100 * 1000;
+		// }
+
 
 		if(false){
 			const buffer = buffers[0];
@@ -316,9 +338,11 @@ renderPointCloudProgressive = (function(){
 
 			gl.activeTexture(gl.TEXTURE0);
 			gl.bindTexture(gradientTexture.type, gradientTexture.handle);
-			if(shFill.uniforms.uGradient){
+			if(Number.isInteger(shFill.uniforms.uGradient)){
 				gl.uniform1i(shFill.uniforms.uGradient, 0);
 			}
+
+			gl.uniform1i(shReproject.uniforms.uAttributeMode, ATTRIBUTE_MODE);
 
 			gl.uniformMatrix4fv(shFill.uniforms.uWorldViewProj, 1, gl.FALSE, transform_m32);
 
@@ -423,7 +447,7 @@ renderPointCloudProgressive = (function(){
 
 			gl.activeTexture(gl.TEXTURE0);
 			gl.bindTexture(gradientTexture.type, gradientTexture.handle);
-			if(shFill.uniforms.uGradient){
+			if(Number.isInteger(shFill.uniforms.uGradient)){
 				gl.uniform1i(shFill.uniforms.uGradient, 0);
 			}
 
@@ -503,8 +527,8 @@ renderPointCloudProgressive = (function(){
 			groups[1] *= 4;
 		}
 
-		groups[0] /= 2;
-		groups[1] /= 2;
+		// groups[0] /= 2;
+		// groups[1] /= 2;
 
 		//log(groups);
 
@@ -563,21 +587,24 @@ renderPointCloudProgressive = (function(){
 		}
 		//gl.depthFunc(gl.GEQUAL);
 		reproject(target, pointcloud, view, proj);
+		fillFixed(target, pointcloud, view, proj);
+		//fillDynamic(target, pointcloud, view, proj);
+		createVBO(target, pointcloud, view, proj);
 
-		if(typeof SINGLE_PROGRESS_STEP !== "undefined" && SINGLE_PROGRESS_STEP){
+		// if(typeof SINGLE_PROGRESS_STEP !== "undefined" && SINGLE_PROGRESS_STEP){
 
-			if(doStep === true){
-				fillFixed(target, pointcloud, view, proj);
-				//fillDynamic(target, pointcloud, view, proj);
-				createVBO(target, pointcloud, view, proj);
-			}
+		// 	if(doStep === true){
+		// 		fillFixed(target, pointcloud, view, proj);
+		// 		//fillDynamic(target, pointcloud, view, proj);
+		// 		createVBO(target, pointcloud, view, proj);
+		// 	}
 
-			doStep = false;
-		}else{
-			fillFixed(target, pointcloud, view, proj);
-			//fillDynamic(target, pointcloud, view, proj);
-			createVBO(target, pointcloud, view, proj);
-		}
+		// 	doStep = false;
+		// }else{
+		// 	fillFixed(target, pointcloud, view, proj);
+		// 	//fillDynamic(target, pointcloud, view, proj);
+		// 	createVBO(target, pointcloud, view, proj);
+		// }
 
 		gl.useProgram(0);
 

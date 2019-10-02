@@ -81,10 +81,10 @@ window.height = 1080;
 // window.width = 2560;
 // window.height = 1440;
 
-MSAA_SAMPLES = 1;
+MSAA_SAMPLES = 4;
 EDL_ENABLED = true;
 
-renderDebug = renderPointCloudProgressive;
+//renderDebug = renderPointCloudProgressive;
 //renderDebug = renderPointCloudBasic;
 
 camera.near = 10;

@@ -173,6 +173,9 @@ if(typeof setAttribute !== "undefined"){
 	let ai = (attributeToggle % toggles.length)
 	//toggles[ai]();
 
+	let ATT_MODE_SCALAR = 0;
+	let ATT_MODE_VECTOR = 1;
+
 	// {
 	// 	let range = [700000, 1000000];
 	// 		let width = range[1] - range[0];
@@ -253,7 +256,7 @@ if(typeof setAttribute !== "undefined"){
 		//setAttribute([{name: "vRank", range: [-100, 12000]}]);
 		//setAttribute([{name: "incidenceAngle", range: [0, 12000]}]);
 		//setAttribute([{name: "returnNumber", range: [0, 80]}]);
-		setAttribute([{name: "PAN", range: [0, 60000]}]);
+		//setAttribute([{name: "PAN", range: [0, 60000]}]);
 
 		// setAttribute([
 		// 	{name: "Red",   scale: 1 / (256 ** 1), offset: 0},
@@ -291,6 +294,42 @@ if(typeof setAttribute !== "undefined"){
 		// ]);
 
 		//setAttribute([{name: "SourceID", range: [10000, 11255]}]);
+	}
+
+
+	{ // for video
+
+
+		attributeToggle = attributeToggle % 6;
+		if(attributeToggle === 0){
+			setAttribute([{name: "EchoRatio", range: [10, 10000]}]);
+			ATTRIBUTE_MODE = ATT_MODE_SCALAR;
+		}else if(attributeToggle === 1){
+			setAttribute([{name: "vRange", range: [-20, 5000]}]);
+			ATTRIBUTE_MODE = ATT_MODE_SCALAR;
+		}else if(attributeToggle === 2){
+			setAttribute([{name: "returnNumber", range: [0, 80]}]);
+			ATTRIBUTE_MODE = ATT_MODE_SCALAR;
+		}else if(attributeToggle === 3){
+			setAttribute([{name: "Amplitude", range: [100, 1800]}]);
+			ATTRIBUTE_MODE = ATT_MODE_SCALAR;
+		}else if(attributeToggle === 4){
+			setAttribute([
+				{name: "Red",   range: [0, 255 ** 2]},
+				{name: "Green", range: [0, 255 ** 2]},
+				{name: "Blue",  range: [0, 255 ** 2]},
+			]);
+			ATTRIBUTE_MODE = ATT_MODE_VECTOR;
+		}else if(attributeToggle === 5){
+			setAttribute([
+				{name: "NormalX", range: [-10000, 10000]},
+				{name: "NormalY", range: [-10000, 10000]},
+				{name: "NormalZ", range: [-10000, 10000]},
+			]);
+			ATTRIBUTE_MODE = ATT_MODE_VECTOR;
+		}
+
+
 	}
 
 	

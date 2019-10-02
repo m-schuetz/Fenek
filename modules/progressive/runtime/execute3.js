@@ -2,15 +2,13 @@
 
 
 
-SINGLE_PROGRESS_STEP = true;
-doStep = true;
+// SINGLE_PROGRESS_STEP = true;
+// doStep = true;
 
-// view.set(
-// 	[608.339, 269.545, -649.400], 
-// 	[754.862, 178.692, -592.921]
-// );
-
-// view.set(
-// 	[618.552, 304.189, -1221.013], 
-// 	[473.978, 193.308, -1343.453]s
-// );
+if(progToggle === 0){
+	remainingBudget = 10 * 1000 * 1000;
+	progToggle = 1;
+}else if(progToggle === 1){
+	remainingBudget = 100 * 1000;
+	progToggle = 0;
+}

@@ -1,27 +1,29 @@
 
-if(!$("testcloud")){
-	
-	//let las = loadLASProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v6_250M.las");
-	//let las = loadLASProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v7_250M.las");
-	
-	//let las = loadBINProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v6_500M.bin");
-	//let las = loadBINProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v6_250M.bin");
 
-	//let las = loadLASProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v6_125M.las");
-	let las = loadLASProgressive("D:/dev/pointclouds/tuwien_baugeschichte/arbegen_257.las");
+if(typeof e4called === "undefined"){
+	e4called = true;
+	
+	let las = loadLASProgressive("D:/dev/pointclouds/archpro/heidentor.las");
 
 	let pc = new PointCloudProgressive("testcloud", "blabla");
+	pc.boundingBox.min.set(...las.boundingBox.min);
+	pc.boundingBox.max.set(...las.boundingBox.max);
+
+	log(pc.boundingBox);
 
 	let handles = las.handles;
 
 	let attributes = [
 		new GLBufferAttribute("position", 0, 3, gl.FLOAT, gl.FALSE, 12, 0),
+		//new GLBufferAttribute("color",    1, 4, gl.UNSIGNED_BYTE, gl.TRUE, 4, 12),
 		new GLBufferAttribute("value", 1, 4, gl.INT, gl.FALSE, 4, 12, {targetType: "int"}),
 	];
+
 	let bytesPerPoint = attributes.reduce( (p, c) => p + c.bytes, 0);
 
 	let maxPointsPerBuffer = 134 * 1000 * 1000;
 	let numPointsLeft = las.numPoints;
+
 	let glBuffers = handles.map( (handle) => {
 
 		let numPointsInBuffer = numPointsLeft > maxPointsPerBuffer ? maxPointsPerBuffer : numPointsLeft;
@@ -57,38 +59,39 @@ if(!$("testcloud")){
 
 	pc.glBuffers = glBuffers;
 
-	let s = 1.0;
+	let s = 0.3;
 	pc.transform.elements.set([
 		s, 0, 0, 0, 
 		0, 0, -s, 0, 
 		0, s, 0, 0, 
-		0, 0, 0, 1, 
+		-10, 1.4, -11, 1, 
 	]);
-
-
 
 	scene.root.add(pc);
 
 	listeners.update.push(() => {
+
+		if(pc.numPoints !== las.numPoints){
+			//log(las.numPoints);
+		}
 		pc.numPoints = las.numPoints;
+		
 	});
 
 }
 
-// view.set(
-// 	[342.979, 478.404, -49.588], 
-// 	[729.613, -101.396, -645.563]
-// );
-
-// window.x = 0;
-// window.y = 0;
 // window.width = 1920;
 // window.height = 1080;
+// window.x = 0;
+// window.y = 0;
+
+view.set(
+	[-11.518, 4.012, -14.508], 
+	[-7.709, 3.015, -13.759]
+);
+
+camera.fov = 60;
+camera.near = 0.1;
+
 
 MSAA_SAMPLES = 1;
-EDL_ENABLED = false;
-
-camera.near = 0.2;
-
-//renderDebug = renderPointCloudProgressive;
-//renderDebug = renderPointCloudBasic;

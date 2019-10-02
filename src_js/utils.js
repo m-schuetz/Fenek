@@ -110,9 +110,9 @@ class GLTimerQueries{
 		}
 
 		let query = gl.createQuery();
-		//log(`created query: ${query}`);
 
 		let mark = {
+			name: name,
 			handle: query,
 			refCount: 0,
 			timestamp: null,
@@ -153,6 +153,8 @@ class GLTimerQueries{
 			return;
 		}
 
+		let tStart = now();
+
 		// resolve gl queries
 		for(let [name, mark] of GLTimerQueries.marks){
 			GLTimerQueries.marksToResolve.push(mark);
@@ -160,6 +162,7 @@ class GLTimerQueries{
 
 		GLTimerQueries.marks = new Map();
 
+		
 		let stillToResolve = [];
 		for(let mark of GLTimerQueries.marksToResolve){
 			
@@ -167,15 +170,17 @@ class GLTimerQueries{
 
 			if(timestampAvailable){
 				let timestamp = gl.getQueryObjectui64(mark.handle, gl.QUERY_RESULT);
-				
+
 				mark.timestamp = timestamp;
 				gl.deleteQuery(mark.handle);
 			}else{
 				stillToResolve.push(mark);
 			}
+			
 		}
 		GLTimerQueries.marksToResolve = stillToResolve;
 		//log(GLTimerQueries.marksToResolve.length);
+		
 
 		if(GLTimerQueries.marksToResolve.length > 100){
 			log(`WARNING: more than 100 queries active`);
@@ -212,6 +217,9 @@ class GLTimerQueries{
 				let outdated = now() - measure.start.cpuTime > 1.0;
 
 				if(outdated){
+
+					GLTimerQueries.marksToResolve = GLTimerQueries.marksToResolve.filter(mark => ![measure.start, measure.end].includes(mark));
+
 					gl.deleteQuery(measure.start.handle);
 					gl.deleteQuery(measure.end.handle);
 				}else{
@@ -235,6 +243,13 @@ class GLTimerQueries{
 		}
 
 		GLTimerQueries.measures = unresolvedMeasures;
+
+		let tEnd = now();
+		let durationMS = (tEnd - tStart) * 1000;
+
+		if(durationMS > 1){
+			log(`WARNING: resolving timer queries took ${durationMS.toFixed(3)}ms`);
+		}
 	}
 
 };

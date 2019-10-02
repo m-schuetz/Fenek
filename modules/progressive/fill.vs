@@ -10,8 +10,22 @@ uniform int uOffset;
 
 layout(binding = 0) uniform sampler2D uGradient;
 
+uniform int uAttributeMode;
+
+#define ATT_MODE_SCALAR 0
+#define ATT_MODE_VECTOR 1
+
+
 out vec3 vColor;
 out vec4 vVertexID;
+
+vec3 getColorFromV1(){
+	float w = intBitsToFloat(aValue);
+	w = clamp(w, 0, 1);
+	vec3 v = texture(uGradient, vec2(w, 0.0)).rgb;
+
+	return v;
+}
 
 vec3 getColorFromV3(){
 	vec3 v = vec3(
@@ -30,8 +44,13 @@ void main() {
 	gl_Position = uWorldViewProj * vec4(aPosition, 1.0);
 	gl_PointSize = 1.0;
 	
-	vColor = getColorFromV3();
+	if(uAttributeMode == ATT_MODE_VECTOR){
+		vColor = getColorFromV3();
+	}else if(uAttributeMode == ATT_MODE_SCALAR){
+		vColor = getColorFromV1();	
+	}
 	//vColor = vec3(1, 0, 0);
+	//vColor = vec3(1, 1, 0);
 
 	//vColor = aValue.xyz;
 
@@ -70,20 +89,21 @@ void main() {
 	// 	gl_Position.w = 0;
 	// }
 
-	{
+	// {
 		
-		//float t = float(aIndex / 13) / (1000 * 1000) - 0.2;
-		float t = float(gl_VertexID / 1000) / (14.5 * 1000.0);
+	// 	//float t = float(aIndex / 13) / (1000 * 1000) - 0.2;
+	// 	float t = float(gl_VertexID / 1000) / (14.5 * 1000.0);
 
-		uint classes = gl_VertexID / 100000;
-		t = float(classes) / 140;
+	// 	uint classes = gl_VertexID / 100000;
+	// 	t = float(classes) / 140;
 		
 
-		vec3 c = texture(uGradient, vec2(t, 0.0)).xyz;
-		vColor = c;
-	}
+	// 	vec3 c = texture(uGradient, vec2(t, 0.0)).xyz;
+	// 	vColor = c;
+	// }
 
 
+	//vColor = texture(uGradient, vec2(0.2, 0.0)).xyz;
 }
 
 

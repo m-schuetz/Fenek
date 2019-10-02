@@ -94,4 +94,4 @@ camera.fov = 100;
 camera.near = 0.1;
 
 
-MSAA_SAMPLES = 4;
+MSAA_SAMPLES = 1;

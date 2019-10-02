@@ -74,20 +74,20 @@ view.set(
 	[569.602, 41.695, -857.466]
 );
 
-view.set(
-	[882.534, 376.912, -520.001], 
-	[569.602, 41.695, -857.466]
-);
+// view.set(
+// 	[882.534, 376.912, -520.001], 
+// 	[569.602, 41.695, -857.466]
+// );
 
 window.x = 0;
 window.y = 0;
-// window.width = 1920;
-// window.height = 1080;
+window.width = 1920;
+window.height = 1080;
 
 
-MSAA_SAMPLES = 1;
+MSAA_SAMPLES = 4;
 EDL_ENABLED = true;
 
-camera.near = 200;
+camera.near = 2;
 //renderDebug = renderPointCloudProgressive;
 //renderDebug = renderPointCloudBasic;

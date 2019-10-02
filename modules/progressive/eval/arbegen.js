@@ -8,7 +8,8 @@ if(!$("testcloud")){
 	//let las = loadBINProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v6_250M.bin");
 
 	//let las = loadLASProgressive("D:/dev/pointclouds/tu_photogrammetry/wienCity_v6_125M.las");
-	let las = loadLASProgressive("D:/dev/pointclouds/tuwien_baugeschichte/arbegen_257.las");
+	//let las = loadLASProgressive("D:/dev/pointclouds/tuwien_baugeschichte/arbegen_257.las");
+	let las = loadLASProgressive("D:/temp/arbegen/merged.las");
 
 	let pc = new PointCloudProgressive("testcloud", "blabla");
 
@@ -75,10 +76,10 @@ if(!$("testcloud")){
 
 }
 
-// view.set(
-// 	[342.979, 478.404, -49.588], 
-// 	[729.613, -101.396, -645.563]
-// );
+view.set(
+	[107.973, 82.120, -77.697], 
+	[77.263, 73.590, -70.710]
+);
 
 // window.x = 0;
 // window.y = 0;

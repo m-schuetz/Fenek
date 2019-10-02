@@ -83,7 +83,8 @@ void main(){
 	imageStore(uOutput, pixelCoords, icolor);
 
 	// reset to max depth and background color black
-	ssFramebuffer[pixelID] = 0xffffffffff000000UL;
+	//ssFramebuffer[pixelID] = 0xffffffffff000000UL;
+	ssFramebuffer[pixelID] = 0xffffffffffffffffUL;
 
 	// reset to other background color value
 	//ssFramebuffer[pixelID] = 0xffffffffff00FF00UL;
