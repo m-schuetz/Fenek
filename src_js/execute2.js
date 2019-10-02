@@ -1,6 +1,4 @@
 
-GLTimerQueries.enabled = true;
-
 //vr.start();
 //vr.stop();
 // allows you to adjust the mirror depending on your VR room setup

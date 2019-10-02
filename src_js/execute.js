@@ -67,7 +67,4 @@ USER_STUDY_LOD_MODIFIER = 0;
 
 MSAA_SAMPLES = 4;
 
-GLTimerQueries.enabled = true;
-
-
 reportState(true);
